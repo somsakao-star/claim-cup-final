@@ -529,11 +529,12 @@ export default function App() {
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
         // ส่งข้อมูลไปให้ API เด็กเสิร์ฟของเรา
-        const response = await fetch('http://localhost:5000/api/claims/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(jsonData)
-        });
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(jsonData)
+});
+        
 
         if (response.ok) {
           alert(`อัปโหลดข้อมูลสำเร็จ! ข้อมูลเข้าสู่ระบบแล้วครับ`);
@@ -568,7 +569,7 @@ export default function App() {
 useEffect(() => {
     const fetchClaimsData = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/claims');
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard-data`);
             if (!response.ok) throw new Error('ดึงข้อมูลไม่สำเร็จ');
             
             const data = await response.json();
