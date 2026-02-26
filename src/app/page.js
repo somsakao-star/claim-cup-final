@@ -426,11 +426,11 @@ const LoginScreen = ({ onLoginSuccess }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     try {
-      const response = await fetch(`${apiUrl}/api/login`, {
+    const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': '69420'
+          'Bypass-Tunnel-Reminder': 'true' // <--- เปลี่ยนตรงนี้
         },
         body: JSON.stringify({ username, password })
       });
@@ -549,11 +549,11 @@ export default function App() {
         
         const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': '69420'  
+            'Bypass-Tunnel-Reminder': 'true'  // <--- เปลี่ยนตรงนี้
           },
           body: JSON.stringify(jsonData)
         });
@@ -592,7 +592,7 @@ export default function App() {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
                 headers: {
-                    'ngrok-skip-browser-warning': '69420'
+                    'Bypass-Tunnel-Reminder': 'true' // <--- เปลี่ยนตรงนี้
                 }
             });
             
