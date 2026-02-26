@@ -426,14 +426,8 @@ const LoginScreen = ({ onLoginSuccess }) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     try {
-    const response = await fetch(`${apiUrl}/api/login`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Bypass-Tunnel-Reminder': 'true' // <--- เปลี่ยนตรงนี้
-        },
-        body: JSON.stringify({ username, password })
-      });
+    // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
 
       const data = await response.json();
 
@@ -549,14 +543,8 @@ export default function App() {
         
         const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Bypass-Tunnel-Reminder': 'true'  // <--- เปลี่ยนตรงนี้
-          },
-          body: JSON.stringify(jsonData)
-        });
+      // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
 
         if (response.ok) {
           alert(`อัปโหลดข้อมูลสำเร็จ! ข้อมูลเข้าสู่ระบบแล้วครับ`);
@@ -590,11 +578,8 @@ export default function App() {
   useEffect(() => {
     const fetchClaimsData = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
-                headers: {
-                    'Bypass-Tunnel-Reminder': 'true' // <--- เปลี่ยนตรงนี้
-                }
-            });
+           // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
             
             const data = await response.json();
             
