@@ -427,11 +427,13 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL; // <--- เพิ่มบรรทัดนี้ลงไป
 
   try {
-    const response = await fetch(`${apiUrl}/api/login`, {
-// ... โค้ดส่วนที่เหลือ
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username, password })
+const response = await fetch(`${apiUrl}/api/login`, {
+    method: 'POST',
+    headers: { 
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': '69420' // <--- เพิ่มบรรทัดนี้ลงไปตรง Login ด้วยครับ
+    },
+    body: JSON.stringify({ username, password })
 });
 
       const data = await response.json();
@@ -526,13 +528,16 @@ export default function App() {
         const worksheet = workbook.Sheets[sheetName];
         
         // แปลงข้อมูลจาก Excel เป็น JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
-        // ส่งข้อมูลไปให้ API เด็กเสิร์ฟของเรา
-const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(jsonData)
+// ส่งข้อมูลไปให้ API เด็กเสิร์ฟของเรา
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
+    method: 'POST',
+    headers: { 
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': '69420'  // <--- เพิ่มบรรทัดนี้ลงไปครับ!
+    },
+    body: JSON.stringify(jsonData)
 });
         
 
@@ -569,8 +574,12 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk
 useEffect(() => {
     const fetchClaimsData = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard-data`);
-            if (!response.ok) throw new Error('ดึงข้อมูลไม่สำเร็จ');
+            // ✅ เปลี่ยนจากเดิมที่มีแค่วงเล็บ ให้มีปีกกาและ headers แบบนี้
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard-data`, {
+    headers: {
+        'ngrok-skip-browser-warning': '69420' // <--- เพิ่มก้อนนี้เข้าไปครับ!
+    }
+});
             
             const data = await response.json();
             
