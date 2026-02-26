@@ -418,16 +418,20 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
     try {
-    // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
-const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
+      // ✅ ซ่อมแล้ว: ให้ส่ง Username / Password ไปเช็คที่ /api/login
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json' // <--- ต้องมีบรรทัดนี้ครับ
+        },
+        body: JSON.stringify({ username, password })
+      });
 
       const data = await response.json();
 
@@ -541,10 +545,16 @@ export default function App() {
         const sheetName = workbook.SheetNames[0]; 
         const worksheet = workbook.Sheets[sheetName];
         
-        const jsonData = XLSX.utils.sheet_to_json(worksheet)
+       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
-const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
+        // ✅ ซ่อมแล้ว: ส่งข้อมูล Excel ไปบันทึกที่ /api/claims (แบบ POST)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json' // <--- ต้องมีบรรทัดนี้ครับ
+          },
+          body: JSON.stringify(jsonData)
+        });
 
         if (response.ok) {
           alert(`อัปโหลดข้อมูลสำเร็จ! ข้อมูลเข้าสู่ระบบแล้วครับ`);
