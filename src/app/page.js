@@ -1,6 +1,4 @@
 "use client";
-import * as XLSX from 'xlsx';
-import { FileUp } from 'lucide-react'; // ถ้ามีไอคอนนี้อยู่แล้วข้ามได้เลยครับ
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   DollarSign, Activity, Trophy, Syringe, Baby,
@@ -516,7 +514,6 @@ export default function App() {
   const [filterUnit, setFilterUnit] = useState('all');
   
   const [claims, setClaims] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -531,49 +528,6 @@ export default function App() {
     }
   }, []);
   
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    
-    reader.onload = async (event) => {
-      try {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0]; 
-        const worksheet = workbook.Sheets[sheetName];
-        
-       const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        // ✅ ซ่อมแล้ว: ส่งข้อมูล Excel ไปบันทึกที่ /api/claims (แบบ POST)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json' // <--- ต้องมีบรรทัดนี้ครับ
-          },
-          body: JSON.stringify(jsonData)
-        });
-
-        if (response.ok) {
-          alert(`อัปโหลดข้อมูลสำเร็จ! ข้อมูลเข้าสู่ระบบแล้วครับ`);
-          window.location.reload(); 
-        } else {
-          alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลครับ');
-        }
-      } catch (error) {
-        console.error('Upload error:', error);
-        alert('ไฟล์ไม่ถูกต้อง หรือเกิดข้อผิดพลาดครับ');
-      } finally {
-        setIsUploading(false);
-        e.target.value = null; 
-      }
-    };
-    
-    reader.readAsArrayBuffer(file);
-  };
-
   const selectedHospitalName = useMemo(() => {
     const hos = hospitals.find(h => h.id === filterUnit);
     return hos ? hos.name : 'All Cup';
