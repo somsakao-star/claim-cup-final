@@ -419,30 +419,27 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setErrorMsg('');
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg('');
 
-  
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL; // <--- เพิ่มบรรทัดนี้ลงไป
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  try {
-const response = await fetch(`${apiUrl}/api/login`, {
-    method: 'POST',
-    headers: { 
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': '69420' // <--- เพิ่มบรรทัดนี้ลงไปตรง Login ด้วยครับ
-    },
-    body: JSON.stringify({ username, password })
-});
+    try {
+      const response = await fetch(`${apiUrl}/api/login`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': '69420'
+        },
+        body: JSON.stringify({ username, password })
+      });
 
       const data = await response.json();
 
-     if (response.ok && data.success) {
-        // 👇 เพิ่มบรรทัดนี้ เพื่อจดจำข้อมูลผู้ใช้ลงในเบราว์เซอร์
+      if (response.ok && data.success) {
         localStorage.setItem('claimcup_user', JSON.stringify(data.user)); 
-        
-        onLoginSuccess(data.user); // ส่งข้อมูลผู้ใช้กลับไปให้หน้าหลักเปิดประตู
+        onLoginSuccess(data.user); 
       } else {
         setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
       }
@@ -473,25 +470,25 @@ const response = await fetch(`${apiUrl}/api/login`, {
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-emerald-900 text-sm font-bold mb-2">ชื่อผู้ใช้งาน (Username)</label>
-           <input 
-  type="text" 
-  value={username} 
-  onChange={(e) => setUsername(e.target.value)}
-  className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
-  placeholder="กรอกชื่อผู้ใช้งาน"
-  required
-/>
+            <input 
+              type="text" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)}
+              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
+              placeholder="กรอกชื่อผู้ใช้งาน"
+              required
+            />
           </div>
           <div>
             <label className="block text-emerald-900 text-sm font-bold mb-2">รหัสผ่าน (Password)</label>
             <input 
-  type="password" 
-  value={password} 
-  onChange={(e) => setPassword(e.target.value)}
-  className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
-  placeholder="••••••••"
-  required
-/>
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
+              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
+              placeholder="••••••••"
+              required
+            />
           </div>
           <button 
             type="submit" 
@@ -505,8 +502,16 @@ const response = await fetch(`${apiUrl}/api/login`, {
     </div>
   );
 };
+
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null); // เก็บข้อมูลคนที่ล็อกอิน
+  const [currentUser, setCurrentUser] = useState(null); 
+  
+  // ฟังก์ชันสำหรับกดปุ่มออกจากระบบ
+  const handleLogout = () => {
+    localStorage.removeItem('claimcup_user'); 
+    setCurrentUser(null); 
+  };
+  
   const [currentTime, setCurrentTime] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [filterYear, setFilterYear] = useState('2569');
@@ -514,20 +519,20 @@ export default function App() {
   
   const [claims, setClaims] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-// ✅ เพิ่มโค้ดชุดนี้: ตอนเปิดเว็บมา ให้ไปแอบดูว่าเคยล็อกอินทิ้งไว้ไหม
- // ✅ โค้ดสำหรับเช็คความจำตอนเปิดเว็บ (หรือกด F5)
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const savedUser = localStorage.getItem('claimcup_user');
     if (savedUser) {
       try {
-        setCurrentUser(JSON.parse(savedUser)); // ถ้าเจอว่าจำไว้ ให้เข้าเว็บได้เลย
+        setCurrentUser(JSON.parse(savedUser)); 
       } catch (e) {
         console.error("ล้างข้อมูลที่พังทิ้ง");
         localStorage.removeItem('claimcup_user');
       }
     }
   }, []);
-  // ฟังก์ชันจัดการตอนเลือกไฟล์ Excel
+  
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -539,26 +544,23 @@ export default function App() {
       try {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0]; // อ่านชีตแรกเสมอ
+        const sheetName = workbook.SheetNames[0]; 
         const worksheet = workbook.Sheets[sheetName];
         
-        // แปลงข้อมูลจาก Excel เป็น JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
-// ส่งข้อมูลไปให้ API เด็กเสิร์ฟของเรา
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims/bulk`, {
-    method: 'POST',
-    headers: { 
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': '69420'  // <--- เพิ่มบรรทัดนี้ลงไปครับ!
-    },
-    body: JSON.stringify(jsonData)
-});
-        
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': '69420'  
+          },
+          body: JSON.stringify(jsonData)
+        });
 
         if (response.ok) {
           alert(`อัปโหลดข้อมูลสำเร็จ! ข้อมูลเข้าสู่ระบบแล้วครับ`);
-          window.location.reload(); // รีเฟรชหน้าเว็บ 1 รอบเพื่อดึงข้อมูลใหม่มาโชว์กราฟ
+          window.location.reload(); 
         } else {
           alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลครับ');
         }
@@ -567,63 +569,56 @@ export default function App() {
         alert('ไฟล์ไม่ถูกต้อง หรือเกิดข้อผิดพลาดครับ');
       } finally {
         setIsUploading(false);
-        e.target.value = null; // เคลียร์ค่าไฟล์ เผื่ออยากอัปโหลดไฟล์เดิมซ้ำ
+        e.target.value = null; 
       }
     };
     
     reader.readAsArrayBuffer(file);
   };
-  const [loading, setLoading] = useState(true);
-// เพิ่มโค้ดบรรทัดนี้ เพื่อหาชื่อหน่วยงานที่กำลังเลือกอยู่
+
   const selectedHospitalName = useMemo(() => {
     const hos = hospitals.find(h => h.id === filterUnit);
     return hos ? hos.name : 'All Cup';
   }, [filterUnit]);
+
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString('th-TH'));
     const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('th-TH')), 1000);
     return () => clearInterval(timer);
   }, []);
 
- // ✅ โค้ดใหม่สำหรับดึงข้อมูลจาก API ของเราเอง (MySQL)
-useEffect(() => {
+  useEffect(() => {
     const fetchClaimsData = async () => {
         try {
-            // ✅ เปลี่ยนจากเดิมที่มีแค่วงเล็บ ให้มีปีกกาและ headers แบบนี้
-const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
-    headers: {
-        'ngrok-skip-browser-warning': '69420'
-    }
-});
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
+                headers: {
+                    'ngrok-skip-browser-warning': '69420'
+                }
+            });
             
             const data = await response.json();
             
-            // ✅ เพิ่มเกราะป้องกันตรงนี้ครับ
             if (Array.isArray(data)) {
-                setClaims(data); // ถ้าข้อมูลปกติ เป็น Array ให้เอาไปใช้งาน
+                setClaims(data); 
             } else {
                 console.error("ข้อมูลผิดปกติ ไม่ใช่ Array:", data);
-                setClaims([]); // ถ้าข้อมูลพัง บังคับให้เป็น Array ว่างๆ หน้าเว็บจะได้ไม่จอดำ
+                setClaims([]); 
             }
             
             setLoading(false);
         } catch (e) {
             console.error("API Error:", e);
-            setClaims([]); // กันเหนียว: ถ้าเชื่อมต่อพัง ก็บังคับเป็น Array ว่างเช่นกัน
+            setClaims([]); 
             setLoading(false);
         }
     };
     fetchClaimsData();
   }, []);
-  // ✅ ดึงตัวแปร yoyData ออกมาด้วย
-  // ==========================================
-  // 1. โซนรวมตัวแปรและการคำนวณ (Hooks) ไว้ด้วยกันก่อน
-  // ==========================================
+
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
       return processData(claims, filterYear, filterUnit);
   }, [claims, filterYear, filterUnit]);
 
-  // ✅ ย้าย pieData ขึ้นมาไว้ตรงนี้ครับ (ต้องอยู่ก่อนตัวดักหน้าจอ)
   const pieData = useMemo(() => {
       const data = platformCards
         .filter(p => p.value > 0)
@@ -639,12 +634,6 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
 
   const handleBack = () => setSelectedPlatform(null);
 
-
-  // ==========================================
-  // 2. โซนดักหน้าจอ (Early Returns) 
-  // ==========================================
-  
-  // ดักที่ 1: ถ้ากำลังโหลดข้อมูล ให้โชว์หน้าโหลด
   if (loading) {
       return (
           <div className="h-screen flex items-center justify-center bg-[#F4FAF7]">
@@ -656,23 +645,15 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
       );
   }
 
-  // ดักที่ 2: ถ้าโหลดเสร็จแล้ว แต่ยังไม่ล็อกอิน ให้โชว์หน้า Login
- // ดักที่ 2: ถ้าโหลดเสร็จแล้ว แต่ยังไม่ล็อกอิน ให้โชว์หน้า Login
   if (!currentUser) {
       return <LoginScreen onLoginSuccess={(user) => {
-          // 👉 ย้ายคำสั่งจดจำมาไว้ตรงนี้เลย ชัวร์ 100%
           localStorage.setItem('claimcup_user', JSON.stringify(user)); 
           setCurrentUser(user); 
       }} />;
   }
 
-
-  // ==========================================
-  // 3. โซนวาดหน้าแดชบอร์ด (ถ้าผ่านด่านด้านบนมาได้)
-  // ==========================================
   return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-emerald-200">
-      {/* โค้ด Header และ UI หน้าแดชบอร์ดของคุณโอต่อยาวๆ ลงไปด้านล่างเลยครับ... */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Kanit:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Plus Jakarta Sans', 'Kanit', sans-serif; }
@@ -697,12 +678,10 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
              </div>
           </div>
           
-          {/* ฝั่งขวา: โลโก้ของคุณโอ + นาฬิกา + ป้ายสถานะ */}
-          <div className="flex items-center gap-6 md:gap-8">
+          {/* ฝั่งขวา: โลโก้ + นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
+          <div className="flex items-center gap-4 md:gap-6">
             
-            {/* ✅ โลโก้ของคุณโอ (ย้ายมาตรงนี้ ปรับให้ใหญ่ขึ้น และเว้นระยะห่างจากนาฬิกา) */}
             <div className="h-16 md:h-20 flex items-center justify-center overflow-hidden">
-              {/* เปลี่ยน my-logo.png เป็นชื่อไฟล์โลโก้ของคุณโอในโฟลเดอร์ public */}
               <img src="/my-logo.png" alt="My Logo" className="h-full w-auto object-contain" />
             </div>
 
@@ -712,6 +691,15 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
                  <CheckCircle2 size={16} className="text-emerald-400" />
                  <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
               </div>
+              
+              {/* ✅ ปุ่มออกจากระบบ */}
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
+              >
+                🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
+              </button>
+
             </div>
           </div>
         </header>
@@ -771,13 +759,12 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
                     <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{totalAmount.toLocaleString()}</h2></div>
                     <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
-                    {/* ✅ แทนที่ด้วยก้อนนี้ครับ จะโชว์ชื่อหน่วยงานแทน */}
-<div className="pt-6 flex justify-center lg:justify-start gap-4">
-  <div className="px-8 py-4 bg-emerald-400/10 text-emerald-400 rounded-[2rem] border border-emerald-400/20 text-sm md:text-base font-black flex items-center gap-3 backdrop-blur-md transition-all hover:bg-emerald-400/20 shadow-inner">
-    <Building2 size={24} />
-    <span>{selectedHospitalName}</span>
-  </div>
-</div>
+                    <div className="pt-6 flex justify-center lg:justify-start gap-4">
+                      <div className="px-8 py-4 bg-emerald-400/10 text-emerald-400 rounded-[2rem] border border-emerald-400/20 text-sm md:text-base font-black flex items-center gap-3 backdrop-blur-md transition-all hover:bg-emerald-400/20 shadow-inner">
+                        <Building2 size={24} />
+                        <span>{selectedHospitalName}</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
                 </div>
@@ -862,3 +849,4 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
     </div>
   );
 }
+
