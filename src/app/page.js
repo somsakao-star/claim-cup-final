@@ -293,8 +293,9 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
               const hName = h ? h.name : c.hcode;
               if (hName === "All Cup" || !hName) return;
               if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
-              map[hName].amount += (typeof c.amount === 'number' ? c.amount : 0);
-              map[hName].cases += 1;
+// แก้ไขบรรทัดนี้ให้แปลง String ที่มีลูกน้ำเป็น Number ได้
+map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
+map[hName].cases += 1;
           }
       });
       return Object.entries(map)
