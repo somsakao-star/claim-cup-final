@@ -438,7 +438,10 @@ const response = await fetch(`${apiUrl}/api/login`, {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+     if (response.ok && data.success) {
+        // 👇 เพิ่มบรรทัดนี้ เพื่อจดจำข้อมูลผู้ใช้ลงในเบราว์เซอร์
+        localStorage.setItem('claimcup_user', JSON.stringify(data.user)); 
+        
         onLoginSuccess(data.user); // ส่งข้อมูลผู้ใช้กลับไปให้หน้าหลักเปิดประตู
       } else {
         setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
@@ -511,7 +514,13 @@ export default function App() {
   
   const [claims, setClaims] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-
+// ✅ เพิ่มโค้ดชุดนี้: ตอนเปิดเว็บมา ให้ไปแอบดูว่าเคยล็อกอินทิ้งไว้ไหม
+  useEffect(() => {
+    const savedUser = localStorage.getItem('claimcup_user');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser)); // ถ้าเจอว่าเคยล็อกอิน ก็ให้เข้าเว็บได้เลย!
+    }
+  }, []);
   // ฟังก์ชันจัดการตอนเลือกไฟล์ Excel
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
