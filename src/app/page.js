@@ -39,13 +39,26 @@ const monthMapping = {
 
 // --- LOGIC: REAL DATA PROCESSING ---
 function processData(claims, yearFilter, unitFilter) {
-  const filtered = claims.filter(c => {
-    const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
-    const dataUnit = c.hcode || "";
-    const matchYear = yearFilter === 'all' || dataYear === yearFilter;
-    const matchUnit = unitFilter === 'all' || dataUnit === unitFilter;
-    return matchYear && matchUnit;
-  });
+  // ในฟังก์ชัน processData
+const filtered = claims.filter(c => {
+  const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
+  const dataUnit = c.hcode || "";
+  const matchYear = yearFilter === 'all' || dataYear === yearFilter;
+
+  // ✅ เพิ่มเงื่อนไขเช็คว่าเป็น 'กายภาพบำบัด' หรือไม่
+  const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
+
+  let matchUnit;
+  if (isPhysical) {
+    // ถ้าเป็นกายภาพบำบัด ให้นับข้อมูลก็ต่อเมื่อเลือกหน่วยงานเป็น 'all' (All Cup) เท่านั้น
+    matchUnit = (unitFilter === 'all');
+  } else {
+    // แพลตฟอร์มอื่นๆ กรองตามหน่วยงานที่เลือกตามปกติ
+    matchUnit = (unitFilter === 'all' || dataUnit === unitFilter);
+  }
+
+  return matchYear && matchUnit;
+});
 
   let totalAmount = 0;
   const platformStats = { ktb: 0, moph: 0, eclaim: 0, thai: 0, physical: 0, ntip: 0 };
@@ -103,17 +116,20 @@ function processData(claims, yearFilter, unitFilter) {
       .sort((a, b) => b.value - a.value)
   }));
 
- const rankingMap = {};
+const rankingMap = {};
 claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
+  
+  // ✅ เพิ่มบรรทัดนี้: ข้ามข้อมูลของกายภาพบำบัด ไม่นำมาคิดรวมในยอดจัดอันดับราย รพ.สต.
+  if (c.platform && c.platform.toLowerCase() === 'physical') return;
+
   const h = hospitals.find(x => x.id === c.hcode);
   const hName = h ? h.name : (c.hcode || "Unknown");
-  
+
   if (hName === "All Cup") return;
   if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
-  
-  // ✅ เพิ่มการแปลง String เป็น Number แบบเดียวกับหน้ารายละเอียด
+
   let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
-  
+
   rankingMap[hName].amount += amt;
   rankingMap[hName].cases += 1;
 });
@@ -288,11 +304,14 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
   
-  const topPlatformUnits = useMemo(() => {
-      const map = {};
-      claims.forEach(c => {
-          if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
-              const h = hospitals.find(x => x.id === c.hcode);
+ const topPlatformUnits = useMemo(() => {
+  // ✅ เพิ่มบรรทัดนี้: ถ้าเป็นหน้ากายภาพบำบัด ไม่ต้องจัดอันดับหน่วยงาน (คืนค่า Array ว่างไปเลย)
+  if (platform.key === 'physical') return [];
+
+  const map = {};
+  claims.forEach(c => {
+    if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
+      const h = hospitals.find(x => x.id === c.hcode);
               const hName = h ? h.name : c.hcode;
               if (hName === "All Cup" || !hName) return;
               if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
