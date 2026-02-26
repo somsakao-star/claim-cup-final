@@ -103,17 +103,20 @@ function processData(claims, yearFilter, unitFilter) {
       .sort((a, b) => b.value - a.value)
   }));
 
-  const rankingMap = {};
-  claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
-     const h = hospitals.find(x => x.id === c.hcode);
-     const hName = h ? h.name : (c.hcode || "Unknown");
-     if (hName === "All Cup") return; 
-     
-     if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
-     let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
-     rankingMap[hName].amount += amt;
-     rankingMap[hName].cases += 1;
-  });
+ const rankingMap = {};
+claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
+  const h = hospitals.find(x => x.id === c.hcode);
+  const hName = h ? h.name : (c.hcode || "Unknown");
+  
+  if (hName === "All Cup") return;
+  if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
+  
+  // ✅ เพิ่มการแปลง String เป็น Number แบบเดียวกับหน้ารายละเอียด
+  let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
+  
+  rankingMap[hName].amount += amt;
+  rankingMap[hName].cases += 1;
+});
   
   const rankingList = Object.entries(rankingMap)
     .map(([name, data]) => ({ name, ...data, trend: "LIVE" }))
@@ -747,17 +750,32 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                           </div>
                           <div className="p-8 space-y-5 overflow-y-auto custom-scrollbar flex-1">
                               {rankingList.map((hospital, index) => (
-                                  <div key={index} className="flex items-center p-6 rounded-[2.5rem] bg-white border border-emerald-100 hover:border-emerald-900 hover:shadow-lg hover:-translate-y-1.5 transition-all group cursor-pointer shadow-sm">
-                                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg mr-6 shrink-0 shadow-md bg-emerald-950 text-white">{index + 1}</div>
-                                      <div className="flex-1 min-w-0">
-                                          <p className="text-lg font-black text-emerald-950 group-hover:text-emerald-800 transition-colors truncate">{hospital.name}</p>
-                                          <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mt-1">{hospital.cases} CASES</p>
-                                      </div>
-                                      <div className="text-right ml-4">
-                                          <p className="text-lg font-black text-emerald-950 tracking-tighter leading-none">{hospital.amount.toLocaleString()} ฿</p>
-                                      </div>
-                                  </div>
-                              ))}
+  <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50 hover:border-emerald-200 transition-all group">
+    
+    {/* ส่วนที่ 1: ลำดับและชื่อ */}
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center text-sm shadow-inner">
+        {index + 1}
+      </div>
+      <div>
+        <h4 className="font-bold text-emerald-900 text-sm group-hover:text-emerald-700 transition-colors">
+          {hospital.name}
+        </h4>
+        <p className="text-xs text-emerald-600/70 font-medium">
+          {hospital.cases} CASES
+        </p>
+      </div>
+    </div>
+
+    {/* ส่วนที่ 2: จำนวนเงิน (ฝั่งขวา) */}
+    <div className="text-right">
+      <p className="font-black text-emerald-700 text-base">
+        {hospital.amount ? hospital.amount.toLocaleString() : "0"} ฿
+      </p>
+    </div>
+
+  </div>
+))}
                           </div>
                       </div>
                   </div>
