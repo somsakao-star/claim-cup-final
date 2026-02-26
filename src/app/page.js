@@ -575,9 +575,9 @@ useEffect(() => {
     const fetchClaimsData = async () => {
         try {
             // ✅ เปลี่ยนจากเดิมที่มีแค่วงเล็บ ให้มีปีกกาและ headers แบบนี้
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard-data`, {
+const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`, {
     headers: {
-        'ngrok-skip-browser-warning': '69420' // <--- เพิ่มก้อนนี้เข้าไปครับ!
+        'ngrok-skip-browser-warning': '69420'
     }
 });
             
