@@ -635,31 +635,27 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
       `}</style>
 
       <div className="flex flex-col h-screen overflow-hidden">
-     {/* Header */}
-        <header className="h-24 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm">
+     {/* Header - ขยายความสูงเป็น md:h-32 เพื่อให้มีที่วางโลโก้ใหญ่ๆ */}
+        <header className="h-28 md:h-32 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm">
           
           {/* ฝั่งซ้าย: โลโก้ รพ.สต. และชื่อ ClaimCup */}
           <div className="flex items-center gap-8">
              <div className="flex items-center space-x-6 group cursor-pointer" onClick={handleBack}>
-                {/* ขยายขนาดโลโก้ใหม่ครับพี่:
-                   - w-20 h-20 (บนมือถือ): ใหญ่ขึ้นมาก!
-                   - md:w-28 md:h-28 (บนคอม): เด่นสุดๆ ครับ
-                   - shadow-lg: เพิ่มเงาให้ดูมีมิติ สวยงาม
-                   - hover:scale-110: พอเอาเมาส์ชี้ จะขยายใหญ่ขึ้นนิดนึง
-                */}
+                {/* โลโก้: ขนาดใหญ่สะใจ md:w-24 md:h-24 พร้อมเงาหนาขึ้น */}
                 <img 
                   src="/my-logo.png" 
                   alt="โลโก้ รพ.สต." 
-                  className="w-20 h-20 md:w-28 md:h-28 rounded-full object-cover shadow-lg bg-white border-2 border-emerald-100 transition-all hover:scale-110 active:scale-95" 
+                  className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white border-2 border-emerald-100 transition-all hover:scale-105 active:scale-95" 
                 />
                 <div className="flex flex-col justify-center">
-                  <h1 className="text-xl md:text-3xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
-                  <p className="text-xs md:text-sm text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
+                  {/* ขยายตัวหนังสือให้ใหญ่ขึ้นรับกับโลโก้ */}
+                  <h1 className="text-2xl md:text-4xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
+                  <p className="text-xs md:text-base text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
                 </div>
              </div>
           </div>
           
-          {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ (สะอาดโลโก้ออกแล้ว) */}
+          {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
@@ -670,7 +666,6 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                  <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
               </div>
               
-              {/* ปุ่มออกจากระบบ */}
               <button 
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
