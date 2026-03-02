@@ -635,14 +635,18 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
       `}</style>
 
       <div className="flex flex-col h-screen overflow-hidden">
-        {/* Header */}
+      {/* Header */}
         <header className="h-24 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm">
-          {/* ฝั่งซ้าย: โลโก้ Stethoscope และชื่อ ClaimCup */}
+          
+          {/* ฝั่งซ้าย: โลโก้ รพ.สต. และชื่อ ClaimCup */}
           <div className="flex items-center gap-8">
              <div className="flex items-center space-x-4 group cursor-pointer" onClick={handleBack}>
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-emerald-900 flex items-center justify-center shadow-xl shadow-emerald-900/20 transition-all hover:rotate-6 active:scale-95">
-                  <Stethoscope className="text-white" size={32} />
-                </div>
+                {/* เอาโลโก้ รพ.สต. มาแทนไอคอนหูฟังหมอเดิมตรงนี้ครับ */}
+                <img 
+                  src="/my-logo.png" 
+                  alt="โลโก้ รพ.สต." 
+                  className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-sm bg-white border border-emerald-100" 
+                />
                 <div className="flex flex-col justify-center">
                   <h1 className="text-xl md:text-3xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
                   <p className="text-xs md:text-sm text-emerald-800 font-bold uppercase tracking-[0.2em] mt-1">Sankhong Portal</p>
@@ -650,28 +654,24 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
              </div>
           </div>
           
-          {/* ฝั่งขวา: โลโก้ + นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
+          {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ (คลีนโลโก้ออกแล้ว) */}
           <div className="flex items-center gap-4 md:gap-6">
-            
-            <div className="h-16 md:h-20 flex items-center justify-center overflow-hidden">
-              <img src="/my-logo.png" alt="My Logo" className="h-full w-auto object-contain" />
-            </div>
-
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs"><Clock size={16} /><span>{currentTime}</span></div>
+              <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
+                <Clock size={16} /><span>{currentTime}</span>
+              </div>
               <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
                  <CheckCircle2 size={16} className="text-emerald-400" />
                  <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
               </div>
               
-              {/* ✅ ปุ่มออกจากระบบ */}
+              {/* ปุ่มออกจากระบบ */}
               <button 
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
               >
                 🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
               </button>
-
             </div>
           </div>
         </header>
