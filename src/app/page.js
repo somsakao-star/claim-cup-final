@@ -640,21 +640,26 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
           
           {/* ฝั่งซ้าย: โลโก้ รพ.สต. และชื่อ ClaimCup */}
           <div className="flex items-center gap-8">
-             <div className="flex items-center space-x-4 group cursor-pointer" onClick={handleBack}>
-                {/* เอาโลโก้ รพ.สต. มาแทนไอคอนหูฟังหมอเดิมตรงนี้ครับ */}
+             <div className="flex items-center space-x-6 group cursor-pointer" onClick={handleBack}>
+                {/* ขยายขนาดโลโก้ใหม่ครับพี่:
+                   - w-20 h-20 (บนมือถือ): ใหญ่ขึ้นมาก!
+                   - md:w-28 md:h-28 (บนคอม): เด่นสุดๆ ครับ
+                   - shadow-lg: เพิ่มเงาให้ดูมีมิติ สวยงาม
+                   - hover:scale-110: พอเอาเมาส์ชี้ จะขยายใหญ่ขึ้นนิดนึง
+                */}
                 <img 
                   src="/my-logo.png" 
                   alt="โลโก้ รพ.สต." 
-                  className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-sm bg-white border border-emerald-100" 
+                  className="w-20 h-20 md:w-28 md:h-28 rounded-full object-cover shadow-lg bg-white border-2 border-emerald-100 transition-all hover:scale-110 active:scale-95" 
                 />
                 <div className="flex flex-col justify-center">
                   <h1 className="text-xl md:text-3xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
-                  <p className="text-xs md:text-sm text-emerald-800 font-bold uppercase tracking-[0.2em] mt-1">Sankhong Portal</p>
+                  <p className="text-xs md:text-sm text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
                 </div>
              </div>
           </div>
           
-          {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ (คลีนโลโก้ออกแล้ว) */}
+          {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ (สะอาดโลโก้ออกแล้ว) */}
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
