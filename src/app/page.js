@@ -635,7 +635,7 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
       `}</style>
 
       <div className="flex flex-col h-screen overflow-hidden">
-      {/* Header */}
+     {/* Header */}
         <header className="h-24 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm">
           
           {/* ฝั่งซ้าย: โลโก้ รพ.สต. และชื่อ ClaimCup */}
