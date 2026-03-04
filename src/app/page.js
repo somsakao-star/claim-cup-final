@@ -431,25 +431,26 @@ map[hName].cases += 1;
   );
 };
 
-// --- MAIN APPLICATION ---
-// --- หน้าต่าง Login (UI) ---
+// --- หน้าต่าง Login (UI) แบบ Cute Lamp Animation (ธีม Emerald) ---
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State สำหรับควบคุมการเปิด/ปิดไฟของโคมไฟ
+  const [isLightOn, setIsLightOn] = useState(true);
 
-const handleLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
 
     try {
-      // ✅ ซ่อมแล้ว: ให้ส่ง Username / Password ไปเช็คที่ /api/login
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json' // <--- ต้องมีบรรทัดนี้ครับ
+          'Content-Type': 'application/json' 
         },
         body: JSON.stringify({ username, password })
       });
@@ -457,8 +458,8 @@ const handleLogin = async (e) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        localStorage.setItem('claimcup_user', JSON.stringify(data.user)); 
-        onLoginSuccess(data.user); 
+        localStorage.setItem('claimcup_user', JSON.stringify(data.user));
+        onLoginSuccess(data.user);
       } else {
         setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
       }
@@ -470,49 +471,83 @@ const handleLogin = async (e) => {
   };
 
   return (
-    <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl shadow-emerald-900/10 w-full max-w-md border border-emerald-100">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-emerald-900 flex items-center justify-center shadow-xl shadow-emerald-900/20 mb-4">
-            <Stethoscope className="text-white" size={40} />
-          </div>
-          <h1 className="text-3xl font-black text-emerald-950 tracking-tight">ClaimCup</h1>
-          <p className="text-emerald-700 font-bold tracking-widest text-sm uppercase mt-1">Sankhong Portal</p>
+    <div className="relative min-h-screen bg-slate-900 flex flex-col items-center justify-center overflow-hidden font-sans">
+      
+      {/* --- โคมไฟ (Lamp Structure) --- */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
+        <div className="w-1.5 h-16 bg-slate-800"></div>
+        <div className="w-6 h-4 bg-slate-700 rounded-t-sm"></div>
+        <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg">
+          {/* ✅ เปลี่ยนสีหลอดไฟเป็นสีเขียว Emerald */}
+          <div 
+            className={`absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-10 h-10 rounded-full transition-all duration-500 ${
+              isLightOn 
+                ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' 
+                : 'bg-slate-600 shadow-none'
+            }`}
+          ></div>
+        </div>
+      </div>
+
+      {/* --- ลำแสง (Light Beam) --- */}
+      {/* ✅ เปลี่ยนสีลำแสงไล่ระดับเป็นสีเขียว Emerald */}
+      <div 
+        className={`absolute top-28 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-b from-emerald-400/30 via-emerald-400/5 to-transparent pointer-events-none transition-opacity duration-500 ease-in-out z-0 ${
+          isLightOn ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
+      ></div>
+
+      {/* --- กล่อง Login --- */}
+      <div className="bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-emerald-900 mb-2">ClaimCup</h2>
+          <p className="text-emerald-600 font-medium">Sankhong Portal</p>
         </div>
 
         {errorMsg && (
-          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-bold mb-6 text-center border border-red-100">
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">
             {errorMsg}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-emerald-900 text-sm font-bold mb-2">ชื่อผู้ใช้งาน (Username)</label>
-            <input 
-              type="text" 
-              value={username} 
+            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน (Username)</label>
+            <input
+              type="text"
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
+              onFocus={() => setIsLightOn(true)}
+              // ✅ ปรับกรอบตอน Focus เป็นสีเขียว Emerald
+              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors"
               placeholder="กรอกชื่อผู้ใช้งาน"
               required
             />
           </div>
+
           <div>
-            <label className="block text-emerald-900 text-sm font-bold mb-2">รหัสผ่าน (Password)</label>
-            <input 
-              type="password" 
-              value={password} 
+            <label className="block text-sm font-bold text-slate-700 mb-2">รหัสผ่าน (Password)</label>
+            <input
+              type="password"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
+              onFocus={() => setIsLightOn(false)}
+              onBlur={() => setIsLightOn(true)}
+              // ✅ ปรับกรอบตอน Focus เป็นสีเขียว Emerald
+              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors"
               placeholder="••••••••"
               required
             />
           </div>
-          <button 
-            type="submit" 
+
+          {/* ✅ เปลี่ยนปุ่มเป็นสีเขียว Emerald */}
+          <button
+            type="submit"
             disabled={isLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg hover:shadow-emerald-600/30 active:scale-95 flex justify-center items-center mt-2"
+            className={`w-full text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex justify-center items-center mt-4 ${
+              isLightOn ? 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/30' : 'bg-slate-800 hover:bg-slate-700 hover:shadow-slate-800/30'
+            }`}
           >
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
