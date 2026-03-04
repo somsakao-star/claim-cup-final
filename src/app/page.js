@@ -441,34 +441,50 @@ const LoginScreen = ({ onLoginSuccess }) => {
   // State สำหรับควบคุมการเปิด/ปิดไฟของโคมไฟ
   const [isLightOn, setIsLightOn] = useState(true);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMsg('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setErrorMsg('');
 
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({ username, password })
-      });
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ username, password })
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok && data.success) {
-        localStorage.setItem('claimcup_user', JSON.stringify(data.user));
-        onLoginSuccess(data.user);
-      } else {
-        setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
-      }
-    } catch (err) {
-      setErrorMsg('ไม่สามารถเชื่อมต่อระบบหลังบ้านได้');
-    } finally {
-      setIsLoading(false);
+    if (response.ok && data.success) {
+      localStorage.setItem('claimcup_user', JSON.stringify(data.user));
+      onLoginSuccess(data.user);
+    } else {
+      // เมื่อเข้าสู่ระบบไม่สำเร็จ
+      setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
+      
+      // ✅ เพิ่มลูกเล่น: สั่งให้ไฟกระพริบเตือนเมื่อรหัสผิด
+      setIsLightOn(false); // ดับไฟ
+      setTimeout(() => setIsLightOn(true), 150);  // เปิดไฟ
+      setTimeout(() => setIsLightOn(false), 300); // ดับไฟ
+      setTimeout(() => setIsLightOn(true), 450);  // เปิดไฟ
+      setTimeout(() => setIsLightOn(false), 600); // ดับไฟ
+      setTimeout(() => setIsLightOn(true), 750);  // เปิดไฟกลับมาปกติ
     }
-  };
+  } catch (err) {
+    // เมื่อเชื่อมต่อระบบไม่ได้ (Backend พัง)
+    setErrorMsg('ไม่สามารถเชื่อมต่อระบบหลังบ้านได้');
+    
+    // ✅ สั่งให้กระพริบเตือนเช่นเดียวกัน
+    setIsLightOn(false);
+    setTimeout(() => setIsLightOn(true), 150);
+    setTimeout(() => setIsLightOn(false), 300);
+    setTimeout(() => setIsLightOn(true), 450);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="relative min-h-screen bg-slate-900 flex flex-col items-center justify-center overflow-hidden font-sans">
