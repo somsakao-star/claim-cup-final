@@ -4,7 +4,7 @@ import {
   DollarSign, Activity, Trophy, Syringe, Baby,
   Flower, Scan, HeartPulse, Monitor,
   TrendingUp, Stethoscope, ArrowUpRight, ArrowLeft,
-  Calendar, Bell, Plus, Clock, Building2, ShieldCheck, CheckCircle2,
+  Calendar, Bell, Clock, Building2, ShieldCheck, CheckCircle2,
   Layers, Leaf, List, Table2
 } from 'lucide-react';
 
@@ -431,25 +431,28 @@ map[hName].cases += 1;
   );
 };
 
-// --- MAIN APPLICATION ---
-// --- หน้าต่าง Login (UI) ---
+// --- หน้าต่าง Login (UI) แบบ Cute Lamp + Pull String Animation ---
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State ควบคุมการ "ดึงสายไฟ"
+  const [isPulled, setIsPulled] = useState(false);
+  // State ควบคุมไฟสว่าง/ดับ
+  const [isLightOn, setIsLightOn] = useState(true);
 
-const handleLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
 
     try {
-      // ✅ ซ่อมแล้ว: ให้ส่ง Username / Password ไปเช็คที่ /api/login
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json' // <--- ต้องมีบรรทัดนี้ครับ
+          'Content-Type': 'application/json' 
         },
         body: JSON.stringify({ username, password })
       });
@@ -457,62 +460,122 @@ const handleLogin = async (e) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        localStorage.setItem('claimcup_user', JSON.stringify(data.user)); 
-        onLoginSuccess(data.user); 
+        localStorage.setItem('claimcup_user', JSON.stringify(data.user));
+        onLoginSuccess(data.user);
       } else {
         setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
+        // ✅ เอฟเฟกต์ไฟกระพริบเมื่อรหัสผิด (ยังคงอยู่เหมือนเดิม)
+        setIsLightOn(false);
+        setTimeout(() => setIsLightOn(true), 150);
+        setTimeout(() => setIsLightOn(false), 300);
+        setTimeout(() => setIsLightOn(true), 450);
+        setTimeout(() => setIsLightOn(false), 600);
+        setTimeout(() => setIsLightOn(true), 750);
       }
     } catch (err) {
       setErrorMsg('ไม่สามารถเชื่อมต่อระบบหลังบ้านได้');
+      setIsLightOn(false);
+      setTimeout(() => setIsLightOn(true), 150);
+      setTimeout(() => setIsLightOn(false), 300);
+      setTimeout(() => setIsLightOn(true), 450);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl shadow-emerald-900/10 w-full max-w-md border border-emerald-100">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-emerald-900 flex items-center justify-center shadow-xl shadow-emerald-900/20 mb-4">
-            <Stethoscope className="text-white" size={40} />
+    <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#0a0a0a]'}`}>
+      
+      {/* --- โคมไฟ (Lamp Structure) --- */}
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
+        <div className="w-1.5 h-16 bg-slate-800"></div>
+        <div className="w-6 h-4 bg-slate-700 rounded-t-sm"></div>
+        <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
+          
+          {/* ✅ สายไฟสำหรับดึง (ใส่ cubic-bezier เพื่อความสมจริงและมีน้ำหนักสปริง) */}
+          <div 
+            className="absolute top-10 flex flex-col items-center group cursor-pointer" 
+            onClick={() => setIsPulled(true)} 
+          >
+            <div className={`w-0.5 bg-slate-500 group-hover:bg-slate-400 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
+            <div className={`w-4 h-4 bg-slate-500 rounded-full group-hover:bg-slate-400 shadow-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isPulled ? 'scale-75' : 'group-active:scale-110 group-active:translate-y-1'}`}></div>
           </div>
-          <h1 className="text-3xl font-black text-emerald-950 tracking-tight">ClaimCup</h1>
-          <p className="text-emerald-700 font-bold tracking-widest text-sm uppercase mt-1">Sankhong Portal</p>
+
+          {/* หลอดไฟ */}
+          <div 
+            className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${
+              (isPulled && isLightOn)
+                ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' 
+                : 'bg-slate-800 shadow-none'
+            }`}
+          ></div>
+        </div>
+      </div>
+
+      {/* --- ลำแสง (Light Beam) --- */}
+      <div 
+        className={`absolute top-28 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-b from-emerald-400/30 via-emerald-400/5 to-transparent pointer-events-none transition-opacity duration-700 ease-in-out z-10 ${
+          (isPulled && isLightOn) ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
+      ></div>
+
+      {!isPulled && (
+        <div className="absolute top-52 text-slate-500 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2">
+          <span>👇</span>
+          <span>CLICK TO TURN ON</span>
+        </div>
+      )}
+
+      {/* --- กล่อง Login --- */}
+      <div 
+        className={`bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24 transition-all duration-1000 ease-out transform ${
+          isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'
+        }`}
+      >
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-emerald-900 mb-2">ClaimCup</h2>
+          <p className="text-emerald-600 font-medium">Sankhong Portal</p>
         </div>
 
         {errorMsg && (
-          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-bold mb-6 text-center border border-red-100">
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">
             {errorMsg}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-emerald-900 text-sm font-bold mb-2">ชื่อผู้ใช้งาน (Username)</label>
-            <input 
-              type="text" 
-              value={username} 
+            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน (Username)</label>
+            <input
+              type="text"
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
+              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors"
               placeholder="กรอกชื่อผู้ใช้งาน"
               required
             />
           </div>
+
           <div>
-            <label className="block text-emerald-900 text-sm font-bold mb-2">รหัสผ่าน (Password)</label>
-            <input 
-              type="password" 
-              value={password} 
+            <label className="block text-sm font-bold text-slate-700 mb-2">รหัสผ่าน (Password)</label>
+            <input
+              type="password"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50"
+              // ✅ นำ onFocus และ onBlur ออกจากช่องกรอกรหัสผ่านแล้ว ไฟจะไม่ดับตอนพิมพ์
+              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors"
               placeholder="••••••••"
               required
             />
           </div>
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             disabled={isLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg hover:shadow-emerald-600/30 active:scale-95 flex justify-center items-center mt-2"
+            className={`w-full text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex justify-center items-center mt-4 ${
+              isLightOn ? 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/30' : 'bg-slate-800 hover:bg-slate-700 hover:shadow-slate-800/30'
+            }`}
           >
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
@@ -635,43 +698,43 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
       `}</style>
 
       <div className="flex flex-col h-screen overflow-hidden">
-        {/* Header */}
-        <header className="h-24 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm">
-          {/* ฝั่งซ้าย: โลโก้ Stethoscope และชื่อ ClaimCup */}
+     {/* Header - ขยายความสูงเป็น md:h-32 เพื่อให้มีที่วางโลโก้ใหญ่ๆ */}
+        <header className="h-28 md:h-32 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm">
+          
+          {/* ฝั่งซ้าย: โลโก้ รพ.สต. และชื่อ ClaimCup */}
           <div className="flex items-center gap-8">
-             <div className="flex items-center space-x-4 group cursor-pointer" onClick={handleBack}>
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-emerald-900 flex items-center justify-center shadow-xl shadow-emerald-900/20 transition-all hover:rotate-6 active:scale-95">
-                  <Stethoscope className="text-white" size={32} />
-                </div>
+             <div className="flex items-center space-x-6 group cursor-pointer" onClick={handleBack}>
+                {/* โลโก้: ขนาดใหญ่สะใจ md:w-24 md:h-24 พร้อมเงาหนาขึ้น */}
+                <img 
+                  src="/my-logo.png" 
+                  alt="โลโก้ รพ.สต." 
+                  className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white border-2 border-emerald-100 transition-all hover:scale-105 active:scale-95" 
+                />
                 <div className="flex flex-col justify-center">
-                  <h1 className="text-xl md:text-3xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
-                  <p className="text-xs md:text-sm text-emerald-800 font-bold uppercase tracking-[0.2em] mt-1">Sankhong Portal</p>
+                  {/* ขยายตัวหนังสือให้ใหญ่ขึ้นรับกับโลโก้ */}
+                  <h1 className="text-2xl md:text-4xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
+                  <p className="text-xs md:text-base text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
                 </div>
              </div>
           </div>
           
-          {/* ฝั่งขวา: โลโก้ + นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
+          {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
           <div className="flex items-center gap-4 md:gap-6">
-            
-            <div className="h-16 md:h-20 flex items-center justify-center overflow-hidden">
-              <img src="/my-logo.png" alt="My Logo" className="h-full w-auto object-contain" />
-            </div>
-
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs"><Clock size={16} /><span>{currentTime}</span></div>
+              <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
+                <Clock size={16} /><span>{currentTime}</span>
+              </div>
               <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
                  <CheckCircle2 size={16} className="text-emerald-400" />
                  <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
               </div>
               
-              {/* ✅ ปุ่มออกจากระบบ */}
               <button 
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
               >
                 🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
               </button>
-
             </div>
           </div>
         </header>
@@ -832,7 +895,7 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
           </div>
         </div>
       </div>
-      <button className="fixed bottom-8 right-8 md:bottom-14 md:right-14 w-18 h-18 md:w-24 md:h-24 bg-emerald-900 text-white rounded-[2.5rem] shadow-[0_30px_70px_rgba(6,78,59,0.3)] flex items-center justify-center z-40 hover:scale-110 active:scale-95 hover:rotate-90 transition-all duration-500 border-4 border-white"><Plus size={40} /></button>
+      
     </div>
   );
 }
