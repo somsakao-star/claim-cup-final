@@ -695,9 +695,28 @@ export default function App() {
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [filterYear, setFilterYear] = useState('2569');
   const [filterUnit, setFilterUnit] = useState('all');
-  
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    const fetchLastUpdated = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/last-updated`);
+            const data = await res.json();
+            if (data.last_updated) {
+                const date = new Date(data.last_updated);
+                setLastUpdated(date.toLocaleDateString('th-TH', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }));
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+    fetchLastUpdated();
+}, []);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('claimcup_user');
@@ -816,15 +835,17 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
           </div>
           
           {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
-          <div className="flex items-center gap-4 md:gap-6">
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
-                <Clock size={16} /><span>{currentTime}</span>
-              </div>
-              <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
-                 <CheckCircle2 size={16} className="text-emerald-400" />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
-              </div>
+          <div className="hidden lg:flex flex-col items-end gap-1">
+   <div className="flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
+      <CheckCircle2 size={16} className="text-emerald-400" />
+      <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
+   </div>
+   {lastUpdated && (
+      <span className="text-[9px] font-bold text-emerald-700/60 tracking-wide">
+         อัพเดทล่าสุด: {lastUpdated}
+      </span>
+   )}
+</div>
               
               <button 
                 onClick={handleLogout}
