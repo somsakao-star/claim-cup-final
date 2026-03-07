@@ -849,6 +849,8 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
               >
                 🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
+              
+              
               </button>
               {lastUpdated && (
                 <span className="text-[9px] font-bold text-emerald-700/60 tracking-wide">
