@@ -206,53 +206,110 @@ const SimplePieChart = ({ data }) => {
 const YoYTrendChart = ({ data }) => {
   if (!data || !data.year68 || !data.year69) return null;
 
-  // หาค่า Max จากทั้ง 2 ปี เพื่อให้กราฟไม่ทะลุกรอบ
   const maxVal = Math.max(...data.year68, ...data.year69, 1000) * 1.1;
-  
-  const makePath = (arr) => `M ` + arr.map((val, idx) => {
-      const x = (idx / 11) * 600; 
-      const y = 100 - ((val / maxVal) * 80); 
-      return `${x} ${y}`;
-  }).join(' L ');
+  const chartLeft = 40;
+  const chartWidth = 560;
+  const baseY = 88;
+
+  const makePath = (arr) => arr.map((val, idx) => {
+    const x = chartLeft + (idx / 11) * chartWidth;
+    const y = baseY - ((val / maxVal) * 80);
+    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
 
   const path68 = makePath(data.year68);
   const path69 = makePath(data.year69);
+
+  // คำนวณยอดรวม 2 ปีรวมกัน
+  const totalVals = data.year68.map((v, i) => v + data.year69[i]);
+  const totalPath = totalVals.map((val, idx) => {
+    const x = chartLeft + (idx / 11) * chartWidth;
+    const y = baseY - ((val / (maxVal * 2)) * 80);
+    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+
+  // Y-axis labels
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({
+    value: Math.round(maxVal * p),
+    y: baseY - p * 80
+  }));
 
   return (
     <div className="w-full flex flex-col select-none flex-1">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-900 text-white rounded-lg shadow-sm"><Calendar size={18} /></div>
-            <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Yearly Trend</h4>
+          <div className="p-2 bg-emerald-900 text-white rounded-lg shadow-sm"><Calendar size={18} /></div>
+          <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Yearly Trend</h4>
         </div>
-        {/* ✅ เพิ่มป้ายบอกสี 2 ปี */}
         <div className="flex items-center space-x-4 text-[10px] font-black uppercase text-emerald-950">
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span><span className="text-slate-500">ปี 2568</span></div>
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span className="text-emerald-700">ปี 2569</span></div>
+          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span><span className="text-rose-500">รวม</span></div>
         </div>
       </div>
       <div className="relative flex flex-1 w-full min-h-[220px] mt-4">
         <div className="flex-1 flex flex-col relative overflow-hidden">
           <div className="relative flex-1 w-full bg-emerald-50/40 rounded-tr-3xl border-t border-r border-emerald-100/30">
-             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none py-4 px-4">
-                 {[...Array(5)].map((_, i) => <div key={i} className="w-full border-t border-dashed border-emerald-200/50 h-0"></div>)}
-             </div>
-             <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 600 100" preserveAspectRatio="none">
-                {/* ✅ เส้นปี 68 (สีเทา เส้นประ) */}
-                <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="3" strokeDasharray="6,4" strokeLinecap="round" strokeLinejoin="round" />
-                {/* ✅ เส้นปี 69 (สีเขียวทึบ) */}
-                <path d={path69} fill="none" stroke="#059669" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                <path d={`${path69} L 600 100 L 0 100 Z`} fill="url(#gradGreen)" opacity="0.2" />
-                <defs>
-                   <linearGradient id="gradGreen" x1="0%" y1="0%" x2="0%" y2="100%">
-                       <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-                       <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                   </linearGradient>
-                </defs>
-             </svg>
-          </div>
-          <div className="flex justify-between w-full pt-3 px-4 text-[10px] font-black text-emerald-950 tracking-tighter bg-emerald-50/20 backdrop-blur-sm">
-            {months.map((m, i) => <span key={i}>{m}</span>)}
+            <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 640 110" preserveAspectRatio="none">
+
+              {/* Grid + แกน Y */}
+              {yLabels.map((label, i) => (
+                <g key={i}>
+                  <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y}
+                    stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <text x={chartLeft - 4} y={label.y + 2} textAnchor="end"
+                    fontSize="4" fill="#6b7280" fontWeight="bold">
+                    {label.value >= 1000 ? `${(label.value/1000).toFixed(0)}k` : label.value}
+                  </text>
+                </g>
+              ))}
+
+              {/* แกน X */}
+              <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY}
+                stroke="#10b981" strokeWidth="0.8" />
+
+              {/* แกน Y */}
+              <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY}
+                stroke="#10b981" strokeWidth="0.8" />
+
+              {/* เส้นปี 68 */}
+              <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="3"
+                strokeDasharray="6,4" strokeLinecap="round" strokeLinejoin="round" />
+
+              {/* เส้นปี 69 */}
+              <path d={path69} fill="none" stroke="#059669" strokeWidth="4"
+                strokeLinecap="round" strokeLinejoin="round" />
+              <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`}
+                fill="url(#gradGreen)" opacity="0.15" />
+
+              {/* เส้นยอดรวม */}
+              <path d={totalPath} fill="none" stroke="#fb7185" strokeWidth="2.5"
+                strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
+              {totalVals.map((val, i) => (
+                <circle key={i}
+                  cx={chartLeft + (i / 11) * chartWidth}
+                  cy={baseY - ((val / (maxVal * 2)) * 80)}
+                  r="2" fill="#fb7185" />
+              ))}
+
+              <defs>
+                <linearGradient id="gradGreen" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              {/* ชื่อเดือนแกน X */}
+              {months.map((m, i) => (
+                <text key={i}
+                  x={chartLeft + (i / 11) * chartWidth}
+                  y={baseY + 6}
+                  textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
+                  {m}
+                </text>
+              ))}
+
+            </svg>
           </div>
         </div>
       </div>
