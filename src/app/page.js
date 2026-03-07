@@ -261,18 +261,19 @@ const YoYTrendChart = ({ data }) => {
 };
 
 const PlatformComparisonChart = ({ data }) => {
-  const barWidth = 600 / 12 * 0.6;
+  const barWidth = 600 / 12 * 0.55;
   const gap = 600 / 12;
   const allVals = data.eclaim.map((v, i) => v + data.ktb[i] + data.moph[i]);
   const maxVal = Math.max(...allVals, 1000) * 1.1;
-  const baseY = 90;
+  const baseY = 88;
+  const chartLeft = 40; // เว้นซ้ายให้แกน Y
+  const chartWidth = 560;
 
-  // สร้างเส้นยอดรวม
-  const totalPath = allVals.map((val, i) => {
-    const x = i * gap + gap * 0.2 + barWidth / 2;
-    const y = baseY - (val / maxVal) * 80;
-    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-  }).join(' ');
+  // คำนวณ Y-axis labels (4 ระดับ)
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({
+    value: Math.round(maxVal * p),
+    y: baseY - p * 80
+  }));
 
   return (
     <div className="w-full flex flex-col select-none flex-1 pt-8 mt-4 border-t border-emerald-950/5">
@@ -285,35 +286,61 @@ const PlatformComparisonChart = ({ data }) => {
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#6366f1]"></span><span>E-Claim</span></div>
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#0ea5e9]"></span><span>KTB</span></div>
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span><span>Moph</span></div>
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span>Total</span></div>
         </div>
       </div>
       <div className="relative flex flex-1 w-full min-h-[180px]">
         <div className="flex-1 flex flex-col relative overflow-hidden bg-emerald-50/20 rounded-3xl border border-emerald-100/50">
-          <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 600 100" preserveAspectRatio="none">
+          <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 640 110" preserveAspectRatio="none">
+
+            {/* --- แกน Y: เส้น Grid + ตัวเลข --- */}
+            {yLabels.map((label, i) => (
+              <g key={i}>
+                {/* เส้น Grid แนวนอน */}
+                <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y}
+                  stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
+                {/* ตัวเลขแกน Y */}
+                <text x={chartLeft - 4} y={label.y + 2} textAnchor="end"
+                  fontSize="4" fill="#6b7280" fontWeight="bold">
+                  {label.value >= 1000 ? `${(label.value/1000).toFixed(0)}k` : label.value}
+                </text>
+              </g>
+            ))}
+
+            {/* --- แกน X (เส้นล่าง) --- */}
+            <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY}
+              stroke="#10b981" strokeWidth="0.8" />
+
+            {/* --- แกน Y (เส้นซ้าย) --- */}
+            <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY}
+              stroke="#10b981" strokeWidth="0.8" />
+
+            {/* --- แท่ง Bar --- */}
             {data.eclaim.map((_, i) => {
-              const x = i * gap + gap * 0.2;
+              const x = chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.2;
+              const bw = barWidth * (chartWidth / 600);
               const eclaimH = (data.eclaim[i] / maxVal) * 80;
               const ktbH = (data.ktb[i] / maxVal) * 80;
               const mophH = (data.moph[i] / maxVal) * 80;
               return (
                 <g key={i}>
-                  <rect x={x} y={baseY - mophH} width={barWidth} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" />
-                  <rect x={x} y={baseY - mophH - ktbH} width={barWidth} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" />
-                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={barWidth} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" />
+                  <rect x={x} y={baseY - mophH} width={bw} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" />
+                  <rect x={x} y={baseY - mophH - ktbH} width={bw} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" />
+                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={bw} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" />
                 </g>
               );
             })}
-            {/* เส้นยอดรวม */}
-            <path d={totalPath} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4,2" />
-            {/* จุดบนเส้น */}
-            {allVals.map((val, i) => (
-              <circle key={i} cx={i * gap + gap * 0.2 + barWidth / 2} cy={baseY - (val / maxVal) * 80} r="2" fill="#059669" />
+
+            {/* --- ชื่อเดือนแกน X --- */}
+            {months.map((m, i) => (
+              <text key={i}
+                x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5}
+                y={baseY + 6}
+                textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
+                {m}
+              </text>
             ))}
+
           </svg>
-          <div className="absolute bottom-1 left-0 right-0 flex justify-around px-4 text-[8px] font-black text-emerald-950">
-            {months.map((m, i) => <span key={i}>{m}</span>)}
-          </div>
         </div>
       </div>
     </div>
