@@ -265,6 +265,14 @@ const PlatformComparisonChart = ({ data }) => {
   const gap = 600 / 12;
   const allVals = data.eclaim.map((v, i) => v + data.ktb[i] + data.moph[i]);
   const maxVal = Math.max(...allVals, 1000) * 1.1;
+  const baseY = 90;
+
+  // สร้างเส้นยอดรวม
+  const totalPath = allVals.map((val, i) => {
+    const x = i * gap + gap * 0.2 + barWidth / 2;
+    const y = baseY - (val / maxVal) * 80;
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
 
   return (
     <div className="w-full flex flex-col select-none flex-1 pt-8 mt-4 border-t border-emerald-950/5">
@@ -277,6 +285,7 @@ const PlatformComparisonChart = ({ data }) => {
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#6366f1]"></span><span>E-Claim</span></div>
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#0ea5e9]"></span><span>KTB</span></div>
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span><span>Moph</span></div>
+          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span>Total</span></div>
         </div>
       </div>
       <div className="relative flex flex-1 w-full min-h-[180px]">
@@ -287,18 +296,20 @@ const PlatformComparisonChart = ({ data }) => {
               const eclaimH = (data.eclaim[i] / maxVal) * 80;
               const ktbH = (data.ktb[i] / maxVal) * 80;
               const mophH = (data.moph[i] / maxVal) * 80;
-              const baseY = 90;
               return (
                 <g key={i}>
-                  {/* Moph (bottom) — มีเส้นขอบ */}
-                  <rect x={x} y={baseY - mophH} width={barWidth} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" stroke="#fff" strokeWidth="0.5" />
-                  {/* KTB (middle) — มีเส้นขอบ */}
-                  <rect x={x} y={baseY - mophH - ktbH} width={barWidth} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" stroke="#fff" strokeWidth="0.5" />
-                  {/* Eclaim (top) — มีเส้นขอบ */}
-                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={barWidth} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" stroke="#fff" strokeWidth="0.5" />
+                  <rect x={x} y={baseY - mophH} width={barWidth} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" />
+                  <rect x={x} y={baseY - mophH - ktbH} width={barWidth} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" />
+                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={barWidth} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" />
                 </g>
               );
             })}
+            {/* เส้นยอดรวม */}
+            <path d={totalPath} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4,2" />
+            {/* จุดบนเส้น */}
+            {allVals.map((val, i) => (
+              <circle key={i} cx={i * gap + gap * 0.2 + barWidth / 2} cy={baseY - (val / maxVal) * 80} r="2" fill="#059669" />
+            ))}
           </svg>
           <div className="absolute bottom-1 left-0 right-0 flex justify-around px-4 text-[8px] font-black text-emerald-950">
             {months.map((m, i) => <span key={i}>{m}</span>)}
