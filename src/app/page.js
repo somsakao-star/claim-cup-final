@@ -284,19 +284,18 @@ const PlatformComparisonChart = ({ data }) => {
           <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 600 100" preserveAspectRatio="none">
             {data.eclaim.map((_, i) => {
               const x = i * gap + gap * 0.2;
-              const totalVal = data.eclaim[i] + data.ktb[i] + data.moph[i];
               const eclaimH = (data.eclaim[i] / maxVal) * 80;
               const ktbH = (data.ktb[i] / maxVal) * 80;
               const mophH = (data.moph[i] / maxVal) * 80;
               const baseY = 90;
               return (
                 <g key={i}>
-                  {/* Moph (bottom) */}
-                  <rect x={x} y={baseY - mophH} width={barWidth} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" />
-                  {/* KTB (middle) */}
-                  <rect x={x} y={baseY - mophH - ktbH} width={barWidth} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" />
-                  {/* Eclaim (top) */}
-                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={barWidth} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" />
+                  {/* Moph (bottom) — มีเส้นขอบ */}
+                  <rect x={x} y={baseY - mophH} width={barWidth} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" stroke="#fff" strokeWidth="0.5" />
+                  {/* KTB (middle) — มีเส้นขอบ */}
+                  <rect x={x} y={baseY - mophH - ktbH} width={barWidth} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" stroke="#fff" strokeWidth="0.5" />
+                  {/* Eclaim (top) — มีเส้นขอบ */}
+                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={barWidth} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" stroke="#fff" strokeWidth="0.5" />
                 </g>
               );
             })}
@@ -308,7 +307,7 @@ const PlatformComparisonChart = ({ data }) => {
       </div>
     </div>
   );
-};;
+};
 
 // ✅ เปลี่ยนเป็นดีไซน์ตารางรายเดือนของคุณโอ 100%
 const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
