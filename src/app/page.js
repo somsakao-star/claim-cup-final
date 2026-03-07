@@ -220,15 +220,6 @@ const YoYTrendChart = ({ data }) => {
   const path68 = makePath(data.year68);
   const path69 = makePath(data.year69);
 
-  // คำนวณยอดรวม 2 ปีรวมกัน
-  const totalVals = data.year68.map((v, i) => v + data.year69[i]);
-  const totalPath = totalVals.map((val, idx) => {
-    const x = chartLeft + (idx / 11) * chartWidth;
-    const y = baseY - ((val / (maxVal * 2)) * 80);
-    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
-  }).join(' ');
-
-  // Y-axis labels
   const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({
     value: Math.round(maxVal * p),
     y: baseY - p * 80
@@ -244,7 +235,6 @@ const YoYTrendChart = ({ data }) => {
         <div className="flex items-center space-x-4 text-[10px] font-black uppercase text-emerald-950">
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span><span className="text-slate-500">ปี 2568</span></div>
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span className="text-emerald-700">ปี 2569</span></div>
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span><span className="text-rose-500">รวม</span></div>
         </div>
       </div>
       <div className="relative flex flex-1 w-full min-h-[220px] mt-4">
@@ -272,24 +262,26 @@ const YoYTrendChart = ({ data }) => {
               <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY}
                 stroke="#10b981" strokeWidth="0.8" />
 
-              {/* เส้นปี 68 */}
-              <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="3"
-                strokeDasharray="6,4" strokeLinecap="round" strokeLinejoin="round" />
-
-              {/* เส้นปี 69 */}
-              <path d={path69} fill="none" stroke="#059669" strokeWidth="4"
-                strokeLinecap="round" strokeLinejoin="round" />
-              <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`}
-                fill="url(#gradGreen)" opacity="0.15" />
-
-              {/* เส้นยอดรวม */}
-              <path d={totalPath} fill="none" stroke="#fb7185" strokeWidth="2.5"
+              {/* เส้นปี 68 + จุด */}
+              <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="2.5"
                 strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
-              {totalVals.map((val, i) => (
+              {data.year68.map((val, i) => (
                 <circle key={i}
                   cx={chartLeft + (i / 11) * chartWidth}
-                  cy={baseY - ((val / (maxVal * 2)) * 80)}
-                  r="2" fill="#fb7185" />
+                  cy={baseY - ((val / maxVal) * 80)}
+                  r="2" fill="#94a3b8" />
+              ))}
+
+              {/* เส้นปี 69 + จุด */}
+              <path d={path69} fill="none" stroke="#059669" strokeWidth="2.5"
+                strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`}
+                fill="url(#gradGreen)" opacity="0.15" />
+              {data.year69.map((val, i) => (
+                <circle key={i}
+                  cx={chartLeft + (i / 11) * chartWidth}
+                  cy={baseY - ((val / maxVal) * 80)}
+                  r="2" fill="#059669" />
               ))}
 
               <defs>
