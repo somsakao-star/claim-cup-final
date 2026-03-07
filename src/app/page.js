@@ -835,7 +835,7 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
           </div>
           
         {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-start gap-4 md:gap-6 pt-1">
             <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
               <Clock size={16} /><span>{currentTime}</span>
             </div>
