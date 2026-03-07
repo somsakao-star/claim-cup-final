@@ -834,7 +834,7 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
              </div>
           </div>
           
-        {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
+       {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
           <div className="flex items-center gap-4 md:gap-6">
             <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
               <Clock size={16} /><span>{currentTime}</span>
@@ -843,22 +843,18 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
               <CheckCircle2 size={16} className="text-emerald-400" />
               <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <button 
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
-              >
-                🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
-              
-              
-              </button>
-              {lastUpdated && (
-                <span className="text-[9px] font-bold text-emerald-700/60 tracking-wide">
-                  อัพเดทล่าสุด: {lastUpdated}
-                </span>
-              )}
-            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
+            >
+              🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
+            </button>
           </div>
+          {lastUpdated && (
+            <span className="absolute bottom-2 right-10 text-[9px] font-bold text-emerald-700/60 tracking-wide">
+              อัพเดทล่าสุด: {lastUpdated}
+            </span>
+          )}
         </header>
 
         <div className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto custom-scrollbar relative bg-[#F7FBF9]">
