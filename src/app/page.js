@@ -261,24 +261,17 @@ const YoYTrendChart = ({ data }) => {
 };
 
 const PlatformComparisonChart = ({ data }) => {
-  const allVals = [...data.eclaim, ...data.ktb, ...data.moph];
+  const barWidth = 600 / 12 * 0.6;
+  const gap = 600 / 12;
+  const allVals = data.eclaim.map((v, i) => v + data.ktb[i] + data.moph[i]);
   const maxVal = Math.max(...allVals, 1000) * 1.1;
-
-  const makePath = (arr) => {
-     if(!arr || arr.length === 0) return "";
-     return `M ` + arr.map((val, idx) => {
-        const x = (idx / 11) * 600;
-        const y = 100 - ((val / maxVal) * 80);
-        return `${x} ${y}`;
-     }).join(' L ');
-  };
 
   return (
     <div className="w-full flex flex-col select-none flex-1 pt-8 mt-4 border-t border-emerald-950/5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-900 text-white rounded-lg shadow-sm"><Layers size={18} /></div>
-            <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Platform Analysis</h4>
+          <div className="p-2 bg-emerald-900 text-white rounded-lg shadow-sm"><Layers size={18} /></div>
+          <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Platform Analysis</h4>
         </div>
         <div className="flex items-center space-x-4 text-[10px] font-black uppercase text-emerald-950">
           <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#6366f1]"></span><span>E-Claim</span></div>
@@ -287,17 +280,35 @@ const PlatformComparisonChart = ({ data }) => {
         </div>
       </div>
       <div className="relative flex flex-1 w-full min-h-[180px]">
-         <div className="flex-1 flex flex-col relative overflow-hidden bg-emerald-50/20 rounded-3xl border border-emerald-100/50">
-            <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 600 100" preserveAspectRatio="none">
-              <path d={makePath(data.eclaim)} fill="none" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={makePath(data.ktb)} fill="none" stroke="#0ea5e9" strokeWidth="3.5" strokeDasharray="6,4" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={makePath(data.moph)} fill="none" stroke="#f59e0b" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-         </div>
+        <div className="flex-1 flex flex-col relative overflow-hidden bg-emerald-50/20 rounded-3xl border border-emerald-100/50">
+          <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 600 100" preserveAspectRatio="none">
+            {data.eclaim.map((_, i) => {
+              const x = i * gap + gap * 0.2;
+              const totalVal = data.eclaim[i] + data.ktb[i] + data.moph[i];
+              const eclaimH = (data.eclaim[i] / maxVal) * 80;
+              const ktbH = (data.ktb[i] / maxVal) * 80;
+              const mophH = (data.moph[i] / maxVal) * 80;
+              const baseY = 90;
+              return (
+                <g key={i}>
+                  {/* Moph (bottom) */}
+                  <rect x={x} y={baseY - mophH} width={barWidth} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" />
+                  {/* KTB (middle) */}
+                  <rect x={x} y={baseY - mophH - ktbH} width={barWidth} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" />
+                  {/* Eclaim (top) */}
+                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={barWidth} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" />
+                </g>
+              );
+            })}
+          </svg>
+          <div className="absolute bottom-1 left-0 right-0 flex justify-around px-4 text-[8px] font-black text-emerald-950">
+            {months.map((m, i) => <span key={i}>{m}</span>)}
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+};;
 
 // ✅ เปลี่ยนเป็นดีไซน์ตารางรายเดือนของคุณโอ 100%
 const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
