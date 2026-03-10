@@ -171,14 +171,12 @@ claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter
 
 // --- UI SUB-COMPONENTS ---
 
-// ✅ คอมโพเนนต์นาฬิกาแยกส่วน (เพิ่มใหม่)
-const RealTimeClock = () => {
+// 🕒 คอมโพเนนต์นาฬิกาแยกส่วน (เพิ่มเข้ามาใหม่เพื่อลดการ Re-render ของเว็บ)
+const LiveClock = () => {
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
-    // ตั้งค่าเวลาครั้งแรกทันทีที่โหลด
     setCurrentTime(new Date().toLocaleTimeString('th-TH'));
-    // อัปเดตทุกๆ 1 วินาที เฉพาะภายในกล่องนี้เท่านั้น
     const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('th-TH')), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -754,7 +752,7 @@ export default function App() {
   useEffect(() => {
     const fetchClaimsData = async () => {
         try {
-           // ตรงดึงข้อมูลกราฟ
+           // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
            
             const data = await response.json();
@@ -844,11 +842,11 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
              </div>
           </div>
           
-       {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
+       {/* ฝั่งขวา: นาฬิกาแบบแยกส่วน + ป้ายสถานะ + ปุ่มออกจากระบบ */}
           <div className="flex items-center gap-4 md:gap-6">
             
-            {/* ✅ เรียกใช้คอมโพเนนต์นาฬิกาแยกส่วนตรงนี้ */}
-            <RealTimeClock />
+            {/* เรียกใช้ Component LiveClock ที่แยกออกมา */}
+            <LiveClock />
 
             <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
               <CheckCircle2 size={16} className="text-emerald-400" />
