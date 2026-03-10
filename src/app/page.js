@@ -1,3 +1,4 @@
+"use client";
 import { useState, useMemo } from "react";
 import { Trophy, DollarSign, ArrowUpRight, Activity, Layers, Building2, CheckCircle2, Clock, Leaf, Monitor, Syringe, Baby, Flower, Scan, HeartPulse, Calendar, ArrowLeft } from "lucide-react";
 
