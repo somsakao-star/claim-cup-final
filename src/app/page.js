@@ -5,10 +5,12 @@ import {
   Flower, Scan, HeartPulse, Monitor,
   TrendingUp, Stethoscope, ArrowUpRight, ArrowLeft,
   Calendar, Bell, Clock, Building2, ShieldCheck, CheckCircle2,
-  Layers, Leaf, List, Table2
+  Layers, Leaf, List, Table2, Wallet // ✅ เพิ่ม Wallet สำหรับ Expense Report
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
+const API_BASE_URL = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_API_URL || '' : '';
+
 const PLATFORM_COLORS = {
   eclaim: "#6366f1",
   ktb: "#0ea5e9",
@@ -561,7 +563,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
     setErrorMsg('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json' 
@@ -713,10 +715,17 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
 
+  // ข้อมูลจำลองสำหรับ Operating Expense (สามารถปรับแก้ให้ดึงจาก API ภายหลังได้)
+  const expenseData = [
+    { label: 'งบบุคลากร (HR)', value: '450,000', percent: 55, color: 'bg-[#6366f1]' },
+    { label: 'งบดำเนินงาน (OPEX)', value: '280,000', percent: 35, color: 'bg-[#f59e0b]' },
+    { label: 'งบลงทุน (CAPEX)', value: '85,000', percent: 10, color: 'bg-[#f43f5e]' },
+  ];
+
   useEffect(() => {
     const fetchLastUpdated = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/last-updated`);
+            const res = await fetch(`${API_BASE_URL}/api/last-updated`);
             const data = await res.json();
             if (data.last_updated) {
                 const date = new Date(data.last_updated);
@@ -753,7 +762,7 @@ export default function App() {
     const fetchClaimsData = async () => {
         try {
            // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
-const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
+            const response = await fetch(`${API_BASE_URL}/api/claims`);
            
             const data = await response.json();
             
@@ -931,7 +940,9 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                   <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-12">
+                {/* --- ANALYTICS & RANKING SECTION --- */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+                  {/* ฝั่งซ้าย (กราฟ) */}
                   <div className="lg:col-span-8">
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
                           <div className="flex items-center gap-6 mb-14">
@@ -950,43 +961,85 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                       </div>
                   </div>
                   
-                  {/* Ranking Section */}
-                  <div className="lg:col-span-4">
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col h-full overflow-hidden hover:shadow-xl transition-all duration-700">
-                          <div className="p-10 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-950/[0.02]">
-                              <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-900" size={32} fill="currentColor" />Top Units</h3></div>
-                              <span className="text-[11px] font-black text-emerald-900/40 uppercase tracking-widest bg-emerald-900/5 px-3 py-1.5 rounded-xl">THB</span>
+                  {/* ฝั่งขวา (แบ่งเป็น Top Units 50% และ Expense Report 50%) */}
+                  <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
+                      
+                      {/* Top Units Card */}
+                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
+                          <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
+                              <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
+                              <span className="text-[11px] font-black text-emerald-800 uppercase tracking-widest bg-white px-3 py-1.5 rounded-xl border border-emerald-100 shadow-sm">THB</span>
                           </div>
-                          <div className="p-8 space-y-5 overflow-y-auto custom-scrollbar flex-1">
+                          <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                               {rankingList.map((hospital, index) => (
-  <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50 hover:border-emerald-200 transition-all group">
-    
-    {/* ส่วนที่ 1: ลำดับและชื่อ */}
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center text-sm shadow-inner">
-        {index + 1}
-      </div>
-      <div>
-        <h4 className="font-bold text-emerald-900 text-sm group-hover:text-emerald-700 transition-colors">
-          {hospital.name}
-        </h4>
-        <p className="text-xs text-emerald-600/70 font-medium">
-          {hospital.cases} CASES
-        </p>
-      </div>
-    </div>
-
-{/* ส่วนที่ 2: จำนวนเงิน (ฝั่งขวา) */}
-<div className="text-right">
-  <p className="font-black text-emerald-700 text-base">
-    {fmt(hospital.amount)} ฿
-  </p>
-</div>
-
-  </div>
-))}
+                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50 hover:border-emerald-200 hover:-translate-y-1 transition-all group">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                      {index + 1}
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-emerald-950 text-sm group-hover:text-emerald-700 transition-colors">
+                                        {hospital.name}
+                                      </h4>
+                                      <p className="text-[11px] text-emerald-600/70 font-bold uppercase">
+                                        {hospital.cases} Cases
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-black text-emerald-800 text-base">
+                                      {fmt(hospital.amount)}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 font-bold">บาท</p>
+                                  </div>
+                                </div>
+                              ))}
                           </div>
                       </div>
+
+                      {/* ✅ NEW: Operating Expense Report Card */}
+                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
+                          {/* Header of Report */}
+                          <div className="p-8 pb-4 flex items-center justify-between relative z-10">
+                              <div>
+                                  <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider">
+                                      <Wallet className="text-emerald-600" size={28} />
+                                      Expense Report
+                                  </h3>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operating Expenses</p>
+                              </div>
+                              <button className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                  <ArrowUpRight size={20} />
+                              </button>
+                          </div>
+                          
+                          {/* Content of Report */}
+                          <div className="p-8 pt-2 space-y-5 relative z-10">
+                              {expenseData.map((item, idx) => (
+                                  <div key={idx} className="group/item">
+                                      <div className="flex justify-between items-end mb-2">
+                                          <span className="text-xs font-bold text-slate-600 group-hover/item:text-emerald-800 transition-colors">{item.label}</span>
+                                          <div className="text-right">
+                                            <span className="text-sm font-black text-emerald-950">{item.value}</span>
+                                            <span className="text-[10px] text-slate-400 ml-1 font-bold">฿</span>
+                                          </div>
+                                      </div>
+                                      <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                          <div 
+                                            className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} 
+                                            style={{ width: `${item.percent}%` }}
+                                          ></div>
+                                      </div>
+                                  </div>
+                              ))}
+                          </div>
+                          
+                          {/* Background Decoration */}
+                          <div className="absolute -bottom-10 -right-10 text-emerald-50/50 pointer-events-none rotate-12 group-hover:rotate-6 transition-transform duration-700">
+                             <Wallet size={160} />
+                          </div>
+                      </div>
+
                   </div>
                 </div>
 
