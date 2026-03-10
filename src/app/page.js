@@ -36,6 +36,7 @@ const monthMapping = {
   "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5,
   "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11
 };
+const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
 // --- LOGIC: REAL DATA PROCESSING ---
 function processData(claims, yearFilter, unitFilter) {
@@ -45,12 +46,12 @@ const filtered = claims.filter(c => {
   const dataUnit = c.hcode || "";
   const matchYear = yearFilter === 'all' || dataYear === yearFilter;
 
-  // ✅ เพิ่มเงื่อนไขเช็คว่าเป็น 'Disability Portal' หรือไม่
+  // ✅ เพิ่มเงื่อนไขเช็คว่าเป็น 'Disability ' หรือไม่
   const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
 
   let matchUnit;
   if (isPhysical) {
-    // ถ้าเป็น Disability Portal ให้นับข้อมูลก็ต่อเมื่อเลือกหน่วยงานเป็น 'all' (All Cup) เท่านั้น
+    // ถ้าเป็น Disability  ให้นับข้อมูลก็ต่อเมื่อเลือกหน่วยงานเป็น 'all' (All Cup) เท่านั้น
     matchUnit = (unitFilter === 'all');
   } else {
     // แพลตฟอร์มอื่นๆ กรองตามหน่วยงานที่เลือกตามปกติ
@@ -119,7 +120,7 @@ const filtered = claims.filter(c => {
 const rankingMap = {};
 claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
   
-  // ✅ เพิ่มบรรทัดนี้: ข้ามข้อมูลของ Disability Portal ไม่นำมาคิดรวมในยอดจัดอันดับราย รพ.สต.
+  // ✅ เพิ่มบรรทัดนี้: ข้ามข้อมูลของ Disability  ไม่นำมาคิดรวมในยอดจัดอันดับราย รพ.สต.
   if (c.platform && c.platform.toLowerCase() === 'physical') return;
 
   const h = hospitals.find(x => x.id === c.hcode);
@@ -402,7 +403,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
   const subItems = platform.items || [];
   
  const topPlatformUnits = useMemo(() => {
-  // ✅ เพิ่มบรรทัดนี้: ถ้าเป็นหน้า Disability Portal ไม่ต้องจัดอันดับหน่วยงาน (คืนค่า Array ว่างไปเลย)
+  // ✅ เพิ่มบรรทัดนี้: ถ้าเป็นหน้า Disability  ไม่ต้องจัดอันดับหน่วยงาน (คืนค่า Array ว่างไปเลย)
   if (platform.key === 'physical') return [];
 
   const map = {};
@@ -442,7 +443,7 @@ map[hName].cases += 1;
         <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border border-emerald-100 shadow-sm">
            <div className="text-right">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</p>
-              <p className="text-2xl font-black tracking-tight leading-none" style={{ color: platformColor }}>{platform.value.toLocaleString()} <span className="text-sm text-slate-400">บาท</span></p>
+              <p className="text-2xl font-black tracking-tight leading-none" style={{ color: platformColor }}>{fmt(platform.value)} <span className="text-sm text-slate-400">บาท</span></p>
            </div>
         </div>
       </div>
@@ -462,7 +463,7 @@ map[hName].cases += 1;
                   <div className="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                     <Activity size={16} />
                   </div>
-                  <p className="text-lg font-black text-emerald-950">{item.value.toLocaleString()} <span className="text-[10px] text-slate-400 font-bold">บาท</span></p>
+                  <p className="text-lg font-black text-emerald-950">{fmt(item.value)} <span className="text-[10px] text-slate-400 font-bold">บาท</span></p>
                </div>
             </div>
           ))}
@@ -492,8 +493,8 @@ map[hName].cases += 1;
                  {subItems.map((item, idx) => (
                    <tr key={idx} className="group hover:scale-[1.005] transition-transform">
                      <td className="py-5 px-6 bg-white border-y border-l border-slate-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
-                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-500 group-hover:text-emerald-900 group-hover:font-bold transition-colors">{amount.toLocaleString()}</td>)}
-                     <td className="py-5 px-6 bg-emerald-50/30 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-emerald-950 shadow-sm">{item.value.toLocaleString()}</td>
+                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-500 group-hover:text-emerald-900 group-hover:font-bold transition-colors">{fmt(amount)}</td>)}
+                     <td className="py-5 px-6 bg-emerald-50/30 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-emerald-950 shadow-sm">{fmt(item.value)}</td>
                    </tr>
                  ))}
                </tbody>
@@ -516,7 +517,7 @@ map[hName].cases += 1;
                        <p className="text-[11px] font-bold text-slate-400 mt-1">{hos.cases} Cases</p>
                     </div>
                     <div className="text-right shrink-0">
-                       <p className="text-base font-black text-emerald-900">{hos.amount.toLocaleString()}</p>
+                       <p className="text-base font-black text-emerald-900">{fmt(hos.amount)}</p>
                        <p className="text-[10px] font-bold text-slate-400">บาท</p>
                     </div>
                  </div>
@@ -570,7 +571,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
         setTimeout(() => setIsLightOn(true), 750);
       }
     } catch (err) {
-      setErrorMsg('ไม่สามารถเชื่อมต่อระบบหลังบ้านได้');
+      setErrorMsg('Unable to connect to database');
       setIsLightOn(false);
       setTimeout(() => setIsLightOn(true), 150);
       setTimeout(() => setIsLightOn(false), 300);
@@ -910,7 +911,7 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                 <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden group">
                   <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
-                    <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{totalAmount.toLocaleString()}</h2></div>
+                    <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
                     <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
                     <div className="pt-6 flex justify-center lg:justify-start gap-4">
                       <div className="px-8 py-4 bg-emerald-400/10 text-emerald-400 rounded-[2rem] border border-emerald-400/20 text-sm md:text-base font-black flex items-center gap-3 backdrop-blur-md transition-all hover:bg-emerald-400/20 shadow-inner">
@@ -967,12 +968,12 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
       </div>
     </div>
 
-    {/* ส่วนที่ 2: จำนวนเงิน (ฝั่งขวา) */}
-    <div className="text-right">
-      <p className="font-black text-emerald-700 text-base">
-        {hospital.amount ? hospital.amount.toLocaleString() : "0"} ฿
-      </p>
-    </div>
+{/* ส่วนที่ 2: จำนวนเงิน (ฝั่งขวา) */}
+<div className="text-right">
+  <p className="font-black text-emerald-700 text-base">
+    {fmt(hospital.amount)} ฿
+  </p>
+</div>
 
   </div>
 ))}
