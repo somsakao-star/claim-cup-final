@@ -102,8 +102,8 @@ const filtered = claims.filter(c => {
     { key: 'ktb', title: "Krungthai Digital Health", icon: Syringe },
     { key: 'moph', title: "MOPH Claim", icon: Baby },
     { key: 'thai', title: "OP/PP Individual", icon: Flower },
-    { key: 'ntip', title: "NTIP (National Tuberculosis Information Program)", icon: Scan },
-    { key: 'physical', title: "Disability Portal", icon: HeartPulse },
+    { key: 'ntip', title: "NTIP", icon: Scan },
+    { key: 'physical', title: "Disability", icon: HeartPulse },
   ].map(p => ({
     ...p,
     value: platformStats[p.key] || 0,
