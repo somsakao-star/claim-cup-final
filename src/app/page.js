@@ -1002,7 +1002,7 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
                             <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-white/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4 group-hover:bg-white group-hover:text-current transition-colors shadow-inner"><card.icon size={28} className="text-white group-hover:text-current" style={{ color: 'inherit' }} /></div>
                             <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
-                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{card.value.toLocaleString()} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
+                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
                           </div>
                         );
                       })}
