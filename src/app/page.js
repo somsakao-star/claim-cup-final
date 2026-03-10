@@ -40,7 +40,6 @@ const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
 // --- LOGIC: REAL DATA PROCESSING ---
 function processData(claims, yearFilter, unitFilter) {
-  // ในฟังก์ชัน processData
 const filtered = claims.filter(c => {
   const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
   const dataUnit = c.hcode || "";
@@ -168,11 +167,28 @@ claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter
     rankingList, 
     monthlyByPlatform 
   };
-} // <-- จบฟังก์ชัน processData ตรงนี้ (มีปีกกาปิดแค่อันเดียวครับ)
+} // <-- จบฟังก์ชัน processData ตรงนี้
 
 // --- UI SUB-COMPONENTS ---
 
-// --- UI SUB-COMPONENTS ---
+// ✅ คอมโพเนนต์นาฬิกาแยกส่วน (เพิ่มใหม่)
+const RealTimeClock = () => {
+  const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    // ตั้งค่าเวลาครั้งแรกทันทีที่โหลด
+    setCurrentTime(new Date().toLocaleTimeString('th-TH'));
+    // อัปเดตทุกๆ 1 วินาที เฉพาะภายในกล่องนี้เท่านั้น
+    const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('th-TH')), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
+      <Clock size={16} /><span>{currentTime}</span>
+    </div>
+  );
+};
 
 const SimplePieChart = ({ data }) => {
   if (!data || data.length === 0) return null;
@@ -692,7 +708,6 @@ export default function App() {
     setCurrentUser(null); 
   };
   
-  const [currentTime, setCurrentTime] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [filterYear, setFilterYear] = useState('2569');
   const [filterUnit, setFilterUnit] = useState('all');
@@ -737,17 +752,11 @@ export default function App() {
   }, [filterUnit]);
 
   useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString('th-TH'));
-    const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('th-TH')), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     const fetchClaimsData = async () => {
         try {
-           // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
+           // ตรงดึงข้อมูลกราฟ
 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
-            
+           
             const data = await response.json();
             
             if (Array.isArray(data)) {
@@ -837,9 +846,10 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
           
        {/* ฝั่งขวา: นาฬิกา + ป้ายสถานะ + ปุ่มออกจากระบบ */}
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
-              <Clock size={16} /><span>{currentTime}</span>
-            </div>
+            
+            {/* ✅ เรียกใช้คอมโพเนนต์นาฬิกาแยกส่วนตรงนี้ */}
+            <RealTimeClock />
+
             <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
               <CheckCircle2 size={16} className="text-emerald-400" />
               <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
@@ -1018,4 +1028,3 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/claims`);
     </div>
   );
 }
-
