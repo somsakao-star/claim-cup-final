@@ -45,12 +45,12 @@ const filtered = claims.filter(c => {
   const dataUnit = c.hcode || "";
   const matchYear = yearFilter === 'all' || dataYear === yearFilter;
 
-  // ✅ เพิ่มเงื่อนไขเช็คว่าเป็น 'กายภาพบำบัด' หรือไม่
+  // ✅ เพิ่มเงื่อนไขเช็คว่าเป็น 'Disability Portal' หรือไม่
   const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
 
   let matchUnit;
   if (isPhysical) {
-    // ถ้าเป็นกายภาพบำบัด ให้นับข้อมูลก็ต่อเมื่อเลือกหน่วยงานเป็น 'all' (All Cup) เท่านั้น
+    // ถ้าเป็น Disability Portal ให้นับข้อมูลก็ต่อเมื่อเลือกหน่วยงานเป็น 'all' (All Cup) เท่านั้น
     matchUnit = (unitFilter === 'all');
   } else {
     // แพลตฟอร์มอื่นๆ กรองตามหน่วยงานที่เลือกตามปกติ
@@ -99,11 +99,11 @@ const filtered = claims.filter(c => {
 
   const platformCards = [
     { key: 'eclaim', title: "E-Claim", icon: Monitor },
-    { key: 'ktb', title: "KTB", icon: Syringe },
-    { key: 'moph', title: "Moph-Claim", icon: Baby },
-    { key: 'thai', title: "แพทย์แผนไทย", icon: Flower },
-    { key: 'ntip', title: "NTIP", icon: Scan },
-    { key: 'physical', title: "กายภาพบำบัด", icon: HeartPulse },
+    { key: 'ktb', title: "Krungthai Digital Health", icon: Syringe },
+    { key: 'moph', title: "MOPH Claim", icon: Baby },
+    { key: 'thai', title: "OP/PP Individual", icon: Flower },
+    { key: 'ntip', title: "NTIP (National Tuberculosis Information Program)", icon: Scan },
+    { key: 'physical', title: "Disability Portal", icon: HeartPulse },
   ].map(p => ({
     ...p,
     value: platformStats[p.key] || 0,
@@ -119,7 +119,7 @@ const filtered = claims.filter(c => {
 const rankingMap = {};
 claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
   
-  // ✅ เพิ่มบรรทัดนี้: ข้ามข้อมูลของกายภาพบำบัด ไม่นำมาคิดรวมในยอดจัดอันดับราย รพ.สต.
+  // ✅ เพิ่มบรรทัดนี้: ข้ามข้อมูลของ Disability Portal ไม่นำมาคิดรวมในยอดจัดอันดับราย รพ.สต.
   if (c.platform && c.platform.toLowerCase() === 'physical') return;
 
   const h = hospitals.find(x => x.id === c.hcode);
@@ -402,7 +402,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
   const subItems = platform.items || [];
   
  const topPlatformUnits = useMemo(() => {
-  // ✅ เพิ่มบรรทัดนี้: ถ้าเป็นหน้ากายภาพบำบัด ไม่ต้องจัดอันดับหน่วยงาน (คืนค่า Array ว่างไปเลย)
+  // ✅ เพิ่มบรรทัดนี้: ถ้าเป็นหน้า Disability Portal ไม่ต้องจัดอันดับหน่วยงาน (คืนค่า Array ว่างไปเลย)
   if (platform.key === 'physical') return [];
 
   const map = {};
