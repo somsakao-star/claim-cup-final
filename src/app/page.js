@@ -5,10 +5,9 @@ import {
   Flower, Scan, HeartPulse, Monitor,
   TrendingUp, Stethoscope, ArrowUpRight, ArrowLeft,
   Calendar, Bell, Clock, Building2, ShieldCheck, CheckCircle2,
-  Layers, Leaf, List, Table2, Wallet // ✅ เพิ่ม Wallet สำหรับ Expense Report
+  Layers, Leaf, List, Table2, Wallet
 } from 'lucide-react';
 
-// --- CONFIGURATION ---
 const API_BASE_URL = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_API_URL || '' : '';
 
 const PLATFORM_COLORS = {
@@ -32,35 +31,30 @@ const hospitals = [
 ];
 
 const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
+
 const monthMapping = {
   "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, 
   "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11,
   "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5,
   "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11
 };
+
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
-// --- LOGIC: REAL DATA PROCESSING ---
 function processData(claims, yearFilter, unitFilter) {
-const filtered = claims.filter(c => {
-  const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
-  const dataUnit = c.hcode || "";
-  const matchYear = yearFilter === 'all' || dataYear === yearFilter;
-
-  // ✅ เพิ่มเงื่อนไขเช็คว่าเป็น 'Disability ' หรือไม่
-  const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
-
-  let matchUnit;
-  if (isPhysical) {
-    // ถ้าเป็น Disability  ให้นับข้อมูลก็ต่อเมื่อเลือกหน่วยงานเป็น 'all' (All Cup) เท่านั้น
-    matchUnit = (unitFilter === 'all');
-  } else {
-    // แพลตฟอร์มอื่นๆ กรองตามหน่วยงานที่เลือกตามปกติ
-    matchUnit = (unitFilter === 'all' || dataUnit === unitFilter);
-  }
-
-  return matchYear && matchUnit;
-});
+  const filtered = claims.filter(c => {
+    const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
+    const dataUnit = c.hcode || "";
+    const matchYear = yearFilter === 'all' || dataYear === yearFilter;
+    const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
+    let matchUnit;
+    if (isPhysical) {
+      matchUnit = (unitFilter === 'all');
+    } else {
+      matchUnit = (unitFilter === 'all' || dataUnit === unitFilter);
+    }
+    return matchYear && matchUnit;
+  });
 
   let totalAmount = 0;
   const platformStats = { ktb: 0, moph: 0, eclaim: 0, thai: 0, physical: 0, ntip: 0 };
@@ -71,7 +65,6 @@ const filtered = claims.filter(c => {
   filtered.forEach(c => {
     let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
     totalAmount += amount;
-
     let pKey = c.platform ? c.platform.toLowerCase() : 'other';
     const mStr = String(c.month);
     const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
@@ -79,13 +72,10 @@ const filtered = claims.filter(c => {
     if (platformStats[pKey] !== undefined) {
       platformStats[pKey] += amount;
       const serviceName = c.service_item || "ไม่ระบุ";
-      
-      // ✅ สร้างที่เก็บข้อมูลแยกเป็นรายเดือน ให้ตารางของคุณโอ
       if (!platformItems[pKey][serviceName]) {
           platformItems[pKey][serviceName] = { total: 0, monthlyData: Array(12).fill(0) };
       }
       platformItems[pKey][serviceName].total += amount;
-      
       if (mIdx >= 0 && mIdx < 12) {
           platformItems[pKey][serviceName].monthlyData[mIdx] += amount;
       }
@@ -110,79 +100,51 @@ const filtered = claims.filter(c => {
     ...p,
     value: platformStats[p.key] || 0,
     items: Object.entries(platformItems[p.key] || {})
-      .map(([name, data]) => ({ 
-          name, 
-          value: data.total, 
-          monthlyData: data.monthlyData 
-      }))
+      .map(([name, data]) => ({ name, value: data.total, monthlyData: data.monthlyData }))
       .sort((a, b) => b.value - a.value)
   }));
 
-const rankingMap = {};
-claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
-  
-  // ✅ เพิ่มบรรทัดนี้: ข้ามข้อมูลของ Disability  ไม่นำมาคิดรวมในยอดจัดอันดับราย รพ.สต.
-  if (c.platform && c.platform.toLowerCase() === 'physical') return;
+  const rankingMap = {};
+  claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
+    if (c.platform && c.platform.toLowerCase() === 'physical') return;
+    const h = hospitals.find(x => x.id === c.hcode);
+    const hName = h ? h.name : (c.hcode || "Unknown");
+    if (hName === "All Cup") return;
+    if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
+    let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
+    rankingMap[hName].amount += amt;
+    rankingMap[hName].cases += 1;
+  });
 
-  const h = hospitals.find(x => x.id === c.hcode);
-  const hName = h ? h.name : (c.hcode || "Unknown");
-
-  if (hName === "All Cup") return;
-  if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
-
-  let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
-
-  rankingMap[hName].amount += amt;
-  rankingMap[hName].cases += 1;
-});
-  
   const rankingList = Object.entries(rankingMap)
     .map(([name, data]) => ({ name, ...data, trend: "LIVE" }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
+    .sort((a, b) => b.amount - a.amount).slice(0, 5);
 
-  // ✅ 1. โค้ดส่วนที่คำนวณกราฟเปรียบเทียบ 2 ปี
   const monthlyTotal68 = Array(12).fill(0);
   const monthlyTotal69 = Array(12).fill(0);
-
   claims.forEach(c => {
     const dataUnit = c.hcode || "";
     if (unitFilter !== 'all' && dataUnit !== unitFilter) return; 
-
     let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
     const mStr = String(c.month);
     const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
-
     if (mIdx >= 0 && mIdx < 12) {
       if (dataYear === '2568') monthlyTotal68[mIdx] += amount;
       if (dataYear === '2569') monthlyTotal69[mIdx] += amount;
     }
   });
 
-  // ✅ 2. Return ตัวใหม่ที่มี yoyData 
-  return { 
-    totalAmount, 
-    platformCards, 
-    monthlyTotal, 
-    yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, 
-    rankingList, 
-    monthlyByPlatform 
-  };
-} // <-- จบฟังก์ชัน processData ตรงนี้
+  return { totalAmount, platformCards, monthlyTotal, yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, rankingList, monthlyByPlatform };
+}
 
-// --- UI SUB-COMPONENTS ---
-
-// 🕒 คอมโพเนนต์นาฬิกาแยกส่วน (เพิ่มเข้ามาใหม่เพื่อลดการ Re-render ของเว็บ)
 const LiveClock = () => {
   const [currentTime, setCurrentTime] = useState('');
-
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString('th-TH'));
     const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('th-TH')), 1000);
     return () => clearInterval(timer);
   }, []);
-
   return (
     <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
       <Clock size={16} /><span>{currentTime}</span>
@@ -198,7 +160,6 @@ const SimplePieChart = ({ data }) => {
     return `${item.color} ${start}% ${end}%`;
   });
   const gradientString = gradientParts.length > 0 ? `conic-gradient(${gradientParts.join(', ')})` : 'bg-slate-200';
-
   return (
     <div className="flex flex-col xl:flex-row items-center space-y-8 xl:space-y-0 xl:space-x-12">
       <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-full shrink-0 shadow-[0_20px_60px_rgba(5,150,105,0.15)] border-4 border-white" style={{ background: gradientString }}>
@@ -222,18 +183,15 @@ const SimplePieChart = ({ data }) => {
 
 const YoYTrendChart = ({ data }) => {
   if (!data || !data.year68 || !data.year69) return null;
-
   const maxVal = Math.max(...data.year68, ...data.year69, 1000) * 1.1;
   const chartLeft = 40;
   const chartWidth = 560;
   const baseY = 88;
-
   const makePath = (arr) => arr.map((val, idx) => {
     const x = chartLeft + (idx / 11) * chartWidth;
     const y = baseY - ((val / maxVal) * 80);
     return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
   }).join(' ');
-
   const path68 = makePath(data.year68);
   const path69 = makePath(data.year69);
 
@@ -241,7 +199,6 @@ const YoYTrendChart = ({ data }) => {
     value: Math.round(maxVal * p),
     y: baseY - p * 80
   }));
-
   return (
     <div className="w-full flex flex-col select-none flex-1">
       <div className="flex items-center justify-between mb-2">
@@ -258,66 +215,34 @@ const YoYTrendChart = ({ data }) => {
         <div className="flex-1 flex flex-col relative overflow-hidden">
           <div className="relative flex-1 w-full bg-emerald-50/40 rounded-tr-3xl border-t border-r border-emerald-100/30">
             <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 640 110" preserveAspectRatio="none">
-
-              {/* Grid + แกน Y */}
               {yLabels.map((label, i) => (
                 <g key={i}>
-                  <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y}
-                    stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
-                  <text x={chartLeft - 4} y={label.y + 2} textAnchor="end"
-                    fontSize="4" fill="#6b7280" fontWeight="bold">
+                  <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y} stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <text x={chartLeft - 4} y={label.y + 2} textAnchor="end" fontSize="4" fill="#6b7280" fontWeight="bold">
                     {label.value >= 1000 ? `${(label.value/1000).toFixed(0)}k` : label.value}
                   </text>
                 </g>
               ))}
-
-              {/* แกน X */}
-              <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY}
-                stroke="#10b981" strokeWidth="0.8" />
-
-              {/* แกน Y */}
-              <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY}
-                stroke="#10b981" strokeWidth="0.8" />
-
-              {/* เส้นปี 68 + จุด */}
-              <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="2.5"
-                strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
+              <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
+              <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
               {data.year68.map((val, i) => (
-                <circle key={i}
-                  cx={chartLeft + (i / 11) * chartWidth}
-                  cy={baseY - ((val / maxVal) * 80)}
-                  r="2" fill="#94a3b8" />
+                <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#94a3b8" />
               ))}
-
-              {/* เส้นปี 69 + จุด */}
-              <path d={path69} fill="none" stroke="#059669" strokeWidth="2.5"
-                strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`}
-                fill="url(#gradGreen)" opacity="0.15" />
+              <path d={path69} fill="none" stroke="#059669" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`} fill="url(#gradGreen)" opacity="0.15" />
               {data.year69.map((val, i) => (
-                <circle key={i}
-                  cx={chartLeft + (i / 11) * chartWidth}
-                  cy={baseY - ((val / maxVal) * 80)}
-                  r="2" fill="#059669" />
+                <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#059669" />
               ))}
-
               <defs>
                 <linearGradient id="gradGreen" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
                   <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                 </linearGradient>
               </defs>
-
-              {/* ชื่อเดือนแกน X */}
               {months.map((m, i) => (
-                <text key={i}
-                  x={chartLeft + (i / 11) * chartWidth}
-                  y={baseY + 6}
-                  textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
-                  {m}
-                </text>
+                <text key={i} x={chartLeft + (i / 11) * chartWidth} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>
               ))}
-
             </svg>
           </div>
         </div>
@@ -332,15 +257,13 @@ const PlatformComparisonChart = ({ data }) => {
   const allVals = data.eclaim.map((v, i) => v + data.ktb[i] + data.moph[i]);
   const maxVal = Math.max(...allVals, 1000) * 1.1;
   const baseY = 88;
-  const chartLeft = 40; // เว้นซ้ายให้แกน Y
+  const chartLeft = 40;
   const chartWidth = 560;
 
-  // คำนวณ Y-axis labels (4 ระดับ)
   const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({
     value: Math.round(maxVal * p),
     y: baseY - p * 80
   }));
-
   return (
     <div className="w-full flex flex-col select-none flex-1 pt-8 mt-4 border-t border-emerald-950/5">
       <div className="flex items-center justify-between mb-4">
@@ -357,30 +280,16 @@ const PlatformComparisonChart = ({ data }) => {
       <div className="relative flex flex-1 w-full min-h-[180px]">
         <div className="flex-1 flex flex-col relative overflow-hidden bg-emerald-50/20 rounded-3xl border border-emerald-100/50">
           <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 640 110" preserveAspectRatio="none">
-
-            {/* --- แกน Y: เส้น Grid + ตัวเลข --- */}
             {yLabels.map((label, i) => (
               <g key={i}>
-                {/* เส้น Grid แนวนอน */}
-                <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y}
-                  stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
-                {/* ตัวเลขแกน Y */}
-                <text x={chartLeft - 4} y={label.y + 2} textAnchor="end"
-                  fontSize="4" fill="#6b7280" fontWeight="bold">
+                <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y} stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
+                <text x={chartLeft - 4} y={label.y + 2} textAnchor="end" fontSize="4" fill="#6b7280" fontWeight="bold">
                   {label.value >= 1000 ? `${(label.value/1000).toFixed(0)}k` : label.value}
                 </text>
               </g>
             ))}
-
-            {/* --- แกน X (เส้นล่าง) --- */}
-            <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY}
-              stroke="#10b981" strokeWidth="0.8" />
-
-            {/* --- แกน Y (เส้นซ้าย) --- */}
-            <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY}
-              stroke="#10b981" strokeWidth="0.8" />
-
-            {/* --- แท่ง Bar --- */}
+            <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
+            <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
             {data.eclaim.map((_, i) => {
               const x = chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.2;
               const bw = barWidth * (chartWidth / 600);
@@ -395,17 +304,9 @@ const PlatformComparisonChart = ({ data }) => {
                 </g>
               );
             })}
-
-            {/* --- ชื่อเดือนแกน X --- */}
             {months.map((m, i) => (
-              <text key={i}
-                x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5}
-                y={baseY + 6}
-                textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
-                {m}
-              </text>
+              <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>
             ))}
-
           </svg>
         </div>
       </div>
@@ -413,32 +314,25 @@ const PlatformComparisonChart = ({ data }) => {
   );
 };
 
-// ✅ เปลี่ยนเป็นดีไซน์ตารางรายเดือนของคุณโอ 100%
 const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
   
  const topPlatformUnits = useMemo(() => {
-  // ✅ เพิ่มบรรทัดนี้: ถ้าเป็นหน้า Disability  ไม่ต้องจัดอันดับหน่วยงาน (คืนค่า Array ว่างไปเลย)
   if (platform.key === 'physical') return [];
-
   const map = {};
   claims.forEach(c => {
     if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
       const h = hospitals.find(x => x.id === c.hcode);
-              const hName = h ? h.name : c.hcode;
-              if (hName === "All Cup" || !hName) return;
-              if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
-// แก้ไขบรรทัดนี้ให้แปลง String ที่มีลูกน้ำเป็น Number ได้
-map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
-map[hName].cases += 1;
-          }
-      });
-      return Object.entries(map)
-          .map(([name, data]) => ({ name, ...data }))
-          .sort((a, b) => b.amount - a.amount)
-          .slice(0, 5); 
-  }, [claims, platform.key, filterYear]);
+      const hName = h ? h.name : c.hcode;
+      if (hName === "All Cup" || !hName) return;
+      if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
+      map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
+      map[hName].cases += 1;
+    }
+  });
+  return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
+ }, [claims, platform.key, filterYear]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -486,9 +380,7 @@ map[hName].cases += 1;
         </div>
       </div>
 
-      {/* ✅ เลย์เอาต์เดิมของคุณโอ กลับมาแล้วครับ! */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Monthly Breakdown Table */}
         <div className="lg:col-span-2 bg-white border border-emerald-100 rounded-[3rem] p-8 shadow-sm flex flex-col">
            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-5">
@@ -518,7 +410,6 @@ map[hName].cases += 1;
            </div>
         </div>
 
-        {/* Hospital Breakdown List with Ranking Numbers */}
         <div className="lg:col-span-1 bg-white border border-emerald-100 rounded-[3.5rem] p-10 shadow-sm flex flex-col">
            <h3 className="font-black text-xl text-emerald-950 mb-8 flex items-center gap-3">
               <Building2 size={24} className="text-slate-400" />
@@ -545,23 +436,18 @@ map[hName].cases += 1;
   );
 };
 
-// --- หน้าต่าง Login (UI) แบบ Cute Lamp + Pull String Animation ---
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State ควบคุมการ "ดึงสายไฟ"
   const [isPulled, setIsPulled] = useState(false);
-  // State ควบคุมไฟสว่าง/ดับ
   const [isLightOn, setIsLightOn] = useState(true);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
@@ -570,7 +456,6 @@ const LoginScreen = ({ onLoginSuccess }) => {
         },
         body: JSON.stringify({ username, password })
       });
-
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -578,7 +463,6 @@ const LoginScreen = ({ onLoginSuccess }) => {
         onLoginSuccess(data.user);
       } else {
         setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
-        // ✅ เอฟเฟกต์ไฟกระพริบเมื่อรหัสผิด (ยังคงอยู่เหมือนเดิม)
         setIsLightOn(false);
         setTimeout(() => setIsLightOn(true), 150);
         setTimeout(() => setIsLightOn(false), 300);
@@ -599,98 +483,40 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
   return (
     <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#0a0a0a]'}`}>
-      
-      {/* --- โคมไฟ (Lamp Structure) --- */}
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
         <div className="w-1.5 h-16 bg-slate-800"></div>
         <div className="w-6 h-4 bg-slate-700 rounded-t-sm"></div>
         <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
-          
-          {/* ✅ สายไฟสำหรับดึง (ใส่ cubic-bezier เพื่อความสมจริงและมีน้ำหนักสปริง) */}
-          <div 
-            className="absolute top-10 flex flex-col items-center group cursor-pointer" 
-            onClick={() => setIsPulled(true)} 
-          >
+          <div className="absolute top-10 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(true)}>
             <div className={`w-0.5 bg-slate-500 group-hover:bg-slate-400 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
             <div className={`w-4 h-4 bg-slate-500 rounded-full group-hover:bg-slate-400 shadow-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isPulled ? 'scale-75' : 'group-active:scale-110 group-active:translate-y-1'}`}></div>
           </div>
-
-          {/* หลอดไฟ */}
-          <div 
-            className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${
-              (isPulled && isLightOn)
-                ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' 
-                : 'bg-slate-800 shadow-none'
-            }`}
-          ></div>
+          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled && isLightOn) ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' : 'bg-slate-800 shadow-none'}`}></div>
         </div>
       </div>
-
-      {/* --- ลำแสง (Light Beam) --- */}
-      <div 
-        className={`absolute top-28 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-b from-emerald-400/30 via-emerald-400/5 to-transparent pointer-events-none transition-opacity duration-700 ease-in-out z-10 ${
-          (isPulled && isLightOn) ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
-      ></div>
-
+      <div className={`absolute top-28 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-b from-emerald-400/30 via-emerald-400/5 to-transparent pointer-events-none transition-opacity duration-700 ease-in-out z-10 ${(isPulled && isLightOn) ? 'opacity-100' : 'opacity-0'}`} style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
       {!isPulled && (
         <div className="absolute top-52 text-slate-500 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2">
           <span>👇</span>
           <span>CLICK TO TURN ON</span>
         </div>
       )}
-
-      {/* --- กล่อง Login --- */}
-      <div 
-        className={`bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24 transition-all duration-1000 ease-out transform ${
-          isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'
-        }`}
-      >
+      <div className={`bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24 transition-all duration-1000 ease-out transform ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-black text-emerald-900 mb-2">ClaimCup</h2>
           <p className="text-emerald-600 font-medium">Sankhong Portal</p>
         </div>
-
-        {errorMsg && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">
-            {errorMsg}
-          </div>
-        )}
-
+        {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">{errorMsg}</div>}
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน (Username)</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors"
-              placeholder="กรอกชื่อผู้ใช้งาน"
-              required
-            />
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors" placeholder="กรอกชื่อผู้ใช้งาน" required />
           </div>
-
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">รหัสผ่าน (Password)</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              // ✅ นำ onFocus และ onBlur ออกจากช่องกรอกรหัสผ่านแล้ว ไฟจะไม่ดับตอนพิมพ์
-              className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors"
-              placeholder="••••••••"
-              required
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors" placeholder="••••••••" required />
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex justify-center items-center mt-4 ${
-              isLightOn ? 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/30' : 'bg-slate-800 hover:bg-slate-700 hover:shadow-slate-800/30'
-            }`}
-          >
+          <button type="submit" disabled={isLoading} className={`w-full text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex justify-center items-center mt-4 ${isLightOn ? 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/30' : 'bg-slate-800 hover:bg-slate-700 hover:shadow-slate-800/30'}`}>
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
@@ -700,9 +526,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
 };
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null); 
-  
-  // ฟังก์ชันสำหรับกดปุ่มออกจากระบบ
+  const [currentUser, setCurrentUser] = useState(null);
   const handleLogout = () => {
     localStorage.removeItem('claimcup_user'); 
     setCurrentUser(null); 
@@ -711,16 +535,15 @@ export default function App() {
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [filterYear, setFilterYear] = useState('2569');
   const [filterUnit, setFilterUnit] = useState('all');
+  
+  // ✅ เพิ่ม State สำหรับดึงข้อมูลรายรับและรายจ่าย
   const [claims, setClaims] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
-
-  // ข้อมูลจำลองสำหรับ Operating Expense (สามารถปรับแก้ให้ดึงจาก API ภายหลังได้)
-  const expenseData = [
-    { label: 'งบบุคลากร (HR)', value: '450,000', percent: 55, color: 'bg-[#6366f1]' },
-    { label: 'งบดำเนินงาน (OPEX)', value: '280,000', percent: 35, color: 'bg-[#f59e0b]' },
-    { label: 'งบลงทุน (CAPEX)', value: '85,000', percent: 10, color: 'bg-[#f43f5e]' },
-  ];
+  
+  // ✅ State สำหรับหน้าต่างรายงาน 12 เดือน
+  const [showExpenseReport, setShowExpenseReport] = useState(false);
 
   useEffect(() => {
     const fetchLastUpdated = async () => {
@@ -739,7 +562,7 @@ export default function App() {
         }
     };
     fetchLastUpdated();
-}, []);
+  }, []);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('claimcup_user');
@@ -747,45 +570,86 @@ export default function App() {
       try {
         setCurrentUser(JSON.parse(savedUser)); 
       } catch (e) {
-        console.error("ล้างข้อมูลที่พังทิ้ง");
         localStorage.removeItem('claimcup_user');
       }
     }
   }, []);
-  
+
   const selectedHospitalName = useMemo(() => {
     const hos = hospitals.find(h => h.id === filterUnit);
     return hos ? hos.name : 'All Cup';
   }, [filterUnit]);
 
+  // ✅ ดึงข้อมูลทั้งรายรับ (claims) และรายจ่าย (expenses) ผ่าน API พร้อมกัน
   useEffect(() => {
-    const fetchClaimsData = async () => {
+    const fetchData = async () => {
         try {
-           // ตรงดึงข้อมูลกราฟ (บรรทัดแถวๆ 161)
-            const response = await fetch(`${API_BASE_URL}/api/claims`);
-           
-            const data = await response.json();
+            const [resClaims, resExpenses] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/claims`),
+                fetch(`${API_BASE_URL}/api/expenses`)
+            ]);
             
-            if (Array.isArray(data)) {
-                setClaims(data); 
-            } else {
-                console.error("ข้อมูลผิดปกติ ไม่ใช่ Array:", data);
-                setClaims([]); 
-            }
+            const dataClaims = await resClaims.json();
+            const dataExpenses = await resExpenses.json();
+            
+            if (Array.isArray(dataClaims)) setClaims(dataClaims);
+            if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
             
             setLoading(false);
         } catch (e) {
             console.error("API Error:", e);
-            setClaims([]); 
             setLoading(false);
         }
     };
-    fetchClaimsData();
+    fetchData();
   }, []);
 
+  // คำนวณข้อมูลสำหรับแดชบอร์ดรายรับ
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
       return processData(claims, filterYear, filterUnit);
   }, [claims, filterYear, filterUnit]);
+
+  // ✅ คำนวณข้อมูล Expense 12 เดือน (สำหรับ Modal รายงานฉบับเต็ม)
+  const expenseReportData = useMemo(() => {
+    if (filterUnit !== 'all' && filterUnit !== '05954') return { rows: [], grandTotal: 0, monthlyTotals: Array(12).fill(0) };
+    
+    const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    const grouped = {};
+    let grandTotal = 0;
+    const monthlyTotals = Array(12).fill(0);
+
+    filtered.forEach(item => {
+        const catName = item.category_name || item.category || 'อื่นๆ'; 
+        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
+        const mIdx = monthMapping[String(item.month)] ?? -1;
+        
+        if (!grouped[catName]) {
+            grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
+        }
+        
+        grouped[catName].total += amt;
+        grandTotal += amt;
+        
+        if (mIdx >= 0 && mIdx < 12) {
+            grouped[catName].monthlyData[mIdx] += amt;
+            monthlyTotals[mIdx] += amt;
+        }
+    });
+
+    const rows = Object.values(grouped).sort((a, b) => b.total - a.total);
+    return { rows, grandTotal, monthlyTotals };
+  }, [expenses, filterYear, filterUnit]);
+
+  // ✅ ตัดมาแค่ 3 อันดับแรก สำหรับหน้า Dashboard รายจ่าย
+  const top3ExpenseData = useMemo(() => {
+    const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]', 'bg-[#10b981]', 'bg-[#8b5cf6]', 'bg-[#0ea5e9]'];
+    return expenseReportData.rows.slice(0, 3).map((item, idx) => ({
+        label: item.label,
+        value: fmt(item.total),
+        percent: expenseReportData.grandTotal > 0 ? Math.round((item.total / expenseReportData.grandTotal) * 100) : 0,
+        color: colorPalette[idx % colorPalette.length]
+    }));
+  }, [expenseReportData]);
 
   const pieData = useMemo(() => {
       const data = platformCards
@@ -807,7 +671,7 @@ export default function App() {
           <div className="h-screen flex items-center justify-center bg-[#F4FAF7]">
               <div className="flex flex-col items-center gap-4">
                   <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <p className="text-emerald-800 font-bold animate-pulse">กำลังโหลดข้อมูล...</p>
+                  <p className="text-emerald-800 font-bold animate-pulse">กำลังเชื่อมต่อฐานข้อมูล...</p>
               </div>
           </div>
       );
@@ -815,7 +679,7 @@ export default function App() {
 
   if (!currentUser) {
       return <LoginScreen onLoginSuccess={(user) => {
-          localStorage.setItem('claimcup_user', JSON.stringify(user)); 
+          localStorage.setItem('claimcup_user', JSON.stringify(user));
           setCurrentUser(user); 
       }} />;
   }
@@ -831,32 +695,23 @@ export default function App() {
       `}</style>
 
       <div className="flex flex-col h-screen overflow-hidden">
-     {/* Header - ขยายความสูงเป็น md:h-32 เพื่อให้มีที่วางโลโก้ใหญ่ๆ */}
         <header className="h-28 md:h-32 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm relative">
-          
-          {/* ฝั่งซ้าย: โลโก้ รพ.สต. และชื่อ ClaimCup */}
           <div className="flex items-center gap-8">
              <div className="flex items-center space-x-6 group cursor-pointer" onClick={handleBack}>
-                {/* โลโก้: ขนาดใหญ่สะใจ md:w-24 md:h-24 พร้อมเงาหนาขึ้น */}
                 <img 
                   src="/my-logo.png" 
                   alt="โลโก้ รพ.สต." 
                   className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white border-2 border-emerald-100 transition-all hover:scale-105 active:scale-95" 
                 />
                 <div className="flex flex-col justify-center">
-                  {/* ขยายตัวหนังสือให้ใหญ่ขึ้นรับกับโลโก้ */}
                   <h1 className="text-2xl md:text-4xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
                   <p className="text-xs md:text-base text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
                 </div>
              </div>
           </div>
           
-       {/* ฝั่งขวา: นาฬิกาแบบแยกส่วน + ป้ายสถานะ + ปุ่มออกจากระบบ */}
           <div className="flex items-center gap-4 md:gap-6">
-            
-            {/* เรียกใช้ Component LiveClock ที่แยกออกมา */}
             <LiveClock />
-
             <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
               <CheckCircle2 size={16} className="text-emerald-400" />
               <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
@@ -883,7 +738,6 @@ export default function App() {
               <PlatformDetailView platform={selectedPlatform} onBack={handleBack} claims={claims} filterYear={filterYear} />
             ) : (
               <>
-                {/* --- FILTER SECTION --- */}
                 <section className="space-y-6">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
@@ -894,7 +748,6 @@ export default function App() {
                         <p className="text-[10px] md:text-xs text-emerald-900 font-black uppercase tracking-[0.2em] bg-emerald-100 px-2 py-0.5 rounded-md">{filterYear}</p>
                       </div>
                     </div>
-                    {/* Year Quick Selector */}
                     <div className="flex items-center gap-2 bg-emerald-900/5 p-1.5 rounded-2xl border border-emerald-900/10">
                       {['2568', '2569'].map(year => (
                         <button key={year} onClick={() => setFilterYear(year)} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${filterYear === year ? 'bg-emerald-900 text-white shadow-lg' : 'text-emerald-900/60 hover:bg-emerald-100'}`}>{year}</button>
@@ -902,7 +755,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Hospital Buttons */}
                   <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
                     {hospitals.map(hos => (
                       hos.spacer ? (
@@ -912,9 +764,7 @@ export default function App() {
                           key={hos.id}
                           onClick={() => setFilterUnit(hos.id)}
                           className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${
-                            filterUnit === hos.id 
-                            ? hos.active 
-                            : hos.inactive
+                            filterUnit === hos.id ? hos.active : hos.inactive
                           }`}
                         >
                           {hos.name}
@@ -924,7 +774,6 @@ export default function App() {
                   </div>
                 </section>
 
-                {/* --- HERO SUMMARY --- */}
                 <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden group">
                   <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
@@ -940,9 +789,7 @@ export default function App() {
                   <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
                 </div>
 
-                {/* --- ANALYTICS & RANKING SECTION --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                  {/* ฝั่งซ้าย (กราฟ) */}
                   <div className="lg:col-span-8">
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
                           <div className="flex items-center gap-6 mb-14">
@@ -950,7 +797,7 @@ export default function App() {
                               <div className="flex flex-col">
                                   <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
                                   <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2">
-                                  <Building2 size={16} /> ข้อมูลของหน่วยบริการ: {selectedHospitalName}
+                                      <Building2 size={16} /> ข้อมูลของหน่วยบริการ: {selectedHospitalName}
                                   </p>
                               </div>
                           </div>
@@ -961,10 +808,8 @@ export default function App() {
                       </div>
                   </div>
                   
-                  {/* ฝั่งขวา (แบ่งเป็น Top Units 50% และ Expense Report 50%) */}
                   <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
                       
-                      {/* Top Units Card */}
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
                           <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
                               <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
@@ -978,18 +823,12 @@ export default function App() {
                                       {index + 1}
                                     </div>
                                     <div>
-                                      <h4 className="font-bold text-emerald-950 text-sm group-hover:text-emerald-700 transition-colors">
-                                        {hospital.name}
-                                      </h4>
-                                      <p className="text-[11px] text-emerald-600/70 font-bold uppercase">
-                                        {hospital.cases} Cases
-                                      </p>
+                                      <h4 className="font-bold text-emerald-950 text-sm group-hover:text-emerald-700 transition-colors">{hospital.name}</h4>
+                                      <p className="text-[11px] text-emerald-600/70 font-bold uppercase">{hospital.cases} Cases</p>
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <p className="font-black text-emerald-800 text-base">
-                                      {fmt(hospital.amount)}
-                                    </p>
+                                    <p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p>
                                     <p className="text-[10px] text-slate-400 font-bold">บาท</p>
                                   </div>
                                 </div>
@@ -997,9 +836,8 @@ export default function App() {
                           </div>
                       </div>
 
-                      {/* ✅ NEW: Operating Expense Report Card */}
+                      {/* ✅ OPERATING EXPENSE REPORT CARD (Dynamic Data) */}
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
-                          {/* Header of Report */}
                           <div className="p-8 pb-4 flex items-center justify-between relative z-10">
                               <div>
                                   <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider">
@@ -1008,33 +846,53 @@ export default function App() {
                                   </h3>
                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operating Expenses</p>
                               </div>
-                              <button className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                              <button 
+                                  onClick={() => setShowExpenseReport(true)}
+                                  className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
+                              >
                                   <ArrowUpRight size={20} />
                               </button>
                           </div>
                           
-                          {/* Content of Report */}
-                          <div className="p-8 pt-2 space-y-5 relative z-10">
-                              {expenseData.map((item, idx) => (
-                                  <div key={idx} className="group/item">
-                                      <div className="flex justify-between items-end mb-2">
-                                          <span className="text-xs font-bold text-slate-600 group-hover/item:text-emerald-800 transition-colors">{item.label}</span>
-                                          <div className="text-right">
-                                            <span className="text-sm font-black text-emerald-950">{item.value}</span>
-                                            <span className="text-[10px] text-slate-400 ml-1 font-bold">฿</span>
-                                          </div>
-                                      </div>
-                                      <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                          <div 
-                                            className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} 
-                                            style={{ width: `${item.percent}%` }}
-                                          ></div>
-                                      </div>
-                                  </div>
-                              ))}
+                          <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
+                             <div className="space-y-5 flex-1">
+                                {top3ExpenseData.length > 0 ? (
+                                    top3ExpenseData.map((item, idx) => (
+                                        <div key={idx} className="group/item">
+                                            <div className="flex justify-between items-end mb-2">
+                                                <span className="text-xs font-bold text-slate-600 group-hover/item:text-emerald-800 transition-colors line-clamp-1">{item.label}</span>
+                                                <div className="text-right whitespace-nowrap ml-2">
+                                                    <span className="text-sm font-black text-emerald-950">{item.value}</span>
+                                                    <span className="text-[10px] text-slate-400 ml-1 font-bold">฿</span>
+                                                </div>
+                                            </div>
+                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                                <div 
+                                                    className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} 
+                                                    style={{ width: `${item.percent}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full py-6 opacity-50">
+                                        <Wallet size={36} className="mb-2 text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-400">ยังไม่มีข้อมูลรายจ่าย</p>
+                                    </div>
+                                )}
+                             </div>
+
+                             {top3ExpenseData.length > 0 && (
+                                <button 
+                                    onClick={() => setShowExpenseReport(true)}
+                                    className="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-2xl text-sm font-bold transition-all border border-emerald-100 shadow-sm"
+                                >
+                                    <Table2 size={16} />
+                                    ดูรายงานฉบับเต็ม
+                                </button>
+                             )}
                           </div>
                           
-                          {/* Background Decoration */}
                           <div className="absolute -bottom-10 -right-10 text-emerald-50/50 pointer-events-none rotate-12 group-hover:rotate-6 transition-transform duration-700">
                              <Wallet size={160} />
                           </div>
@@ -1076,6 +934,114 @@ export default function App() {
         </div>
       </div>
       
+      {/* ✅ MODAL REPORT ฉบับเต็ม (แยกเดือน 12 เดือน) */}
+      {showExpenseReport && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-[1200px] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-4 border-white/20">
+                
+                {/* Header */}
+                <div className="px-8 py-6 border-b border-emerald-100/50 flex justify-between items-center bg-emerald-50/50">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-md shadow-emerald-600/20">
+                            <List size={24} />
+                        </div>
+                        <div>
+                            <h3 className="font-black text-emerald-950 text-xl uppercase tracking-wider">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
+                            <p className="text-xs font-bold text-emerald-700/60 mt-1 uppercase tracking-widest">
+                                ปีงบประมาณ {filterYear === 'all' ? 'ทั้งหมด' : filterYear} | {selectedHospitalName}
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => setShowExpenseReport(false)} 
+                        className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-100 rounded-xl transition-all"
+                    >
+                        <span className="font-black text-2xl leading-none">&times;</span>
+                    </button>
+                </div>
+
+                {/* Table Content */}
+                <div className="p-8 overflow-auto custom-scrollbar flex-1">
+                    <table className="w-full min-w-[1000px] text-left border-collapse border-separate border-spacing-y-1">
+                        <thead>
+                            <tr className="bg-emerald-50 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
+                                <th className="p-4 py-3 rounded-l-xl sticky left-0 z-20 bg-emerald-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">หมวดหมู่รายการจ่าย</th>
+                                {months.map((m, i) => (
+                                    <th key={i} className="p-4 py-3 text-right">{m}</th>
+                                ))}
+                                <th className="p-4 py-3 text-right rounded-r-xl bg-emerald-100">รวมทั้งสิ้น</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-emerald-50/50">
+                            {expenseReportData.rows.length > 0 ? (
+                                expenseReportData.rows.map((item, idx) => (
+                                    <tr key={idx} className="hover:bg-slate-50 transition-colors group">
+                                        <td className="p-4 py-3 text-sm text-slate-700 font-bold group-hover:text-emerald-700 transition-colors sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                            {idx + 1}. {item.label}
+                                        </td>
+                                        {item.monthlyData.map((val, mIdx) => (
+                                            <td key={mIdx} className="p-4 py-3 text-[12px] text-slate-500 font-medium text-right group-hover:text-emerald-800 transition-colors">
+                                                {val > 0 ? fmt(val) : '-'}
+                                            </td>
+                                        ))}
+                                        <td className="p-4 py-3 text-sm text-emerald-900 font-black text-right bg-emerald-50/30 group-hover:bg-emerald-100/50 transition-colors">
+                                            {fmt(item.total)}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="14" className="text-center py-10 text-slate-400 font-bold">ไม่มีข้อมูลค่าใช้จ่าย</td>
+                                </tr>
+                            )}
+                        </tbody>
+                        
+                        {/* Footer (รวมยอดรายเดือน) */}
+                        {expenseReportData.rows.length > 0 && (
+                            <tfoot>
+                                <tr className="bg-emerald-600 text-white shadow-lg">
+                                    <td className="p-4 py-4 text-sm font-bold text-right rounded-l-xl sticky left-0 z-20 bg-emerald-600 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]">
+                                        รวมทุกหมวดหมู่
+                                    </td>
+                                    {expenseReportData.monthlyTotals.map((total, i) => (
+                                        <td key={i} className="p-4 py-4 text-[12px] font-bold text-right text-emerald-100">
+                                            {total > 0 ? fmt(total) : '-'}
+                                        </td>
+                                    ))}
+                                    <td className="p-4 py-4 text-base font-black text-right rounded-r-xl bg-emerald-700 shadow-inner">
+                                        {fmt(expenseReportData.grandTotal)}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="px-8 py-5 border-t border-emerald-100/50 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hidden sm:block">
+                        พิมพ์เอกสารเมื่อ: {new Date().toLocaleString('th-TH')}
+                    </div>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setShowExpenseReport(false)} 
+                            className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all"
+                        >
+                            ปิดหน้าต่าง
+                        </button>
+                        <button 
+                            onClick={() => window.print()} 
+                            className="px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95"
+                        >
+                            <Table2 size={18} />
+                            พิมพ์รายงาน (Print)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 }
