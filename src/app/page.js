@@ -1,23 +1,16 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  DollarSign, Activity, Trophy, Syringe, Baby,
-  Flower, Scan, HeartPulse, Monitor,
-  TrendingUp, Stethoscope, ArrowUpRight, ArrowLeft,
-  Calendar, Bell, Clock, Building2, ShieldCheck, CheckCircle2,
+  Activity, Trophy, Syringe, Baby, Flower, Scan, HeartPulse, Monitor,
+  ArrowUpRight, ArrowLeft, Calendar, Clock, Building2, CheckCircle2,
   Layers, Leaf, List, Table2, Wallet
 } from 'lucide-react';
 
-// --- CONFIGURATION ---
 const API_BASE_URL = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_API_URL || '' : '';
 
 const PLATFORM_COLORS = {
-  eclaim: "#6366f1",
-  ktb: "#0ea5e9",
-  moph: "#f59e0b",
-  thai: "#10b981",
-  ntip: "#8b5cf6",
-  physical: "#f43f5e",
+  eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b",
+  thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e",
 };
 
 const hospitals = [
@@ -42,20 +35,13 @@ const monthMapping = {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
-// --- LOGIC: REAL DATA PROCESSING ---
 function processData(claims, yearFilter, unitFilter) {
   const filtered = claims.filter(c => {
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
     const dataUnit = c.hcode || "";
     const matchYear = yearFilter === 'all' || dataYear === yearFilter;
     const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
-
-    let matchUnit;
-    if (isPhysical) {
-      matchUnit = (unitFilter === 'all');
-    } else {
-      matchUnit = (unitFilter === 'all' || dataUnit === unitFilter);
-    }
+    let matchUnit = isPhysical ? (unitFilter === 'all') : (unitFilter === 'all' || dataUnit === unitFilter);
     return matchYear && matchUnit;
   });
 
@@ -68,7 +54,6 @@ function processData(claims, yearFilter, unitFilter) {
   filtered.forEach(c => {
     let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
     totalAmount += amount;
-
     let pKey = c.platform ? c.platform.toLowerCase() : 'other';
     const mStr = String(c.month);
     const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
@@ -76,22 +61,15 @@ function processData(claims, yearFilter, unitFilter) {
     if (platformStats[pKey] !== undefined) {
       platformStats[pKey] += amount;
       const serviceName = c.service_item || "ไม่ระบุ";
-      
       if (!platformItems[pKey][serviceName]) {
           platformItems[pKey][serviceName] = { total: 0, monthlyData: Array(12).fill(0) };
       }
       platformItems[pKey][serviceName].total += amount;
-      
-      if (mIdx >= 0 && mIdx < 12) {
-          platformItems[pKey][serviceName].monthlyData[mIdx] += amount;
-      }
+      if (mIdx >= 0 && mIdx < 12) platformItems[pKey][serviceName].monthlyData[mIdx] += amount;
     }
-
     if (mIdx >= 0 && mIdx < 12) {
         monthlyTotal[mIdx] += amount;
-        if (['eclaim', 'ktb', 'moph'].includes(pKey)) {
-            monthlyByPlatform[pKey][mIdx] += amount;
-        }
+        if (['eclaim', 'ktb', 'moph'].includes(pKey)) monthlyByPlatform[pKey][mIdx] += amount;
     }
   });
 
@@ -105,13 +83,7 @@ function processData(claims, yearFilter, unitFilter) {
   ].map(p => ({
     ...p,
     value: platformStats[p.key] || 0,
-    items: Object.entries(platformItems[p.key] || {})
-      .map(([name, data]) => ({ 
-          name, 
-          value: data.total, 
-          monthlyData: data.monthlyData 
-      }))
-      .sort((a, b) => b.value - a.value)
+    items: Object.entries(platformItems[p.key] || {}).map(([name, data]) => ({ name, value: data.total, monthlyData: data.monthlyData })).sort((a, b) => b.value - a.value)
   }));
 
   const rankingMap = {};
@@ -119,50 +91,33 @@ function processData(claims, yearFilter, unitFilter) {
     if (c.platform && c.platform.toLowerCase() === 'physical') return;
     const h = hospitals.find(x => x.id === c.hcode);
     const hName = h ? h.name : (c.hcode || "Unknown");
-
     if (hName === "All Cup") return;
     if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
-
     let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
-
     rankingMap[hName].amount += amt;
     rankingMap[hName].cases += 1;
   });
 
-  const rankingList = Object.entries(rankingMap)
-    .map(([name, data]) => ({ name, ...data, trend: "LIVE" }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
+  const rankingList = Object.entries(rankingMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5);
 
   const monthlyTotal68 = Array(12).fill(0);
   const monthlyTotal69 = Array(12).fill(0);
-
   claims.forEach(c => {
     const dataUnit = c.hcode || "";
     if (unitFilter !== 'all' && dataUnit !== unitFilter) return; 
-
     let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
     const mStr = String(c.month);
     const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
-
     if (mIdx >= 0 && mIdx < 12) {
       if (dataYear === '2568') monthlyTotal68[mIdx] += amount;
       if (dataYear === '2569') monthlyTotal69[mIdx] += amount;
     }
   });
 
-  return { 
-    totalAmount, 
-    platformCards, 
-    monthlyTotal, 
-    yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, 
-    rankingList, 
-    monthlyByPlatform 
-  };
+  return { totalAmount, platformCards, monthlyTotal, yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, rankingList, monthlyByPlatform };
 }
 
-// --- UI SUB-COMPONENTS ---
 const LiveClock = () => {
   const [currentTime, setCurrentTime] = useState('');
   useEffect(() => {
@@ -220,10 +175,7 @@ const YoYTrendChart = ({ data }) => {
   const path68 = makePath(data.year68);
   const path69 = makePath(data.year69);
 
-  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({
-    value: Math.round(maxVal * p),
-    y: baseY - p * 80
-  }));
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({ value: Math.round(maxVal * p), y: baseY - p * 80 }));
   return (
     <div className="w-full flex flex-col select-none flex-1">
       <div className="flex items-center justify-between mb-2">
@@ -251,25 +203,17 @@ const YoYTrendChart = ({ data }) => {
               <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
               <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
               <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
-              {data.year68.map((val, i) => (
-                <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#94a3b8" />
-              ))}
+              {data.year68.map((val, i) => <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#94a3b8" />)}
               <path d={path69} fill="none" stroke="#059669" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
               <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`} fill="url(#gradGreen)" opacity="0.15" />
-              {data.year69.map((val, i) => (
-                <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#059669" />
-              ))}
+              {data.year69.map((val, i) => <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#059669" />)}
               <defs>
                 <linearGradient id="gradGreen" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
                   <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              {months.map((m, i) => (
-                <text key={i} x={chartLeft + (i / 11) * chartWidth} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
-                  {m}
-                </text>
-              ))}
+              {months.map((m, i) => <text key={i} x={chartLeft + (i / 11) * chartWidth} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>)}
             </svg>
           </div>
         </div>
@@ -280,17 +224,13 @@ const YoYTrendChart = ({ data }) => {
 
 const PlatformComparisonChart = ({ data }) => {
   const barWidth = 600 / 12 * 0.55;
-  const gap = 600 / 12;
   const allVals = data.eclaim.map((v, i) => v + data.ktb[i] + data.moph[i]);
   const maxVal = Math.max(...allVals, 1000) * 1.1;
   const baseY = 88;
   const chartLeft = 40;
   const chartWidth = 560;
 
-  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({
-    value: Math.round(maxVal * p),
-    y: baseY - p * 80
-  }));
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({ value: Math.round(maxVal * p), y: baseY - p * 80 }));
   return (
     <div className="w-full flex flex-col select-none flex-1 pt-8 mt-4 border-t border-emerald-950/5">
       <div className="flex items-center justify-between mb-4">
@@ -331,138 +271,8 @@ const PlatformComparisonChart = ({ data }) => {
                 </g>
               );
             })}
-            {months.map((m, i) => (
-              <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
-                {m}
-              </text>
-            ))}
+            {months.map((m, i) => <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>)}
           </svg>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
-  const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
-  const subItems = platform.items || [];
-  
-  const topPlatformUnits = useMemo(() => {
-    if (platform.key === 'physical') return [];
-
-    const map = {};
-    claims.forEach(c => {
-      if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
-        const h = hospitals.find(x => x.id === c.hcode);
-        const hName = h ? h.name : c.hcode;
-        if (hName === "All Cup" || !hName) return;
-        if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
-        map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
-        map[hName].cases += 1;
-      }
-    });
-    return Object.entries(map)
-        .map(([name, data]) => ({ name, ...data }))
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 5); 
-  }, [claims, platform.key, filterYear]);
-
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-3 bg-white border border-emerald-100 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 text-slate-400 transition-all shadow-sm group">
-            <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
-                <platform.icon size={24} style={{ color: platformColor }} />
-              </div>
-              <h2 className="text-3xl font-black text-emerald-950 uppercase tracking-tight">{platform.title} Details</h2>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border border-emerald-100 shadow-sm">
-           <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</p>
-              <p className="text-2xl font-black tracking-tight leading-none" style={{ color: platformColor }}>{fmt(platform.value)} <span className="text-sm text-slate-400">บาท</span></p>
-           </div>
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-           <List size={20} className="text-slate-400" />
-           <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">Service Overview</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {subItems.map((item, idx) => (
-            <div key={idx} className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full group">
-               <div className="mb-3">
-                  <p className="text-xs font-bold text-slate-500 group-hover:text-emerald-700 transition-colors line-clamp-2">{item.name}</p>
-               </div>
-               <div className="flex items-end justify-between">
-                  <div className="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                    <Activity size={16} />
-                  </div>
-                  <p className="text-lg font-black text-emerald-950">{fmt(item.value)} <span className="text-[10px] text-slate-400 font-bold">บาท</span></p>
-               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white border border-emerald-100 rounded-[3rem] p-8 shadow-sm flex flex-col">
-           <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-5">
-                <div className="p-4 bg-emerald-100 text-emerald-800 rounded-2xl shadow-sm"><Table2 size={32} /></div>
-                <div><h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Monthly Breakdown</h3><p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Detailed Monthly Disbursement</p></div>
-              </div>
-           </div>
-           <div className="overflow-x-auto custom-scrollbar">
-             <table className="w-full min-w-[900px] border-separate border-spacing-y-2">
-               <thead>
-                 <tr>
-                   <th className="text-left py-4 px-6 text-xs font-black text-slate-500 uppercase tracking-wider bg-slate-50/50 rounded-l-2xl sticky left-0 z-10">รายการบริการ</th>
-                   {months.map((m, i) => <th key={i} className="text-right py-4 px-3 text-[11px] font-black uppercase bg-slate-50/50" style={{ color: platformColor }}>{m}</th>)}
-                   <th className="text-right py-4 px-6 text-xs font-black text-slate-700 uppercase bg-emerald-50/50 rounded-r-2xl">Total</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {subItems.map((item, idx) => (
-                   <tr key={idx} className="group hover:scale-[1.005] transition-transform">
-                     <td className="py-5 px-6 bg-white border-y border-l border-slate-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
-                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-500 group-hover:text-emerald-900 group-hover:font-bold transition-colors">{fmt(amount)}</td>)}
-                     <td className="py-5 px-6 bg-emerald-50/30 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-emerald-950 shadow-sm">{fmt(item.value)}</td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-        </div>
-
-        <div className="lg:col-span-1 bg-white border border-emerald-100 rounded-[3.5rem] p-10 shadow-sm flex flex-col">
-           <h3 className="font-black text-xl text-emerald-950 mb-8 flex items-center gap-3">
-              <Building2 size={24} className="text-slate-400" />
-              Top Units Share
-           </h3>
-           <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-2">
-              {topPlatformUnits.length > 0 ? topPlatformUnits.map((hos, idx) => (
-                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-emerald-200 transition-all hover:translate-x-1 gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-sm shrink-0">{idx + 1}</div>
-                    <div className="flex-1 min-w-0">
-                       <p className="text-sm font-bold text-slate-700 truncate">{hos.name}</p>
-                       <p className="text-[11px] font-bold text-slate-400 mt-1">{hos.cases} Cases</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                       <p className="text-base font-black text-emerald-900">{fmt(hos.amount)}</p>
-                       <p className="text-[10px] font-bold text-slate-400">บาท</p>
-                    </div>
-                 </div>
-              )) : <p className="text-sm text-slate-400 text-center mt-10">ยังไม่มีข้อมูล</p>}
-           </div>
         </div>
       </div>
     </div>
@@ -481,34 +291,41 @@ const LoginScreen = ({ onLoginSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
-    
-    // ✅ แบบจำลอง (Mock) - โหลด 1 วินาทีแล้วเข้าสู่ระบบเลย ไม่ต้องต่อฐานข้อมูล
-    setTimeout(() => {
-        const fakeUser = { username: username || 'admin', role: 'admin' };
-        localStorage.setItem('claimcup_user', JSON.stringify(fakeUser));
-        onLoginSuccess(fakeUser);
-        setIsLoading(false);
-    }, 1000);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        localStorage.setItem('claimcup_user', JSON.stringify(data.user));
+        onLoginSuccess(data.user);
+      } else {
+        setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
+      }
+    } catch (err) {
+      setErrorMsg('เชื่อมต่อฐานข้อมูลไม่สำเร็จ');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#0a0a0a]'}`}>
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
         <div className="w-1.5 h-16 bg-slate-800"></div>
-        <div className="w-6 h-4 bg-slate-700 rounded-t-sm"></div>
         <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
           <div className="absolute top-10 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(true)}>
-            <div className={`w-0.5 bg-slate-500 group-hover:bg-slate-400 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
-            <div className={`w-4 h-4 bg-slate-500 rounded-full group-hover:bg-slate-400 shadow-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isPulled ? 'scale-75' : 'group-active:scale-110 group-active:translate-y-1'}`}></div>
+            <div className={`w-0.5 bg-slate-500 transition-all duration-500 origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
+            <div className={`w-4 h-4 bg-slate-500 rounded-full transition-all duration-500 ${isPulled ? 'scale-75' : 'group-active:scale-110'}`}></div>
           </div>
-          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled && isLightOn) ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' : 'bg-slate-800 shadow-none'}`}></div>
+          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled && isLightOn) ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' : 'bg-slate-800'}`}></div>
         </div>
       </div>
-      <div className={`absolute top-28 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-b from-emerald-400/30 via-emerald-400/5 to-transparent pointer-events-none transition-opacity duration-700 ease-in-out z-10 ${(isPulled && isLightOn) ? 'opacity-100' : 'opacity-0'}`} style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
       {!isPulled && (
         <div className="absolute top-52 text-slate-500 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2">
-          <span>👇</span>
-          <span>CLICK TO TURN ON</span>
+          <span>👇</span><span>คลิกเพื่อเปิดระบบ</span>
         </div>
       )}
       <div className={`bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24 transition-all duration-1000 ease-out transform ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
@@ -518,15 +335,9 @@ const LoginScreen = ({ onLoginSuccess }) => {
         </div>
         {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">{errorMsg}</div>}
         <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อผู้ใช้งาน (Username)</label>
-            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors" placeholder="กรอกชื่อผู้ใช้งาน" required />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">รหัสผ่าน (Password)</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 focus:border-emerald-500 focus:outline-none bg-emerald-50/50 transition-colors" placeholder="••••••••" required />
-          </div>
-          <button type="submit" disabled={isLoading} className={`w-full text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex justify-center items-center mt-4 ${isLightOn ? 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/30' : 'bg-slate-800 hover:bg-slate-700 hover:shadow-slate-800/30'}`}>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50/50" placeholder="Username" required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50/50" placeholder="Password" required />
+          <button type="submit" disabled={isLoading} className="w-full text-white font-bold py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 transition-all shadow-lg active:scale-95">
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
@@ -537,574 +348,311 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const handleLogout = () => {
-    localStorage.removeItem('claimcup_user'); 
-    setCurrentUser(null); 
-  };
-  
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [filterYear, setFilterYear] = useState('2569');
   const [filterUnit, setFilterUnit] = useState('all');
+  
   const [claims, setClaims] = useState([]);
-  const [expenses, setExpenses] = useState([]); // ✅ เพิ่ม State สำหรับ Expenses
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
-  const [showExpenseReport, setShowExpenseReport] = useState(false); // ✅ เพิ่ม State ควบคุม Popup Report
-
- useEffect(() => {
-    const fetchData = async () => {
-        try {
-            // ✅ 1. สร้างข้อมูลจำลอง (Mock Data) สำหรับรายรับ (Claims)
-            const mockClaims = [
-                { hcode: '05954', fiscal_year: '2569', month: '10', amount: 50000, platform: 'eclaim', service_item: 'OPD' },
-                { hcode: '05954', fiscal_year: '2569', month: '10', amount: 35000, platform: 'ktb', service_item: 'ส่งเสริมสุขภาพ' },
-                { hcode: '05954', fiscal_year: '2569', month: '11', amount: 42000, platform: 'moph', service_item: 'แพทย์แผนไทย' },
-                { hcode: '05962', fiscal_year: '2569', month: '10', amount: 20000, platform: 'eclaim', service_item: 'OPD' }
-            ];
-
-            // ✅ 2. สร้างข้อมูลจำลอง (Mock Data) สำหรับรายจ่าย (Expenses)
-            const mockExpenses = [
-                { id: 1, category: 1, category_name: 'ค่ายาและเวชภัณฑ์', amount: 15000, fiscal_year: '2569', month: '10' },
-                { id: 2, category: 2, category_name: 'ค่าตอบแทนบุคลากร', amount: 25000, fiscal_year: '2569', month: '10' },
-                { id: 3, category: 3, category_name: 'ค่าใช้สอยและซ่อมบำรุง', amount: 8500, fiscal_year: '2569', month: '11' },
-                { id: 4, category: 4, category_name: 'ค่าวัสดุสำนักงาน', amount: 3000, fiscal_year: '2569', month: '11' },
-                { id: 5, category: 5, category_name: 'ค่าสาธารณูปโภค', amount: 4500, fiscal_year: '2569', month: '11' }
-            ];
-
-            // ✅ 3. เซ็ตข้อมูลจำลองเข้าสู่ State
-            setClaims(mockClaims);
-            setExpenses(mockExpenses);
-            setLoading(false);
-
-            /* ❌ ปิดการดึงข้อมูลจาก API จริงไว้
-            const resClaims = await fetch(`${API_BASE_URL}/api/claims`);
-            const dataClaims = await resClaims.json();
-            if (Array.isArray(dataClaims)) setClaims(dataClaims);
-            
-            const resExpenses = await fetch(`${API_BASE_URL}/api/expenses`);
-            const dataExpenses = await resExpenses.json();
-            if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
-            */
-            
-        } catch (e) {
-            console.error("Error Loading Mock Data:", e);
-            setLoading(false);
-        }
-    };
-    fetchData();
-  }, []);
+  const [showExpenseReport, setShowExpenseReport] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('claimcup_user');
     if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser)); 
-      } catch (e) {
-        console.error("ล้างข้อมูลที่พังทิ้ง");
-        localStorage.removeItem('claimcup_user');
-      }
+      try { setCurrentUser(JSON.parse(savedUser)); } catch (e) { localStorage.removeItem('claimcup_user'); }
     }
   }, []);
 
-  const selectedHospitalName = useMemo(() => {
-    const hos = hospitals.find(h => h.id === filterUnit);
-    return hos ? hos.name : 'All Cup';
-  }, [filterUnit]);
-
+  // ✅ พระเอกของงานนี้: ระบบดึงข้อมูลแบบแยกส่วน พังอันไหน อีกอันยังรอด!
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllData = async () => {
         try {
-            // ✅ ดึงข้อมูล Claims (รายรับ)
-            const resClaims = await fetch(`${API_BASE_URL}/api/claims`);
-            const dataClaims = await resClaims.json();
-            if (Array.isArray(dataClaims)) setClaims(dataClaims);
-            
-            // ✅ ดึงข้อมูล Expenses (รายจ่าย)
-            const resExpenses = await fetch(`${API_BASE_URL}/api/expenses`);
-            const dataExpenses = await resExpenses.json();
-            if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
-            
-            setLoading(false);
-        } catch (e) {
-            console.error("API Error:", e);
+            // 1. ลองดึงข้อมูลรายรับ (Claims)
+            try {
+                const resC = await fetch(`${API_BASE_URL}/api/claims`);
+                if (resC.ok && resC.headers.get("content-type")?.includes("application/json")) {
+                    const dataC = await resC.json();
+                    if (Array.isArray(dataC)) setClaims(dataC);
+                }
+            } catch (err) { console.error("ไม่สามารถดึง Claims ได้:", err); }
+
+            // 2. ลองดึงข้อมูลรายจ่าย (Expenses)
+            try {
+                const resE = await fetch(`${API_BASE_URL}/api/expenses`);
+                if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
+                    const dataE = await resE.json();
+                    if (Array.isArray(dataE)) setExpenses(dataE);
+                }
+            } catch (err) { console.error("ไม่สามารถดึง Expenses ได้:", err); }
+
+            // 3. ดึงวันที่อัปเดต
+            try {
+                const resU = await fetch(`${API_BASE_URL}/api/last-updated`);
+                if (resU.ok) {
+                    const dataU = await resU.json();
+                    if (dataU.last_updated) {
+                        setLastUpdated(new Date(dataU.last_updated).toLocaleDateString('th-TH', {
+                            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        }));
+                    }
+                }
+            } catch (err) { }
+
+        } finally {
             setLoading(false);
         }
     };
-    fetchData();
+    fetchAllData();
   }, []);
+
+  const selectedHospitalName = useMemo(() => hospitals.find(h => h.id === filterUnit)?.name || 'All Cup', [filterUnit]);
 
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
       return processData(claims, filterYear, filterUnit);
   }, [claims, filterYear, filterUnit]);
 
-  // ✅ คำนวณและจัดกลุ่มข้อมูลค่าใช้จ่ายทั้งหมด (ดึงมาจากตาราง expenses)
-  const fullExpenseData = useMemo(() => {
-    if (filterUnit !== 'all' && filterUnit !== '05954') return [];
-    
-    // กรองตามปีงบประมาณ
-    const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
-    
-    let totalExpense = 0;
-    const grouped = {};
-
-    filtered.forEach(item => {
-        // อ้างอิงชื่อ category_name ที่ Join มาจาก Backend ถ้าไม่มีให้แสดง 'อื่นๆ'
-        const catName = item.category_name || item.category || 'อื่นๆ'; 
-        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
-        
-        totalExpense += amt;
-        if (!grouped[catName]) grouped[catName] = 0;
-        grouped[catName] += amt;
-    });
-
-    const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]', 'bg-[#10b981]', 'bg-[#8b5cf6]', 'bg-[#0ea5e9]'];
-
-    return Object.entries(grouped)
-        .map(([label, value], idx) => ({
-            label,
-            value: fmt(value),
-            percent: totalExpense > 0 ? Math.round((value / totalExpense) * 100) : 0,
-            color: colorPalette[idx % colorPalette.length],
-            rawAmount: value
-        }))
-        .sort((a, b) => b.rawAmount - a.rawAmount); // คืนค่าทั้งหมด เรียงจากมากไปน้อย
-  }, [expenses, filterYear, filterUnit]);
-
-  // ✅ ตัดมาแค่ Top 3 สำหรับโชว์บน Dashboard
-  const top3ExpenseData = fullExpenseData.slice(0, 3);
-// ✅ คำนวณข้อมูลสำหรับรายงานฉบับเต็ม (แยก 12 เดือน)
   const expenseReportData = useMemo(() => {
     if (filterUnit !== 'all' && filterUnit !== '05954') return { rows: [], grandTotal: 0, monthlyTotals: Array(12).fill(0) };
-    
     const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
-    
     const grouped = {};
     let grandTotal = 0;
     const monthlyTotals = Array(12).fill(0);
-
     filtered.forEach(item => {
         const catName = item.category_name || item.category || 'อื่นๆ'; 
         const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
-        const mStr = String(item.month);
-        const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
-        
-        if (!grouped[catName]) {
-            grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
-        }
-        
+        const mIdx = monthMapping[String(item.month)] ?? -1;
+        if (!grouped[catName]) grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
         grouped[catName].total += amt;
         grandTotal += amt;
-        
         if (mIdx >= 0 && mIdx < 12) {
             grouped[catName].monthlyData[mIdx] += amt;
             monthlyTotals[mIdx] += amt;
         }
     });
-
-    const rows = Object.values(grouped).sort((a, b) => b.total - a.total);
-    return { rows, grandTotal, monthlyTotals };
+    return { rows: Object.values(grouped).sort((a, b) => b.total - a.total), grandTotal, monthlyTotals };
   }, [expenses, filterYear, filterUnit]);
+
+  const top3ExpenseData = useMemo(() => {
+    const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]'];
+    return expenseReportData.rows.slice(0, 3).map((item, idx) => ({
+        label: item.label, value: fmt(item.total),
+        percent: expenseReportData.grandTotal > 0 ? Math.round((item.total / expenseReportData.grandTotal) * 100) : 0,
+        color: colorPalette[idx % colorPalette.length]
+    }));
+  }, [expenseReportData]);
+
   const pieData = useMemo(() => {
-      const data = platformCards
-        .filter(p => p.value > 0)
-        .map(p => ({
-            label: p.title,
-            value: p.value,
-            color: PLATFORM_COLORS[p.key],
+      const data = platformCards.filter(p => p.value > 0).map(p => ({
+            label: p.title, value: p.value, color: PLATFORM_COLORS[p.key],
             percent: totalAmount > 0 ? Math.round((p.value / totalAmount) * 100) : 0
-        }))
-        .sort((a,b) => b.value - a.value);
+      })).sort((a,b) => b.value - a.value);
       return data.length > 0 ? data : [{label: 'No Data', value: 1, color: '#e2e8f0', percent: 0}];
   }, [platformCards, totalAmount]);
 
-  const handleBack = () => setSelectedPlatform(null);
-
-  if (loading) {
-      return (
-          <div className="h-screen flex items-center justify-center bg-[#F4FAF7]">
-              <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <p className="text-emerald-800 font-bold animate-pulse">กำลังโหลดข้อมูล...</p>
-              </div>
-          </div>
-      );
-  }
-
-  if (!currentUser) {
-      return <LoginScreen onLoginSuccess={(user) => {
-          localStorage.setItem('claimcup_user', JSON.stringify(user));
-          setCurrentUser(user); 
-      }} />;
-  }
+  if (loading) return <div className="h-screen flex items-center justify-center bg-[#F4FAF7]"><div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div></div>;
+  if (!currentUser) return <LoginScreen onLoginSuccess={setCurrentUser} />;
 
   return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-emerald-200">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Kanit:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Plus Jakarta Sans', 'Kanit', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #064e3b; border-radius: 10px; }
-      `}</style>
-
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-emerald-200">
       <div className="flex flex-col h-screen overflow-hidden">
         <header className="h-28 md:h-32 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm relative">
           <div className="flex items-center gap-8">
-             <div className="flex items-center space-x-6 group cursor-pointer" onClick={handleBack}>
-                <img 
-                  src="/my-logo.png" 
-                  alt="โลโก้ รพ.สต." 
-                  className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white border-2 border-emerald-100 transition-all hover:scale-105 active:scale-95" 
-                />
+             <div className="flex items-center space-x-6 group cursor-pointer" onClick={() => setSelectedPlatform(null)}>
+                <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white border-2 border-emerald-100 transition-all hover:scale-105 active:scale-95" />
                 <div className="flex flex-col justify-center">
                   <h1 className="text-2xl md:text-4xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
                   <p className="text-xs md:text-base text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
                 </div>
              </div>
           </div>
-          
           <div className="flex items-center gap-4 md:gap-6">
             <LiveClock />
-            <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10">
-              <CheckCircle2 size={16} className="text-emerald-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
-            >
-              🚪 <span className="hidden sm:inline">ออกจากระบบ</span>
-            </button>
+            <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10"><CheckCircle2 size={16} className="text-emerald-400" /><span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span></div>
+            <button onClick={() => { localStorage.removeItem('claimcup_user'); setCurrentUser(null); }} className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95">🚪 <span className="hidden sm:inline">ออกจากระบบ</span></button>
           </div>
-          {lastUpdated && (
-            <span className="absolute bottom-2 right-10 text-[9px] font-bold text-emerald-700/60 tracking-wide">
-              อัพเดทล่าสุด: {lastUpdated}
-            </span>
-          )}
+          {lastUpdated && <span className="absolute bottom-2 right-10 text-[9px] font-bold text-emerald-700/60 tracking-wide">อัพเดทล่าสุด: {lastUpdated}</span>}
         </header>
 
         <div className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto custom-scrollbar relative bg-[#F7FBF9]">
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
-          
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
-            {selectedPlatform ? (
-              <PlatformDetailView platform={selectedPlatform} onBack={handleBack} claims={claims} filterYear={filterYear} />
-            ) : (
-              <>
-                {/* --- FILTER SECTION --- */}
-                <section className="space-y-6">
-                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                      <h3 className="text-2xl md:text-5xl font-black text-emerald-950 tracking-tight flex items-center gap-4"><Leaf className="text-emerald-800" size={40} />Health Claim Analytics</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-[10px] md:text-xs text-emerald-800/40 font-bold uppercase tracking-[0.2em]">CUP Sankhong Dashboard</p>
-                        <span className="w-1 h-1 rounded-full bg-emerald-200"></span>
-                        <p className="text-[10px] md:text-xs text-emerald-900 font-black uppercase tracking-[0.2em] bg-emerald-100 px-2 py-0.5 rounded-md">{filterYear}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 bg-emerald-900/5 p-1.5 rounded-2xl border border-emerald-900/10">
-                      {['2568', '2569'].map(year => (
-                        <button key={year} onClick={() => setFilterYear(year)} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${filterYear === year ? 'bg-emerald-900 text-white shadow-lg' : 'text-emerald-900/60 hover:bg-emerald-100'}`}>{year}</button>
-                      ))}
-                    </div>
+            
+            <section className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                  <h3 className="text-2xl md:text-5xl font-black text-emerald-950 tracking-tight flex items-center gap-4"><Leaf className="text-emerald-800" size={40} />Health Claim Analytics</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-[10px] md:text-xs text-emerald-800/40 font-bold uppercase tracking-[0.2em]">CUP Sankhong Dashboard</p>
+                    <span className="w-1 h-1 rounded-full bg-emerald-200"></span>
+                    <p className="text-[10px] md:text-xs text-emerald-900 font-black uppercase tracking-[0.2em] bg-emerald-100 px-2 py-0.5 rounded-md">{filterYear}</p>
                   </div>
-
-                  <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {hospitals.map(hos => (
-                      hos.spacer ? (
-                        <div key={hos.id} className="hidden md:block"></div>
-                      ) : (
-                        <button
-                          key={hos.id}
-                          onClick={() => setFilterUnit(hos.id)}
-                          className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${
-                            filterUnit === hos.id 
-                            ? hos.active 
-                            : hos.inactive
-                          }`}
-                        >
-                          {hos.name}
-                        </button>
-                      )
-                    ))}
-                  </div>
-                </section>
-
-                {/* --- HERO SUMMARY --- */}
-                <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden group">
-                  <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
-                    <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
-                    <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
-                    <div className="pt-6 flex justify-center lg:justify-start gap-4">
-                      <div className="px-8 py-4 bg-emerald-400/10 text-emerald-400 rounded-[2rem] border border-emerald-400/20 text-sm md:text-base font-black flex items-center gap-3 backdrop-blur-md transition-all hover:bg-emerald-400/20 shadow-inner">
-                        <Building2 size={24} />
-                        <span>{selectedHospitalName}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
                 </div>
+                <div className="flex items-center gap-2 bg-emerald-900/5 p-1.5 rounded-2xl border border-emerald-900/10">
+                  {['2568', '2569'].map(year => (
+                    <button key={year} onClick={() => setFilterYear(year)} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${filterYear === year ? 'bg-emerald-900 text-white shadow-lg' : 'text-emerald-900/60 hover:bg-emerald-100'}`}>{year}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {hospitals.map(hos => hos.spacer ? <div key={hos.id} className="hidden md:block"></div> : (
+                  <button key={hos.id} onClick={() => setFilterUnit(hos.id)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${filterUnit === hos.id ? hos.active : hos.inactive}`}>{hos.name}</button>
+                ))}
+              </div>
+            </section>
 
-                {/* --- ANALYTICS & RANKING SECTION --- */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                  <div className="lg:col-span-8">
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
-                          <div className="flex items-center gap-6 mb-14">
-                              <div className="p-5 bg-emerald-900 rounded-[1.5rem] text-white shadow-lg shadow-emerald-900/20"><Activity size={36} /></div>
-                              <div className="flex flex-col">
-                                  <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
-                                  <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2">
-                                      <Building2 size={16} /> ข้อมูลของหน่วยบริการ: {selectedHospitalName}
-                                  </p>
-                              </div>
-                          </div>
-                          <div className="flex flex-col flex-1 min-h-[400px] justify-between">
-                              <YoYTrendChart data={yoyData} />
-                              <PlatformComparisonChart data={monthlyByPlatform} />
+            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden">
+              <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
+                <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
+                <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
+                <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
+              </div>
+              <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+              <div className="lg:col-span-8">
+                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
+                      <div className="flex items-center gap-6 mb-14">
+                          <div className="p-5 bg-emerald-900 rounded-[1.5rem] text-white shadow-lg shadow-emerald-900/20"><Activity size={36} /></div>
+                          <div className="flex flex-col">
+                              <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
+                              <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2"><Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}</p>
                           </div>
                       </div>
+                      <div className="flex flex-col flex-1 min-h-[400px] justify-between">
+                          <YoYTrendChart data={yoyData} />
+                          <PlatformComparisonChart data={monthlyByPlatform} />
+                      </div>
                   </div>
-                  
-                  <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
+              </div>
+              
+              <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
+                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
+                      <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
+                          <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
+                      </div>
+                      <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                          {rankingList.map((hospital, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm">{index + 1}</div>
+                                <div><h4 className="font-bold text-emerald-950 text-sm">{hospital.name}</h4></div>
+                              </div>
+                              <div className="text-right"><p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p></div>
+                            </div>
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* ✅ ส่วนแสดงรายจ่ายที่ปลอดภัยแบบ 100% */}
+                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
+                      <div className="p-8 pb-4 flex items-center justify-between relative z-10">
+                          <div>
+                              <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
+                          </div>
+                          <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"><ArrowUpRight size={20} /></button>
+                      </div>
                       
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
-                          <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
-                              <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
-                              <span className="text-[11px] font-black text-emerald-800 uppercase tracking-widest bg-white px-3 py-1.5 rounded-xl border border-emerald-100 shadow-sm">THB</span>
-                          </div>
-                          <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                              {rankingList.map((hospital, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50 hover:border-emerald-200 hover:-translate-y-1 transition-all group">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                                      {index + 1}
-                                    </div>
-                                    <div>
-                                      <h4 className="font-bold text-emerald-950 text-sm group-hover:text-emerald-700 transition-colors">
-                                        {hospital.name}
-                                      </h4>
-                                      <p className="text-[11px] text-emerald-600/70 font-bold uppercase">
-                                        {hospital.cases} Cases
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-black text-emerald-800 text-base">
-                                      {fmt(hospital.amount)}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 font-bold">บาท</p>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                      </div>
-
-                      {/* ✅ OPERATING EXPENSE REPORT CARD */}
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
-                          <div className="p-8 pb-4 flex items-center justify-between relative z-10">
-                              <div>
-                                  <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider">
-                                      <Wallet className="text-emerald-600" size={28} />
-                                      Expense Report
-                                  </h3>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operating Expenses</p>
-                              </div>
-                              <button 
-                                  onClick={() => setShowExpenseReport(true)}
-                                  className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                              >
-                                  <ArrowUpRight size={20} />
-                              </button>
-                          </div>
-                          
-                          <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
-                             <div className="space-y-5 flex-1">
-                                {top3ExpenseData.length > 0 ? (
-                                    top3ExpenseData.map((item, idx) => (
-                                        <div key={idx} className="group/item">
-                                            <div className="flex justify-between items-end mb-2">
-                                                <span className="text-xs font-bold text-slate-600 group-hover/item:text-emerald-800 transition-colors line-clamp-1">{item.label}</span>
-                                                <div className="text-right whitespace-nowrap ml-2">
-                                                    <span className="text-sm font-black text-emerald-950">{item.value}</span>
-                                                    <span className="text-[10px] text-slate-400 ml-1 font-bold">฿</span>
-                                                </div>
-                                            </div>
-                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                                <div 
-                                                    className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} 
-                                                    style={{ width: `${item.percent}%` }}
-                                                ></div>
-                                            </div>
+                      <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
+                         <div className="space-y-5 flex-1">
+                            {top3ExpenseData.length > 0 ? (
+                                top3ExpenseData.map((item, idx) => (
+                                    <div key={idx} className="group/item">
+                                        <div className="flex justify-between items-end mb-2">
+                                            <span className="text-xs font-bold text-slate-600">{item.label}</span>
+                                            <span className="text-sm font-black text-emerald-950">{item.value} ฿</span>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full py-6 opacity-50">
-                                        <Wallet size={36} className="mb-2 text-slate-300" />
-                                        <p className="text-sm font-bold text-slate-400">ยังไม่มีข้อมูลรายจ่าย</p>
+                                        <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                            <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.percent}%` }}></div>
+                                        </div>
                                     </div>
-                                )}
-                             </div>
-
-                             {top3ExpenseData.length > 0 && (
-                                <button 
-                                    onClick={() => setShowExpenseReport(true)}
-                                    className="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-2xl text-sm font-bold transition-all border border-emerald-100 shadow-sm"
-                                >
-                                    <Table2 size={16} />
-                                    ดูรายงานฉบับเต็ม
-                                </button>
-                             )}
-                          </div>
-                          
-                          <div className="absolute -bottom-10 -right-10 text-emerald-50/50 pointer-events-none rotate-12 group-hover:rotate-6 transition-transform duration-700">
-                             <Wallet size={160} />
-                          </div>
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full py-6 opacity-50">
+                                    <Wallet size={36} className="mb-2 text-slate-300" />
+                                    <p className="text-sm font-bold text-slate-400">ยังไม่มีข้อมูลรายจ่าย</p>
+                                </div>
+                            )}
+                         </div>
+                         {top3ExpenseData.length > 0 && (
+                            <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-2xl text-sm font-bold transition-all"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
+                         )}
                       </div>
-
                   </div>
+              </div>
+            </div>
+
+            <section className="py-6 pb-20">
+              <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
+                  {platformCards.map((card) => {
+                    const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
+                    return (
+                      <div key={card.key} className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center`} style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}>
+                        <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
+                        <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
+                        <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <section className="py-6 pb-20">
-                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm relative overflow-hidden hover:shadow-xl transition-all duration-700">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-50/50 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10"><div className="flex items-center gap-5"><div className="p-4 bg-emerald-100 text-emerald-800 rounded-2xl shadow-sm"><Layers size={32} /></div><div><h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Service Platform Breakdown</h3><p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Analytical Overview by System</p></div></div></div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8 relative z-10">
-                      {platformCards.map((card) => {
-                        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
-                        return (
-                          <div 
-                            key={card.key}
-                            onClick={() => setSelectedPlatform(card)}
-                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer group h-full relative overflow-hidden active:scale-95`}
-                            style={{ 
-                              backgroundColor: platformColor,
-                              boxShadow: `0 20px 40px -10px ${platformColor}80` 
-                            }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-white/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4 group-hover:bg-white group-hover:text-current transition-colors shadow-inner"><card.icon size={28} className="text-white group-hover:text-current" style={{ color: 'inherit' }} /></div>
-                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
-                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-              </>
-            )}
+              </div>
+            </section>
           </div>
         </div>
       </div>
       
-  {/* ✅ MODAL REPORT ฉบับเต็ม (แบบแยกเดือน) */}
+      {/* MODAL REPORT 12 เดือน */}
       {showExpenseReport && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-[1200px] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-4 border-white/20">
-                
-                {/* Header */}
+            <div className="bg-white w-full max-w-[1200px] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="px-8 py-6 border-b border-emerald-100/50 flex justify-between items-center bg-emerald-50/50">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-md shadow-emerald-600/20">
-                            <List size={24} />
-                        </div>
+                        <div className="p-3 bg-emerald-600 text-white rounded-2xl"><List size={24} /></div>
                         <div>
-                            <h3 className="font-black text-emerald-950 text-xl uppercase tracking-wider">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
-                            <p className="text-xs font-bold text-emerald-700/60 mt-1 uppercase tracking-widest">
-                                ปีงบประมาณ {filterYear === 'all' ? 'ทั้งหมด' : filterYear} | {selectedHospitalName}
-                            </p>
+                            <h3 className="font-black text-emerald-950 text-xl uppercase">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => setShowExpenseReport(false)} 
-                        className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-100 rounded-xl transition-all"
-                    >
-                        <span className="font-black text-2xl leading-none">&times;</span>
-                    </button>
+                    <button onClick={() => setShowExpenseReport(false)} className="text-slate-400 hover:text-rose-500 text-2xl font-black">&times;</button>
                 </div>
-
-                {/* Table Content */}
                 <div className="p-8 overflow-auto custom-scrollbar flex-1">
                     <table className="w-full min-w-[1000px] text-left border-collapse border-separate border-spacing-y-1">
                         <thead>
-                            <tr className="bg-emerald-50 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
-                                <th className="p-4 py-3 rounded-l-xl sticky left-0 z-20 bg-emerald-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">หมวดหมู่รายการจ่าย</th>
-                                {months.map((m, i) => (
-                                    <th key={i} className="p-4 py-3 text-right">{m}</th>
-                                ))}
-                                <th className="p-4 py-3 text-right rounded-r-xl bg-emerald-100">รวมทั้งสิ้น</th>
+                            <tr className="bg-emerald-50 text-emerald-800 text-[11px] font-black uppercase">
+                                <th className="p-4 py-3 sticky left-0 z-20 bg-emerald-50">หมวดหมู่รายการจ่าย</th>
+                                {months.map((m, i) => <th key={i} className="p-4 py-3 text-right">{m}</th>)}
+                                <th className="p-4 py-3 text-right">รวมทั้งสิ้น</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-emerald-50/50">
-                            {expenseReportData.rows.length > 0 ? (
-                                expenseReportData.rows.map((item, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50 transition-colors group">
-                                        <td className="p-4 py-3 text-sm text-slate-700 font-bold group-hover:text-emerald-700 transition-colors sticky left-0 z-10 bg-white group-hover:bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                                            {idx + 1}. {item.label}
-                                        </td>
-                                        {item.monthlyData.map((val, mIdx) => (
-                                            <td key={mIdx} className="p-4 py-3 text-[12px] text-slate-500 font-medium text-right group-hover:text-emerald-800 transition-colors">
-                                                {val > 0 ? fmt(val) : '-'}
-                                            </td>
-                                        ))}
-                                        <td className="p-4 py-3 text-sm text-emerald-900 font-black text-right bg-emerald-50/30 group-hover:bg-emerald-100/50 transition-colors">
-                                            {fmt(item.total)}
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="14" className="text-center py-10 text-slate-400 font-bold">ไม่มีข้อมูลค่าใช้จ่าย</td>
+                            {expenseReportData.rows.length > 0 ? expenseReportData.rows.map((item, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50">
+                                    <td className="p-4 py-3 text-sm text-slate-700 font-bold sticky left-0 z-10 bg-white">{idx + 1}. {item.label}</td>
+                                    {item.monthlyData.map((val, mIdx) => <td key={mIdx} className="p-4 py-3 text-[12px] text-slate-500 text-right">{val > 0 ? fmt(val) : '-'}</td>)}
+                                    <td className="p-4 py-3 text-sm text-emerald-900 font-black text-right bg-emerald-50/30">{fmt(item.total)}</td>
                                 </tr>
-                            )}
+                            )) : <tr><td colSpan="14" className="text-center py-10 text-slate-400">ไม่มีข้อมูล</td></tr>}
                         </tbody>
-                        
-                        {/* Footer (รวมยอดรายเดือน) */}
                         {expenseReportData.rows.length > 0 && (
                             <tfoot>
-                                <tr className="bg-emerald-600 text-white shadow-lg">
-                                    <td className="p-4 py-4 text-sm font-bold text-right rounded-l-xl sticky left-0 z-20 bg-emerald-600 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.2)]">
-                                        รวมทุกหมวดหมู่
-                                    </td>
-                                    {expenseReportData.monthlyTotals.map((total, i) => (
-                                        <td key={i} className="p-4 py-4 text-[12px] font-bold text-right text-emerald-100">
-                                            {total > 0 ? fmt(total) : '-'}
-                                        </td>
-                                    ))}
-                                    <td className="p-4 py-4 text-base font-black text-right rounded-r-xl bg-emerald-700 shadow-inner">
-                                        {fmt(expenseReportData.grandTotal)}
-                                    </td>
+                                <tr className="bg-emerald-600 text-white">
+                                    <td className="p-4 py-4 text-sm font-bold text-right sticky left-0 z-20 bg-emerald-600">รวมทุกหมวดหมู่</td>
+                                    {expenseReportData.monthlyTotals.map((total, i) => <td key={i} className="p-4 py-4 text-[12px] font-bold text-right">{total > 0 ? fmt(total) : '-'}</td>)}
+                                    <td className="p-4 py-4 text-base font-black text-right bg-emerald-700">{fmt(expenseReportData.grandTotal)}</td>
                                 </tr>
                             </tfoot>
                         )}
                     </table>
                 </div>
-
-                {/* Footer Buttons & Signature Area */}
-                <div className="px-8 py-5 border-t border-emerald-100/50 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hidden sm:block">
-                        พิมพ์เอกสารเมื่อ: {new Date().toLocaleString('th-TH')}
-                    </div>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={() => setShowExpenseReport(false)} 
-                            className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all"
-                        >
-                            ปิดหน้าต่าง
-                        </button>
-                        <button 
-                            onClick={() => window.print()} 
-                            className="px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95"
-                        >
-                            <Table2 size={18} />
-                            พิมพ์รายงาน (Print)
-                        </button>
-                    </div>
+                <div className="px-8 py-5 border-t border-emerald-100/50 bg-slate-50 flex justify-end gap-3">
+                    <button onClick={() => setShowExpenseReport(false)} className="px-6 py-2.5 text-sm font-bold text-slate-600 border border-slate-200 rounded-xl">ปิด</button>
+                    <button onClick={() => window.print()} className="px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl flex items-center gap-2"><Table2 size={18} />พิมพ์รายงาน</button>
                 </div>
             </div>
         </div>
       )}
-      </div>
+    </div>
   );
-}   
+}
