@@ -581,23 +581,38 @@ export default function App() {
   }, [filterUnit]);
 
   // ✅ ดึงข้อมูลทั้งรายรับ (claims) และรายจ่าย (expenses) ผ่าน API พร้อมกัน
-  useEffect(() => {
+useEffect(() => {
     const fetchData = async () => {
         try {
-            const [resClaims, resExpenses] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/claims`),
-                fetch(`${API_BASE_URL}/api/expenses`)
-            ]);
-            
-            const dataClaims = await resClaims.json();
-            const dataExpenses = await resExpenses.json();
-            
-            if (Array.isArray(dataClaims)) setClaims(dataClaims);
-            if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
-            
+            // 1. ดึงข้อมูลรายรับ (Claims)
+            try {
+                const resClaims = await fetch(`${API_BASE_URL}/api/claims`);
+                if (resClaims.ok) {
+                    const dataClaims = await resClaims.json();
+                    if (Array.isArray(dataClaims)) setClaims(dataClaims);
+                } else {
+                    console.error("API Claims มีปัญหา:", resClaims.status);
+                }
+            } catch (err) {
+                console.error("ดึงข้อมูลรายรับไม่สำเร็จ:", err);
+            }
+
+            // 2. ดึงข้อมูลรายจ่าย (Expenses)
+            try {
+                const resExpenses = await fetch(`${API_BASE_URL}/api/expenses`);
+                if (resExpenses.ok) {
+                    const dataExpenses = await resExpenses.json();
+                    if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
+                } else {
+                    console.error("API Expenses มีปัญหา:", resExpenses.status);
+                }
+            } catch (err) {
+                console.error("ดึงข้อมูลรายจ่ายไม่สำเร็จ:", err);
+            }
+
             setLoading(false);
         } catch (e) {
-            console.error("API Error:", e);
+            console.error("เกิดข้อผิดพลาดรวม:", e);
             setLoading(false);
         }
     };
