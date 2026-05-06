@@ -8,6 +8,7 @@ import {
   Layers, Leaf, List, Table2, Wallet
 } from 'lucide-react';
 
+// --- CONFIGURATION ---
 const API_BASE_URL = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_API_URL || '' : '';
 
 const PLATFORM_COLORS = {
@@ -41,12 +42,14 @@ const monthMapping = {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
+// --- LOGIC: REAL DATA PROCESSING ---
 function processData(claims, yearFilter, unitFilter) {
   const filtered = claims.filter(c => {
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
     const dataUnit = c.hcode || "";
     const matchYear = yearFilter === 'all' || dataYear === yearFilter;
     const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
+
     let matchUnit;
     if (isPhysical) {
       matchUnit = (unitFilter === 'all');
@@ -65,6 +68,7 @@ function processData(claims, yearFilter, unitFilter) {
   filtered.forEach(c => {
     let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
     totalAmount += amount;
+
     let pKey = c.platform ? c.platform.toLowerCase() : 'other';
     const mStr = String(c.month);
     const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
@@ -72,10 +76,12 @@ function processData(claims, yearFilter, unitFilter) {
     if (platformStats[pKey] !== undefined) {
       platformStats[pKey] += amount;
       const serviceName = c.service_item || "ไม่ระบุ";
+      
       if (!platformItems[pKey][serviceName]) {
           platformItems[pKey][serviceName] = { total: 0, monthlyData: Array(12).fill(0) };
       }
       platformItems[pKey][serviceName].total += amount;
+      
       if (mIdx >= 0 && mIdx < 12) {
           platformItems[pKey][serviceName].monthlyData[mIdx] += amount;
       }
@@ -100,7 +106,11 @@ function processData(claims, yearFilter, unitFilter) {
     ...p,
     value: platformStats[p.key] || 0,
     items: Object.entries(platformItems[p.key] || {})
-      .map(([name, data]) => ({ name, value: data.total, monthlyData: data.monthlyData }))
+      .map(([name, data]) => ({ 
+          name, 
+          value: data.total, 
+          monthlyData: data.monthlyData 
+      }))
       .sort((a, b) => b.value - a.value)
   }));
 
@@ -109,35 +119,50 @@ function processData(claims, yearFilter, unitFilter) {
     if (c.platform && c.platform.toLowerCase() === 'physical') return;
     const h = hospitals.find(x => x.id === c.hcode);
     const hName = h ? h.name : (c.hcode || "Unknown");
+
     if (hName === "All Cup") return;
     if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
+
     let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
+
     rankingMap[hName].amount += amt;
     rankingMap[hName].cases += 1;
   });
 
   const rankingList = Object.entries(rankingMap)
     .map(([name, data]) => ({ name, ...data, trend: "LIVE" }))
-    .sort((a, b) => b.amount - a.amount).slice(0, 5);
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
 
   const monthlyTotal68 = Array(12).fill(0);
   const monthlyTotal69 = Array(12).fill(0);
+
   claims.forEach(c => {
     const dataUnit = c.hcode || "";
     if (unitFilter !== 'all' && dataUnit !== unitFilter) return; 
+
     let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
     const mStr = String(c.month);
     const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
+
     if (mIdx >= 0 && mIdx < 12) {
       if (dataYear === '2568') monthlyTotal68[mIdx] += amount;
       if (dataYear === '2569') monthlyTotal69[mIdx] += amount;
     }
   });
 
-  return { totalAmount, platformCards, monthlyTotal, yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, rankingList, monthlyByPlatform };
+  return { 
+    totalAmount, 
+    platformCards, 
+    monthlyTotal, 
+    yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, 
+    rankingList, 
+    monthlyByPlatform 
+  };
 }
 
+// --- UI SUB-COMPONENTS ---
 const LiveClock = () => {
   const [currentTime, setCurrentTime] = useState('');
   useEffect(() => {
@@ -241,7 +266,9 @@ const YoYTrendChart = ({ data }) => {
                 </linearGradient>
               </defs>
               {months.map((m, i) => (
-                <text key={i} x={chartLeft + (i / 11) * chartWidth} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>
+                <text key={i} x={chartLeft + (i / 11) * chartWidth} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
+                  {m}
+                </text>
               ))}
             </svg>
           </div>
@@ -305,7 +332,9 @@ const PlatformComparisonChart = ({ data }) => {
               );
             })}
             {months.map((m, i) => (
-              <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>
+              <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">
+                {m}
+              </text>
             ))}
           </svg>
         </div>
@@ -318,21 +347,25 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
   
- const topPlatformUnits = useMemo(() => {
-  if (platform.key === 'physical') return [];
-  const map = {};
-  claims.forEach(c => {
-    if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
-      const h = hospitals.find(x => x.id === c.hcode);
-      const hName = h ? h.name : c.hcode;
-      if (hName === "All Cup" || !hName) return;
-      if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
-      map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
-      map[hName].cases += 1;
-    }
-  });
-  return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
- }, [claims, platform.key, filterYear]);
+  const topPlatformUnits = useMemo(() => {
+    if (platform.key === 'physical') return [];
+
+    const map = {};
+    claims.forEach(c => {
+      if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
+        const h = hospitals.find(x => x.id === c.hcode);
+        const hName = h ? h.name : c.hcode;
+        if (hName === "All Cup" || !hName) return;
+        if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
+        map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
+        map[hName].cases += 1;
+      }
+    });
+    return Object.entries(map)
+        .map(([name, data]) => ({ name, ...data }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5); 
+  }, [claims, platform.key, filterYear]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -448,37 +481,14 @@ const LoginScreen = ({ onLoginSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        localStorage.setItem('claimcup_user', JSON.stringify(data.user));
-        onLoginSuccess(data.user);
-      } else {
-        setErrorMsg(data.message || 'รหัสผ่านไม่ถูกต้อง');
-        setIsLightOn(false);
-        setTimeout(() => setIsLightOn(true), 150);
-        setTimeout(() => setIsLightOn(false), 300);
-        setTimeout(() => setIsLightOn(true), 450);
-        setTimeout(() => setIsLightOn(false), 600);
-        setTimeout(() => setIsLightOn(true), 750);
-      }
-    } catch (err) {
-      setErrorMsg('Unable to connect to database');
-      setIsLightOn(false);
-      setTimeout(() => setIsLightOn(true), 150);
-      setTimeout(() => setIsLightOn(false), 300);
-      setTimeout(() => setIsLightOn(true), 450);
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // ✅ แบบจำลอง (Mock) - โหลด 1 วินาทีแล้วเข้าสู่ระบบเลย ไม่ต้องต่อฐานข้อมูล
+    setTimeout(() => {
+        const fakeUser = { username: username || 'admin', role: 'admin' };
+        localStorage.setItem('claimcup_user', JSON.stringify(fakeUser));
+        onLoginSuccess(fakeUser);
+        setIsLoading(false);
+    }, 1000);
   };
 
   return (
@@ -535,33 +545,53 @@ export default function App() {
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [filterYear, setFilterYear] = useState('2569');
   const [filterUnit, setFilterUnit] = useState('all');
-  
-  // ✅ เพิ่ม State สำหรับดึงข้อมูลรายรับและรายจ่าย
   const [claims, setClaims] = useState([]);
-  const [expenses, setExpenses] = useState([]);
+  const [expenses, setExpenses] = useState([]); // ✅ เพิ่ม State สำหรับ Expenses
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
-  
-  // ✅ State สำหรับหน้าต่างรายงาน 12 เดือน
-  const [showExpenseReport, setShowExpenseReport] = useState(false);
+  const [showExpenseReport, setShowExpenseReport] = useState(false); // ✅ เพิ่ม State ควบคุม Popup Report
 
-  useEffect(() => {
-    const fetchLastUpdated = async () => {
+ useEffect(() => {
+    const fetchData = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/last-updated`);
-            const data = await res.json();
-            if (data.last_updated) {
-                const date = new Date(data.last_updated);
-                setLastUpdated(date.toLocaleDateString('th-TH', {
-                    year: 'numeric', month: 'short', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                }));
-            }
+            // ✅ 1. สร้างข้อมูลจำลอง (Mock Data) สำหรับรายรับ (Claims)
+            const mockClaims = [
+                { hcode: '05954', fiscal_year: '2569', month: '10', amount: 50000, platform: 'eclaim', service_item: 'OPD' },
+                { hcode: '05954', fiscal_year: '2569', month: '10', amount: 35000, platform: 'ktb', service_item: 'ส่งเสริมสุขภาพ' },
+                { hcode: '05954', fiscal_year: '2569', month: '11', amount: 42000, platform: 'moph', service_item: 'แพทย์แผนไทย' },
+                { hcode: '05962', fiscal_year: '2569', month: '10', amount: 20000, platform: 'eclaim', service_item: 'OPD' }
+            ];
+
+            // ✅ 2. สร้างข้อมูลจำลอง (Mock Data) สำหรับรายจ่าย (Expenses)
+            const mockExpenses = [
+                { id: 1, category: 1, category_name: 'ค่ายาและเวชภัณฑ์', amount: 15000, fiscal_year: '2569', month: '10' },
+                { id: 2, category: 2, category_name: 'ค่าตอบแทนบุคลากร', amount: 25000, fiscal_year: '2569', month: '10' },
+                { id: 3, category: 3, category_name: 'ค่าใช้สอยและซ่อมบำรุง', amount: 8500, fiscal_year: '2569', month: '11' },
+                { id: 4, category: 4, category_name: 'ค่าวัสดุสำนักงาน', amount: 3000, fiscal_year: '2569', month: '11' },
+                { id: 5, category: 5, category_name: 'ค่าสาธารณูปโภค', amount: 4500, fiscal_year: '2569', month: '11' }
+            ];
+
+            // ✅ 3. เซ็ตข้อมูลจำลองเข้าสู่ State
+            setClaims(mockClaims);
+            setExpenses(mockExpenses);
+            setLoading(false);
+
+            /* ❌ ปิดการดึงข้อมูลจาก API จริงไว้
+            const resClaims = await fetch(`${API_BASE_URL}/api/claims`);
+            const dataClaims = await resClaims.json();
+            if (Array.isArray(dataClaims)) setClaims(dataClaims);
+            
+            const resExpenses = await fetch(`${API_BASE_URL}/api/expenses`);
+            const dataExpenses = await resExpenses.json();
+            if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
+            */
+            
         } catch (e) {
-            console.error(e);
+            console.error("Error Loading Mock Data:", e);
+            setLoading(false);
         }
     };
-    fetchLastUpdated();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -570,6 +600,7 @@ export default function App() {
       try {
         setCurrentUser(JSON.parse(savedUser)); 
       } catch (e) {
+        console.error("ล้างข้อมูลที่พังทิ้ง");
         localStorage.removeItem('claimcup_user');
       }
     }
@@ -580,55 +611,73 @@ export default function App() {
     return hos ? hos.name : 'All Cup';
   }, [filterUnit]);
 
-  // ✅ ดึงข้อมูลทั้งรายรับ (claims) และรายจ่าย (expenses) ผ่าน API พร้อมกัน
-useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
         try {
-            // 1. ดึงข้อมูลรายรับ (Claims)
-            try {
-                const resClaims = await fetch(`${API_BASE_URL}/api/claims`);
-                if (resClaims.ok) {
-                    const dataClaims = await resClaims.json();
-                    if (Array.isArray(dataClaims)) setClaims(dataClaims);
-                } else {
-                    console.error("API Claims มีปัญหา:", resClaims.status);
-                }
-            } catch (err) {
-                console.error("ดึงข้อมูลรายรับไม่สำเร็จ:", err);
-            }
-
-            // 2. ดึงข้อมูลรายจ่าย (Expenses)
-            try {
-                const resExpenses = await fetch(`${API_BASE_URL}/api/expenses`);
-                if (resExpenses.ok) {
-                    const dataExpenses = await resExpenses.json();
-                    if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
-                } else {
-                    console.error("API Expenses มีปัญหา:", resExpenses.status);
-                }
-            } catch (err) {
-                console.error("ดึงข้อมูลรายจ่ายไม่สำเร็จ:", err);
-            }
-
+            // ✅ ดึงข้อมูล Claims (รายรับ)
+            const resClaims = await fetch(`${API_BASE_URL}/api/claims`);
+            const dataClaims = await resClaims.json();
+            if (Array.isArray(dataClaims)) setClaims(dataClaims);
+            
+            // ✅ ดึงข้อมูล Expenses (รายจ่าย)
+            const resExpenses = await fetch(`${API_BASE_URL}/api/expenses`);
+            const dataExpenses = await resExpenses.json();
+            if (Array.isArray(dataExpenses)) setExpenses(dataExpenses);
+            
             setLoading(false);
         } catch (e) {
-            console.error("เกิดข้อผิดพลาดรวม:", e);
+            console.error("API Error:", e);
             setLoading(false);
         }
     };
     fetchData();
   }, []);
 
-  // คำนวณข้อมูลสำหรับแดชบอร์ดรายรับ
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
       return processData(claims, filterYear, filterUnit);
   }, [claims, filterYear, filterUnit]);
 
-  // ✅ คำนวณข้อมูล Expense 12 เดือน (สำหรับ Modal รายงานฉบับเต็ม)
+  // ✅ คำนวณและจัดกลุ่มข้อมูลค่าใช้จ่ายทั้งหมด (ดึงมาจากตาราง expenses)
+  const fullExpenseData = useMemo(() => {
+    if (filterUnit !== 'all' && filterUnit !== '05954') return [];
+    
+    // กรองตามปีงบประมาณ
+    const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    
+    let totalExpense = 0;
+    const grouped = {};
+
+    filtered.forEach(item => {
+        // อ้างอิงชื่อ category_name ที่ Join มาจาก Backend ถ้าไม่มีให้แสดง 'อื่นๆ'
+        const catName = item.category_name || item.category || 'อื่นๆ'; 
+        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
+        
+        totalExpense += amt;
+        if (!grouped[catName]) grouped[catName] = 0;
+        grouped[catName] += amt;
+    });
+
+    const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]', 'bg-[#10b981]', 'bg-[#8b5cf6]', 'bg-[#0ea5e9]'];
+
+    return Object.entries(grouped)
+        .map(([label, value], idx) => ({
+            label,
+            value: fmt(value),
+            percent: totalExpense > 0 ? Math.round((value / totalExpense) * 100) : 0,
+            color: colorPalette[idx % colorPalette.length],
+            rawAmount: value
+        }))
+        .sort((a, b) => b.rawAmount - a.rawAmount); // คืนค่าทั้งหมด เรียงจากมากไปน้อย
+  }, [expenses, filterYear, filterUnit]);
+
+  // ✅ ตัดมาแค่ Top 3 สำหรับโชว์บน Dashboard
+  const top3ExpenseData = fullExpenseData.slice(0, 3);
+// ✅ คำนวณข้อมูลสำหรับรายงานฉบับเต็ม (แยก 12 เดือน)
   const expenseReportData = useMemo(() => {
     if (filterUnit !== 'all' && filterUnit !== '05954') return { rows: [], grandTotal: 0, monthlyTotals: Array(12).fill(0) };
     
     const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    
     const grouped = {};
     let grandTotal = 0;
     const monthlyTotals = Array(12).fill(0);
@@ -636,7 +685,8 @@ useEffect(() => {
     filtered.forEach(item => {
         const catName = item.category_name || item.category || 'อื่นๆ'; 
         const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
-        const mIdx = monthMapping[String(item.month)] ?? -1;
+        const mStr = String(item.month);
+        const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
         
         if (!grouped[catName]) {
             grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
@@ -654,18 +704,6 @@ useEffect(() => {
     const rows = Object.values(grouped).sort((a, b) => b.total - a.total);
     return { rows, grandTotal, monthlyTotals };
   }, [expenses, filterYear, filterUnit]);
-
-  // ✅ ตัดมาแค่ 3 อันดับแรก สำหรับหน้า Dashboard รายจ่าย
-  const top3ExpenseData = useMemo(() => {
-    const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]', 'bg-[#10b981]', 'bg-[#8b5cf6]', 'bg-[#0ea5e9]'];
-    return expenseReportData.rows.slice(0, 3).map((item, idx) => ({
-        label: item.label,
-        value: fmt(item.total),
-        percent: expenseReportData.grandTotal > 0 ? Math.round((item.total / expenseReportData.grandTotal) * 100) : 0,
-        color: colorPalette[idx % colorPalette.length]
-    }));
-  }, [expenseReportData]);
-
   const pieData = useMemo(() => {
       const data = platformCards
         .filter(p => p.value > 0)
@@ -686,7 +724,7 @@ useEffect(() => {
           <div className="h-screen flex items-center justify-center bg-[#F4FAF7]">
               <div className="flex flex-col items-center gap-4">
                   <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <p className="text-emerald-800 font-bold animate-pulse">กำลังเชื่อมต่อฐานข้อมูล...</p>
+                  <p className="text-emerald-800 font-bold animate-pulse">กำลังโหลดข้อมูล...</p>
               </div>
           </div>
       );
@@ -753,6 +791,7 @@ useEffect(() => {
               <PlatformDetailView platform={selectedPlatform} onBack={handleBack} claims={claims} filterYear={filterYear} />
             ) : (
               <>
+                {/* --- FILTER SECTION --- */}
                 <section className="space-y-6">
                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
@@ -779,7 +818,9 @@ useEffect(() => {
                           key={hos.id}
                           onClick={() => setFilterUnit(hos.id)}
                           className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${
-                            filterUnit === hos.id ? hos.active : hos.inactive
+                            filterUnit === hos.id 
+                            ? hos.active 
+                            : hos.inactive
                           }`}
                         >
                           {hos.name}
@@ -789,6 +830,7 @@ useEffect(() => {
                   </div>
                 </section>
 
+                {/* --- HERO SUMMARY --- */}
                 <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden group">
                   <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
@@ -804,6 +846,7 @@ useEffect(() => {
                   <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
                 </div>
 
+                {/* --- ANALYTICS & RANKING SECTION --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
                   <div className="lg:col-span-8">
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
@@ -838,12 +881,18 @@ useEffect(() => {
                                       {index + 1}
                                     </div>
                                     <div>
-                                      <h4 className="font-bold text-emerald-950 text-sm group-hover:text-emerald-700 transition-colors">{hospital.name}</h4>
-                                      <p className="text-[11px] text-emerald-600/70 font-bold uppercase">{hospital.cases} Cases</p>
+                                      <h4 className="font-bold text-emerald-950 text-sm group-hover:text-emerald-700 transition-colors">
+                                        {hospital.name}
+                                      </h4>
+                                      <p className="text-[11px] text-emerald-600/70 font-bold uppercase">
+                                        {hospital.cases} Cases
+                                      </p>
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p>
+                                    <p className="font-black text-emerald-800 text-base">
+                                      {fmt(hospital.amount)}
+                                    </p>
                                     <p className="text-[10px] text-slate-400 font-bold">บาท</p>
                                   </div>
                                 </div>
@@ -851,7 +900,7 @@ useEffect(() => {
                           </div>
                       </div>
 
-                      {/* ✅ OPERATING EXPENSE REPORT CARD (Dynamic Data) */}
+                      {/* ✅ OPERATING EXPENSE REPORT CARD */}
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
                           <div className="p-8 pb-4 flex items-center justify-between relative z-10">
                               <div>
@@ -949,7 +998,7 @@ useEffect(() => {
         </div>
       </div>
       
-      {/* ✅ MODAL REPORT ฉบับเต็ม (แยกเดือน 12 เดือน) */}
+  {/* ✅ MODAL REPORT ฉบับเต็ม (แบบแยกเดือน) */}
       {showExpenseReport && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-[1200px] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-4 border-white/20">
@@ -1032,7 +1081,7 @@ useEffect(() => {
                     </table>
                 </div>
 
-                {/* Footer Buttons */}
+                {/* Footer Buttons & Signature Area */}
                 <div className="px-8 py-5 border-t border-emerald-100/50 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hidden sm:block">
                         พิมพ์เอกสารเมื่อ: {new Date().toLocaleString('th-TH')}
@@ -1056,7 +1105,6 @@ useEffect(() => {
             </div>
         </div>
       )}
-
-    </div>
+      </div>
   );
-}
+}   
