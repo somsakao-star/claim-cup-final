@@ -21,6 +21,13 @@ const hospitals = [
 
 const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
 const monthMapping = { "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11, "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5, "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11 };
+
+// ✅ map รหัสหมวดหมู่ → ชื่อจริงจากตาราง paymentcategory (fallback กรณี JOIN ไม่สำเร็จ)
+const EXPENSE_CATEGORY_NAMES = {
+  "7":  "ค่าสาธารณูปโภค",
+  "8":  "ค่าจ้างลูกจ้างชั่วคราว",
+  "9":  "ค่าตอบแทนการปฏิบัติงานนอกเวลาราชการ",
+};
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
 function processData(claims, yearFilter, unitFilter) {
@@ -487,11 +494,24 @@ export default function App() {
             // 2. ดึงข้อมูลรายจ่าย (Expenses)
             try {
                 const resE = await fetch(`${API_BASE_URL}/api/expenses`);
-                if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
-                    const dataE = await resE.json();
-                    if (Array.isArray(dataE)) setExpenses(dataE);
+                // ✅ แก้ไข: ไม่เช็ค content-type เพราะบาง server ไม่ส่ง header นั้น
+                const rawText = await resE.text();
+                try {
+                    const dataE = JSON.parse(rawText);
+                    if (Array.isArray(dataE)) {
+                        console.log(`✅ โหลด expenses สำเร็จ: ${dataE.length} รายการ`);
+                        if (dataE.length > 0) {
+                            // ✅ Debug: แสดง field names ของ record แรก เพื่อตรวจว่า column ชื่ออะไร
+                            console.log('📋 ตัวอย่าง expense record:', JSON.stringify(dataE[0]));
+                        }
+                        setExpenses(dataE);
+                    } else {
+                        console.error('❌ API /expenses ไม่ได้ส่ง Array กลับมา:', dataE);
+                    }
+                } catch (parseErr) {
+                    console.error('❌ Parse JSON ล้มเหลว, raw response:', rawText.substring(0, 200));
                 }
-            } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
+            } catch (err) { console.error("❌ fetch /expenses ไม่ได้:", err); }
 
             // 3. ดึงวันที่อัปเดต
             try {
@@ -534,7 +554,8 @@ export default function App() {
     const monthlyTotals = Array(12).fill(0);
 
     filtered.forEach(item => {
-        const catName = item.category_name || item.category || 'อื่นๆ';
+        const catKey = String(item.category_name ?? item.category ?? '').trim();
+        const catName = EXPENSE_CATEGORY_NAMES[catKey] || catKey || 'ไม่ระบุ';
         
         // ✅ แก้ไข Bug 3: MySQL DECIMAL คืนเป็น string — ใช้ parsing ที่ครอบคลุมทุกกรณี
         const rawAmt = item.amount;
