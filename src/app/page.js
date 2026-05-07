@@ -6,8 +6,7 @@ import {
   Layers, Leaf, List, Table2, Wallet
 } from 'lucide-react';
 
-const API_BASE_URL = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_API_URL || '' : '';
-
+const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
 const hospitals = [
   { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800', inactive: 'bg-slate-100 text-slate-600' },
