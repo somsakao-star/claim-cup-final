@@ -520,15 +520,32 @@ export default function App() {
   }, [claims, filterYear, filterUnit]);
 
   const expenseReportData = useMemo(() => {
-    if (filterUnit !== 'all' && filterUnit !== '05954') return { rows: [], grandTotal: 0, monthlyTotals: Array(12).fill(0) };
-    const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    // ✅ แก้ไข Bug 1: ลบ restriction filterUnit ออก — Expense Report เป็นข้อมูลระดับ CUP เสมอ
+    // กรองตามปีงบประมาณที่เลือก
+    const filteredByYear = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    
+    // ✅ แก้ไข Bug 2: ถ้ากรองปีแล้วไม่มีข้อมูลเลย (เช่น เลือก 2569 แต่ข้อมูลอยู่ที่ 2568)
+    // ให้ fallback ไปดึงข้อมูลทุกปีแทน พร้อมแจ้งเตือน
+    const filtered = filteredByYear.length > 0 ? filteredByYear : expenses;
+    const isYearFallback = filteredByYear.length === 0 && expenses.length > 0;
+
     const grouped = {};
     let grandTotal = 0;
     const monthlyTotals = Array(12).fill(0);
+
     filtered.forEach(item => {
-        const catName = item.category_name || item.category || 'อื่นๆ'; 
-        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
-        const mIdx = monthMapping[String(item.month)] ?? -1;
+        const catName = item.category_name || item.category || 'อื่นๆ';
+        
+        // ✅ แก้ไข Bug 3: MySQL DECIMAL คืนเป็น string — ใช้ parsing ที่ครอบคลุมทุกกรณี
+        const rawAmt = item.amount;
+        const amt = (rawAmt === null || rawAmt === undefined) ? 0 :
+            (typeof rawAmt === 'number' ? rawAmt :
+             parseFloat(String(rawAmt).replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0);
+
+        // ✅ แก้ไข: รองรับ month เป็น integer (10), string ("10"), หรือชื่อไทย ("ตุลาคม")
+        const mKey = String(item.month ?? '').trim();
+        const mIdx = monthMapping[mKey] !== undefined ? monthMapping[mKey] : -1;
+
         if (!grouped[catName]) grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
         grouped[catName].total += amt;
         grandTotal += amt;
@@ -537,8 +554,13 @@ export default function App() {
             monthlyTotals[mIdx] += amt;
         }
     });
-    return { rows: Object.values(grouped).sort((a, b) => b.total - a.total), grandTotal, monthlyTotals };
-  }, [expenses, filterYear, filterUnit]);
+    return {
+      rows: Object.values(grouped).sort((a, b) => b.total - a.total),
+      grandTotal,
+      monthlyTotals,
+      isYearFallback, // ✅ flag สำหรับแสดงป้ายเตือนใน UI
+    };
+  }, [expenses, filterYear]);
 
   const top3ExpenseData = useMemo(() => {
     const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]'];
@@ -662,6 +684,12 @@ export default function App() {
                           <div className="p-8 pb-4 flex items-center justify-between relative z-10">
                               <div>
                                   <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
+                                  {/* ✅ ป้ายเตือนเมื่อ fallback ปี */}
+                                  {expenseReportData.isYearFallback && (
+                                    <p className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 inline-block">
+                                      ⚠️ ไม่พบข้อมูลปี {filterYear} — แสดงข้อมูลทุกปีแทน
+                                    </p>
+                                  )}
                               </div>
                               <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"><ArrowUpRight size={20} /></button>
                           </div>
@@ -731,6 +759,12 @@ export default function App() {
                         <div className="p-3 bg-emerald-600 text-white rounded-2xl"><List size={24} /></div>
                         <div>
                             <h3 className="font-black text-emerald-950 text-xl uppercase">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
+                            {/* ✅ แสดงปีงบ + แจ้งเตือนถ้า fallback */}
+                            <p className="text-xs text-emerald-700/60 font-bold mt-1">
+                              {expenseReportData.isYearFallback
+                                ? `⚠️ ไม่พบข้อมูลปี ${filterYear} — แสดงข้อมูลทุกปีงบประมาณ`
+                                : `ปีงบประมาณ ${filterYear}`}
+                            </p>
                         </div>
                     </div>
                     <button onClick={() => setShowExpenseReport(false)} className="text-slate-400 hover:text-rose-500 text-2xl font-black">&times;</button>
