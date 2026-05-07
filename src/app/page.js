@@ -8,31 +8,19 @@ import {
 
 const API_BASE_URL = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_API_URL || '' : '';
 
-const PLATFORM_COLORS = {
-  eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b",
-  thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e",
-};
-
+const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
 const hospitals = [
-  { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800 ring-offset-2', inactive: 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200' },
-  { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', active: 'bg-blue-600 text-white shadow-blue-300 ring-2 ring-blue-600 ring-offset-2', inactive: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-100' },
-  { id: '05962', name: 'รพ.สต.บ้านต้นเปา', active: 'bg-emerald-600 text-white shadow-emerald-300 ring-2 ring-emerald-600 ring-offset-2', inactive: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100' },
-  { id: '05957', name: 'รพ.สต.บ้านกอสะเรียม', active: 'bg-amber-500 text-white shadow-amber-300 ring-2 ring-amber-500 ring-offset-2', inactive: 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-100' },
-  { id: 's1', spacer: true },
-  { id: 's2', spacer: true },
-  { id: '05956', name: 'รพ.สต.บ้านป่าตาล', active: 'bg-rose-600 text-white shadow-rose-300 ring-2 ring-rose-600 ring-offset-2', inactive: 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-100' },
-  { id: '05959', name: 'รพ.สต.บ้านแม่ผาแหน', active: 'bg-indigo-600 text-white shadow-indigo-300 ring-2 ring-indigo-600 ring-offset-2', inactive: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100' },
+  { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800', inactive: 'bg-slate-100 text-slate-600' },
+  { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', active: 'bg-blue-600 text-white shadow-blue-300 ring-2 ring-blue-600', inactive: 'bg-blue-50 text-blue-700' },
+  { id: '05962', name: 'รพ.สต.บ้านต้นเปา', active: 'bg-emerald-600 text-white shadow-emerald-300 ring-2 ring-emerald-600', inactive: 'bg-emerald-50 text-emerald-700' },
+  { id: '05957', name: 'รพ.สต.บ้านกอสะเรียม', active: 'bg-amber-500 text-white shadow-amber-300 ring-2 ring-amber-500', inactive: 'bg-amber-50 text-amber-700' },
+  { id: 's1', spacer: true }, { id: 's2', spacer: true },
+  { id: '05956', name: 'รพ.สต.บ้านป่าตาล', active: 'bg-rose-600 text-white shadow-rose-300 ring-2 ring-rose-600', inactive: 'bg-rose-50 text-rose-700' },
+  { id: '05959', name: 'รพ.สต.บ้านแม่ผาแหน', active: 'bg-indigo-600 text-white shadow-indigo-300 ring-2 ring-indigo-600', inactive: 'bg-indigo-50 text-indigo-700' },
 ];
 
 const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
-
-const monthMapping = {
-  "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, 
-  "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11,
-  "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5,
-  "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11
-};
-
+const monthMapping = { "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11, "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5, "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11 };
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
 function processData(claims, yearFilter, unitFilter) {
@@ -99,7 +87,6 @@ function processData(claims, yearFilter, unitFilter) {
   });
 
   const rankingList = Object.entries(rankingMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5);
-
   const monthlyTotal68 = Array(12).fill(0);
   const monthlyTotal69 = Array(12).fill(0);
   claims.forEach(c => {
@@ -117,6 +104,10 @@ function processData(claims, yearFilter, unitFilter) {
 
   return { totalAmount, platformCards, monthlyTotal, yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, rankingList, monthlyByPlatform };
 }
+
+// ==========================================
+// ✅ นำคอมโพเนนต์ที่หายไปกลับมา (LiveClock, SimplePieChart, YoYTrendChart, PlatformComparisonChart, PlatformDetailView, LoginScreen)
+// ==========================================
 
 const LiveClock = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -207,13 +198,6 @@ const YoYTrendChart = ({ data }) => {
               <path d={path69} fill="none" stroke="#059669" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
               <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`} fill="url(#gradGreen)" opacity="0.15" />
               {data.year69.map((val, i) => <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#059669" />)}
-              <defs>
-                <linearGradient id="gradGreen" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {months.map((m, i) => <text key={i} x={chartLeft + (i / 11) * chartWidth} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>)}
             </svg>
           </div>
         </div>
@@ -273,6 +257,129 @@ const PlatformComparisonChart = ({ data }) => {
             })}
             {months.map((m, i) => <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>)}
           </svg>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ✅ เพิ่มคอมโพเนนต์ PlatformDetailView กลับมาเพื่อให้กดดูรายละเอียดได้
+const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
+  const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
+  const subItems = platform.items || [];
+  
+  const topPlatformUnits = useMemo(() => {
+    if (platform.key === 'physical') return [];
+    const map = {};
+    claims.forEach(c => {
+      if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
+        const h = hospitals.find(x => x.id === c.hcode);
+        const hName = h ? h.name : c.hcode;
+        if (hName === "All Cup" || !hName) return;
+        if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
+        map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
+        map[hName].cases += 1;
+      }
+    });
+    return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
+  }, [claims, platform.key, filterYear]);
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-3 bg-white border border-emerald-100 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 text-slate-400 transition-all shadow-sm group">
+            <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+          </button>
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
+                <platform.icon size={24} style={{ color: platformColor }} />
+              </div>
+              <h2 className="text-3xl font-black text-emerald-950 uppercase tracking-tight">{platform.title} Details</h2>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border border-emerald-100 shadow-sm">
+           <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</p>
+              <p className="text-2xl font-black tracking-tight leading-none" style={{ color: platformColor }}>{fmt(platform.value)} <span className="text-sm text-slate-400">บาท</span></p>
+           </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+           <List size={20} className="text-slate-400" />
+           <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">Service Overview</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {subItems.map((item, idx) => (
+            <div key={idx} className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full group">
+               <div className="mb-3">
+                  <p className="text-xs font-bold text-slate-500 group-hover:text-emerald-700 transition-colors line-clamp-2">{item.name}</p>
+               </div>
+               <div className="flex items-end justify-between">
+                  <div className="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                    <Activity size={16} />
+                  </div>
+                  <p className="text-lg font-black text-emerald-950">{fmt(item.value)} <span className="text-[10px] text-slate-400 font-bold">บาท</span></p>
+               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white border border-emerald-100 rounded-[3rem] p-8 shadow-sm flex flex-col">
+           <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-5">
+                <div className="p-4 bg-emerald-100 text-emerald-800 rounded-2xl shadow-sm"><Table2 size={32} /></div>
+                <div><h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Monthly Breakdown</h3><p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Detailed Monthly Disbursement</p></div>
+              </div>
+           </div>
+           <div className="overflow-x-auto custom-scrollbar">
+             <table className="w-full min-w-[900px] border-separate border-spacing-y-2">
+               <thead>
+                 <tr>
+                   <th className="text-left py-4 px-6 text-xs font-black text-slate-500 uppercase tracking-wider bg-slate-50/50 rounded-l-2xl sticky left-0 z-10">รายการบริการ</th>
+                   {months.map((m, i) => <th key={i} className="text-right py-4 px-3 text-[11px] font-black uppercase bg-slate-50/50" style={{ color: platformColor }}>{m}</th>)}
+                   <th className="text-right py-4 px-6 text-xs font-black text-slate-700 uppercase bg-emerald-50/50 rounded-r-2xl">Total</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {subItems.map((item, idx) => (
+                   <tr key={idx} className="group hover:scale-[1.005] transition-transform">
+                     <td className="py-5 px-6 bg-white border-y border-l border-slate-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
+                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-500 group-hover:text-emerald-900 group-hover:font-bold transition-colors">{fmt(amount)}</td>)}
+                     <td className="py-5 px-6 bg-emerald-50/30 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-emerald-950 shadow-sm">{fmt(item.value)}</td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+        </div>
+
+        <div className="lg:col-span-1 bg-white border border-emerald-100 rounded-[3.5rem] p-10 shadow-sm flex flex-col">
+           <h3 className="font-black text-xl text-emerald-950 mb-8 flex items-center gap-3">
+              <Building2 size={24} className="text-slate-400" />
+              Top Units Share
+           </h3>
+           <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-2">
+              {topPlatformUnits.length > 0 ? topPlatformUnits.map((hos, idx) => (
+                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-emerald-200 transition-all hover:translate-x-1 gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-sm shrink-0">{idx + 1}</div>
+                    <div className="flex-1 min-w-0">
+                       <p className="text-sm font-bold text-slate-700 truncate">{hos.name}</p>
+                       <p className="text-[11px] font-bold text-slate-400 mt-1">{hos.cases} Cases</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                       <p className="text-base font-black text-emerald-900">{fmt(hos.amount)}</p>
+                       <p className="text-[10px] font-bold text-slate-400">บาท</p>
+                    </div>
+                 </div>
+              )) : <p className="text-sm text-slate-400 text-center mt-10">ยังไม่มีข้อมูล</p>}
+           </div>
         </div>
       </div>
     </div>
@@ -365,27 +472,26 @@ export default function App() {
     }
   }, []);
 
-  // ✅ พระเอกของงานนี้: ระบบดึงข้อมูลแบบแยกส่วน พังอันไหน อีกอันยังรอด!
   useEffect(() => {
     const fetchAllData = async () => {
         try {
-            // 1. ลองดึงข้อมูลรายรับ (Claims)
+            // 1. ดึงข้อมูลรายรับ (Claims)
             try {
                 const resC = await fetch(`${API_BASE_URL}/api/claims`);
                 if (resC.ok && resC.headers.get("content-type")?.includes("application/json")) {
                     const dataC = await resC.json();
                     if (Array.isArray(dataC)) setClaims(dataC);
                 }
-            } catch (err) { console.error("ไม่สามารถดึง Claims ได้:", err); }
+            } catch (err) { console.error("ดึง Claims ไม่ได้:", err); }
 
-            // 2. ลองดึงข้อมูลรายจ่าย (Expenses)
+            // 2. ดึงข้อมูลรายจ่าย (Expenses)
             try {
                 const resE = await fetch(`${API_BASE_URL}/api/expenses`);
                 if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
                     const dataE = await resE.json();
                     if (Array.isArray(dataE)) setExpenses(dataE);
                 }
-            } catch (err) { console.error("ไม่สามารถดึง Expenses ได้:", err); }
+            } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
 
             // 3. ดึงวันที่อัปเดต
             try {
@@ -479,127 +585,139 @@ export default function App() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
             
-            <section className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                  <h3 className="text-2xl md:text-5xl font-black text-emerald-950 tracking-tight flex items-center gap-4"><Leaf className="text-emerald-800" size={40} />Health Claim Analytics</h3>
-                  <div className="flex items-center gap-2 mt-2">
-                    <p className="text-[10px] md:text-xs text-emerald-800/40 font-bold uppercase tracking-[0.2em]">CUP Sankhong Dashboard</p>
-                    <span className="w-1 h-1 rounded-full bg-emerald-200"></span>
-                    <p className="text-[10px] md:text-xs text-emerald-900 font-black uppercase tracking-[0.2em] bg-emerald-100 px-2 py-0.5 rounded-md">{filterYear}</p>
+            {/* ✅ แสดงหน้า Platform Detail ถ้ายูสเซอร์คลิกไพ่ */}
+            {selectedPlatform ? (
+              <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} />
+            ) : (
+              <>
+                <section className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                      <h3 className="text-2xl md:text-5xl font-black text-emerald-950 tracking-tight flex items-center gap-4"><Leaf className="text-emerald-800" size={40} />Health Claim Analytics</h3>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-[10px] md:text-xs text-emerald-800/40 font-bold uppercase tracking-[0.2em]">CUP Sankhong Dashboard</p>
+                        <span className="w-1 h-1 rounded-full bg-emerald-200"></span>
+                        <p className="text-[10px] md:text-xs text-emerald-900 font-black uppercase tracking-[0.2em] bg-emerald-100 px-2 py-0.5 rounded-md">{filterYear}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-emerald-900/5 p-1.5 rounded-2xl border border-emerald-900/10">
+                      {['2568', '2569'].map(year => (
+                        <button key={year} onClick={() => setFilterYear(year)} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${filterYear === year ? 'bg-emerald-900 text-white shadow-lg' : 'text-emerald-900/60 hover:bg-emerald-100'}`}>{year}</button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 bg-emerald-900/5 p-1.5 rounded-2xl border border-emerald-900/10">
-                  {['2568', '2569'].map(year => (
-                    <button key={year} onClick={() => setFilterYear(year)} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${filterYear === year ? 'bg-emerald-900 text-white shadow-lg' : 'text-emerald-900/60 hover:bg-emerald-100'}`}>{year}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
-                {hospitals.map(hos => hos.spacer ? <div key={hos.id} className="hidden md:block"></div> : (
-                  <button key={hos.id} onClick={() => setFilterUnit(hos.id)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${filterUnit === hos.id ? hos.active : hos.inactive}`}>{hos.name}</button>
-                ))}
-              </div>
-            </section>
-
-            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden">
-              <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
-                <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
-                <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
-                <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
-              </div>
-              <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-              <div className="lg:col-span-8">
-                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
-                      <div className="flex items-center gap-6 mb-14">
-                          <div className="p-5 bg-emerald-900 rounded-[1.5rem] text-white shadow-lg shadow-emerald-900/20"><Activity size={36} /></div>
-                          <div className="flex flex-col">
-                              <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
-                              <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2"><Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}</p>
-                          </div>
-                      </div>
-                      <div className="flex flex-col flex-1 min-h-[400px] justify-between">
-                          <YoYTrendChart data={yoyData} />
-                          <PlatformComparisonChart data={monthlyByPlatform} />
-                      </div>
+                  <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {hospitals.map(hos => hos.spacer ? <div key={hos.id} className="hidden md:block"></div> : (
+                      <button key={hos.id} onClick={() => setFilterUnit(hos.id)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${filterUnit === hos.id ? hos.active : hos.inactive}`}>{hos.name}</button>
+                    ))}
                   </div>
-              </div>
-              
-              <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
-                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
-                      <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
-                          <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
-                      </div>
-                      <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                          {rankingList.map((hospital, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm">{index + 1}</div>
-                                <div><h4 className="font-bold text-emerald-950 text-sm">{hospital.name}</h4></div>
+                </section>
+
+                <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden">
+                  <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
+                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
+                    <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
+                    <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
+                  </div>
+                  <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+                  <div className="lg:col-span-8">
+                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
+                          <div className="flex items-center gap-6 mb-14">
+                              <div className="p-5 bg-emerald-900 rounded-[1.5rem] text-white shadow-lg shadow-emerald-900/20"><Activity size={36} /></div>
+                              <div className="flex flex-col">
+                                  <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
+                                  <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2"><Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}</p>
                               </div>
-                              <div className="text-right"><p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p></div>
-                            </div>
-                          ))}
-                      </div>
-                  </div>
-
-                  {/* ✅ ส่วนแสดงรายจ่ายที่ปลอดภัยแบบ 100% */}
-                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
-                      <div className="p-8 pb-4 flex items-center justify-between relative z-10">
-                          <div>
-                              <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
                           </div>
-                          <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"><ArrowUpRight size={20} /></button>
-                      </div>
-                      
-                      <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
-                         <div className="space-y-5 flex-1">
-                            {top3ExpenseData.length > 0 ? (
-                                top3ExpenseData.map((item, idx) => (
-                                    <div key={idx} className="group/item">
-                                        <div className="flex justify-between items-end mb-2">
-                                            <span className="text-xs font-bold text-slate-600">{item.label}</span>
-                                            <span className="text-sm font-black text-emerald-950">{item.value} ฿</span>
-                                        </div>
-                                        <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                            <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.percent}%` }}></div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full py-6 opacity-50">
-                                    <Wallet size={36} className="mb-2 text-slate-300" />
-                                    <p className="text-sm font-bold text-slate-400">ยังไม่มีข้อมูลรายจ่าย</p>
-                                </div>
-                            )}
-                         </div>
-                         {top3ExpenseData.length > 0 && (
-                            <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-2xl text-sm font-bold transition-all"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
-                         )}
+                          <div className="flex flex-col flex-1 min-h-[400px] justify-between">
+                              <YoYTrendChart data={yoyData} />
+                              <PlatformComparisonChart data={monthlyByPlatform} />
+                          </div>
                       </div>
                   </div>
-              </div>
-            </div>
-
-            <section className="py-6 pb-20">
-              <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
-                  {platformCards.map((card) => {
-                    const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
-                    return (
-                      <div key={card.key} className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center`} style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}>
-                        <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
-                        <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
-                        <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
+                  
+                  <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
+                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
+                          <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
+                              <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
+                          </div>
+                          <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                              {rankingList.map((hospital, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm">{index + 1}</div>
+                                    <div><h4 className="font-bold text-emerald-950 text-sm">{hospital.name}</h4></div>
+                                  </div>
+                                  <div className="text-right"><p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p></div>
+                                </div>
+                              ))}
+                          </div>
                       </div>
-                    );
-                  })}
+
+                      {/* ส่วนแสดงรายจ่ายที่ปลอดภัยแบบ 100% */}
+                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
+                          <div className="p-8 pb-4 flex items-center justify-between relative z-10">
+                              <div>
+                                  <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
+                              </div>
+                              <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"><ArrowUpRight size={20} /></button>
+                          </div>
+                          
+                          <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
+                             <div className="space-y-5 flex-1">
+                                {top3ExpenseData.length > 0 ? (
+                                    top3ExpenseData.map((item, idx) => (
+                                        <div key={idx} className="group/item">
+                                            <div className="flex justify-between items-end mb-2">
+                                                <span className="text-xs font-bold text-slate-600 line-clamp-1">{item.label}</span>
+                                                <span className="text-sm font-black text-emerald-950 whitespace-nowrap ml-2">{item.value} ฿</span>
+                                            </div>
+                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                                <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.percent}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full py-6 opacity-50">
+                                        <Wallet size={36} className="mb-2 text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-400">ยังไม่มีข้อมูลรายจ่าย</p>
+                                    </div>
+                                )}
+                             </div>
+                             {top3ExpenseData.length > 0 && (
+                                <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-2xl text-sm font-bold transition-all"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
+                             )}
+                          </div>
+                      </div>
+                  </div>
                 </div>
-              </div>
-            </section>
+
+                <section className="py-6 pb-20">
+                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
+                      {platformCards.map((card) => {
+                        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
+                        return (
+                          <div 
+                            key={card.key} 
+                            onClick={() => setSelectedPlatform(card)} // ✅ ใส่ปุ่มคลิกกลับมาแล้ว
+                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95`} 
+                            style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
+                          >
+                            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
+                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
+                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
           </div>
         </div>
       </div>
