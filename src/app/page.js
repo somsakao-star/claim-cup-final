@@ -9,7 +9,9 @@ import {
 const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 
 const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
-const hospitals = [
+
+// 🌟 ปุ่มกดหน้าหลัก: เก็บไว้เฉพาะหน่วยบริการหลัก ไม่ต้องใส่นักกายภาพตรงนี้แล้ว
+const HOSPITAL_BUTTONS = [
   { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800', inactive: 'bg-slate-100 text-slate-600' },
   { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', active: 'bg-blue-600 text-white shadow-blue-300 ring-2 ring-blue-600', inactive: 'bg-blue-50 text-blue-700' },
   { id: '05962', name: 'รพ.สต.บ้านต้นเปา', active: 'bg-emerald-600 text-white shadow-emerald-300 ring-2 ring-emerald-600', inactive: 'bg-emerald-50 text-emerald-700' },
@@ -40,7 +42,8 @@ const EXPENSE_CATEGORY_NAMES = {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
-function processData(claims, yearFilter, unitFilter) {
+// ✅ ฟังก์ชันคำนวณข้อมูลหลัก: รับพจนานุกรมชื่อมาจากฐานข้อมูล (hospitalMap)
+function processData(claims, yearFilter, unitFilter, hospitalMap) {
   const filtered = claims.filter(c => {
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
     const dataUnit = c.hcode || "";
@@ -93,10 +96,13 @@ function processData(claims, yearFilter, unitFilter) {
 
   const rankingMap = {};
   claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
+    // ✅ ข้ามกายภาพ ไม่เอามารวมใน Top Units ของหน้าหลัก
     if (c.platform && c.platform.toLowerCase() === 'physical') return;
-    const h = hospitals.find(x => x.id === c.hcode);
-    const hName = h ? h.name : (c.hcode || "Unknown");
-    if (hName === "All Cup") return;
+    
+    // ✅ ดึงชื่อจากฐานข้อมูล (hospitalMap)
+    const hName = hospitalMap[String(c.hcode)] || (c.hcode || "Unknown");
+    if (hName === "All Cup" || !hName) return;
+    
     if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
     let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
     rankingMap[hName].amount += amt;
@@ -276,25 +282,27 @@ const PlatformComparisonChart = ({ data }) => {
   );
 };
 
-const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName }) => {
+const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName, hospitalMap }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
   
   const topPlatformUnits = useMemo(() => {
-    if (platform.key === 'physical') return [];
+    // ✅ ในหน้ารายละเอียด อนุญาตให้กายภาพดึงรายชื่อมาโชว์ในตาราง Top Units Share ได้
     const map = {};
     claims.forEach(c => {
       if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
-        const h = hospitals.find(x => x.id === c.hcode);
-        const hName = h ? h.name : c.hcode;
+        
+        // ✅ ดึงชื่อจากฐานข้อมูลตรงๆ ถ้ารหัส 54 ก็จะแปลเป็น พัทธนันท์ อัตโนมัติ
+        const hName = hospitalMap[String(c.hcode)] || c.hcode;
         if (hName === "All Cup" || !hName) return;
+        
         if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
         map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
         map[hName].cases += 1;
       }
     });
     return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
-  }, [claims, platform.key, filterYear]);
+  }, [claims, platform.key, filterYear, hospitalMap]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -340,7 +348,6 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
           {subItems.map((item, idx) => (
             <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 border-b-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col justify-between h-full group" style={{ borderBottomColor: platformColor }}>
                <div className="mb-4">
-                  {/* เอาคำสั่งจำกัดบรรทัดออก เพื่อให้แสดงชื่อยาวๆ ได้เต็มที่ */}
                   <p className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{item.name}</p>
                </div>
                <div className="flex items-end justify-between mt-2">
@@ -492,6 +499,9 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState('');
   const [showExpenseReport, setShowExpenseReport] = useState(false);
 
+  // ✅ 1. เพิ่ม State เพื่อเก็บพจนานุกรมชื่อหน่วยบริการที่ดึงมาจาก Database
+  const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
+
   useEffect(() => {
     const savedUser = localStorage.getItem('claimcup_user');
     if (savedUser) {
@@ -502,7 +512,7 @@ export default function App() {
   useEffect(() => {
     const fetchAllData = async () => {
         try {
-            // 1. ดึงข้อมูลรายรับ (Claims)
+            // ดึงข้อมูลรายรับ (Claims)
             try {
                 const resC = await fetch(`${API_BASE_URL}/api/claims`);
                 if (resC.ok && resC.headers.get("content-type")?.includes("application/json")) {
@@ -511,7 +521,7 @@ export default function App() {
                 }
             } catch (err) { console.error("ดึง Claims ไม่ได้:", err); }
 
-            // 2. ดึงข้อมูลรายจ่าย (Expenses)
+            // ดึงข้อมูลรายจ่าย (Expenses)
             try {
                 const resE = await fetch(`${API_BASE_URL}/api/expenses`);
                 if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
@@ -520,7 +530,20 @@ export default function App() {
                 }
             } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
 
-            // 3. ดึงวันที่อัปเดต
+            // ✅ 2. เพิ่มการดึงข้อมูลจากตาราง Hospitals มาแปลงเป็นพจนานุกรม { '05954': 'รพ.สต.บ้านสันโค้ง', '54': 'พัทธนันท์' }
+            try {
+                const resH = await fetch(`${API_BASE_URL}/api/hospitals`);
+                if (resH.ok) {
+                    const dataH = await resH.json();
+                    const hMap = { 'all': 'All Cup' };
+                    dataH.forEach(h => {
+                        hMap[String(h.hcode)] = h.name;
+                    });
+                    setHospitalMap(hMap);
+                }
+            } catch (err) { console.error("ดึง Hospitals ไม่ได้", err); }
+
+            // ดึงวันที่อัปเดต
             try {
                 const resU = await fetch(`${API_BASE_URL}/api/last-updated`);
                 if (resU.ok) {
@@ -540,11 +563,13 @@ export default function App() {
     fetchAllData();
   }, []);
 
-  const selectedHospitalName = useMemo(() => hospitals.find(h => h.id === filterUnit)?.name || 'All Cup', [filterUnit]);
+  // ✅ เปลี่ยนมาใช้ชื่อที่อ่านมาจาก Database แทน
+  const selectedHospitalName = useMemo(() => hospitalMap[filterUnit] || 'All Cup', [filterUnit, hospitalMap]);
 
+  // ✅ ส่ง hospitalMap เข้าไปใน processData ด้วย
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
-      return processData(claims, filterYear, filterUnit);
-  }, [claims, filterYear, filterUnit]);
+      return processData(claims, filterYear, filterUnit, hospitalMap);
+  }, [claims, filterYear, filterUnit, hospitalMap]);
 
   const expenseReportData = useMemo(() => {
     const filteredByYear = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
@@ -628,9 +653,9 @@ export default function App() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
             
-            {/* ✅ ส่งชื่อ selectedHospitalName เข้าไปให้ Platform Detail */}
+            {/* ✅ ส่ง hospitalMap เข้าไปใน Platform Detail ด้วย */}
             {selectedPlatform ? (
-              <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} />
+              <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} hospitalMap={hospitalMap} />
             ) : (
               <>
                 <section className="space-y-6">
@@ -650,7 +675,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {hospitals.map(hos => hos.spacer ? <div key={hos.id} className="hidden md:block"></div> : (
+                    {HOSPITAL_BUTTONS.map(hos => hos.spacer ? <div key={hos.id} className="hidden md:block"></div> : (
                       <button key={hos.id} onClick={() => setFilterUnit(hos.id)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${filterUnit === hos.id ? hos.active : hos.inactive}`}>{hos.name}</button>
                     ))}
                   </div>
@@ -670,7 +695,6 @@ export default function App() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
                   <div className="lg:col-span-8">
-                      {/* 🌟 หน้าหลัก: เพิ่มขอบสีเขียวอ่อน (border-2 border-emerald-200) และเงา */}
                       <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-10 md:p-14 h-full flex flex-col shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
                           <div className="flex items-center gap-6 mb-14">
                               <div className="p-5 bg-gradient-to-br from-emerald-800 to-emerald-950 rounded-[1.5rem] text-white shadow-[0_10px_20px_rgba(5,150,105,0.3)]"><Activity size={36} /></div>
@@ -687,7 +711,6 @@ export default function App() {
                   </div>
                   
                   <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
-                      {/* 🌟 กล่อง Top Units: ขอบสีเขียวอ่อน */}
                       <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] flex flex-col flex-1 min-h-[350px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
                           <div className="p-8 border-b border-emerald-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 to-transparent">
                               <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
@@ -705,7 +728,6 @@ export default function App() {
                           </div>
                       </div>
 
-                      {/* 🌟 กล่อง Expense Report: ขอบสีเขียวอ่อน */}
                       <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] flex flex-col overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500 relative group">
                           <div className="p-8 pb-4 flex items-center justify-between relative z-10 bg-gradient-to-r from-emerald-50/50 to-transparent border-b border-emerald-100">
                               <div>
@@ -724,7 +746,6 @@ export default function App() {
                                 {top3ExpenseData.length > 0 ? (
                                     top3ExpenseData.map((item, idx) => (
                                         <div key={idx} className="group/item">
-                                            {/* เอาคำสั่งตัดคำ (line-clamp-1) ออก เพื่อให้ชื่อแสดงครบถ้วน */}
                                             <div className="flex justify-between items-end mb-2 gap-2">
                                                 <span className="text-xs font-bold text-slate-600" title={item.label}>{item.label}</span>
                                                 <span className="text-sm font-black text-emerald-950 whitespace-nowrap">{item.value} ฿</span>
@@ -785,12 +806,10 @@ export default function App() {
         </div>
       </div>
       
-      {/* 🌟 MODAL REPORT 12 เดือน: ดีไซน์ใหม่พรีเมียม 100% */}
       {showExpenseReport && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-[1300px] rounded-[3rem] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
                 
-                {/* Header สีเขียวเข้มพรีเมียม */}
                 <div className="px-10 py-8 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 flex justify-between items-center relative overflow-hidden">
                     <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform translate-x-10 -translate-y-10"><Wallet size={200} /></div>
                     <div className="flex items-center gap-5 relative z-10">
@@ -821,7 +840,6 @@ export default function App() {
                                       <td className="p-5 py-4 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white group-hover:bg-emerald-50/40 border-r border-emerald-50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.02)] transition-colors">
                                         <div className="flex items-center gap-3">
                                           <span className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[10px] text-emerald-600 font-black group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors shrink-0">{idx + 1}</span>
-                                          {/* เอาคำสั่งจำกัดบรรทัดออก เพื่อให้แสดงชื่อยาวๆ ได้เต็มที่ */}
                                           <span>{item.label}</span>
                                         </div>
                                       </td>
