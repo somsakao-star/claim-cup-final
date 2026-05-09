@@ -276,7 +276,7 @@ const PlatformComparisonChart = ({ data }) => {
   );
 };
 
-// ✅ แปลงโฉม PlatformDetailView ให้ดูหรูหรา มีมิติ และเน้นตัวเลขให้โดดเด่น
+// ✅ อัปเกรด PlatformDetailView ดีไซน์ใหม่ล่าสุด
 const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
@@ -299,14 +299,10 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* 🌟 1. ส่วนหัวใหม่: ย้ายยอดเงินมารวมกับชื่อ จัดเลย์เอาต์ให้ดูอลังการ */}
       <div className="bg-white rounded-[3.5rem] p-8 md:p-12 shadow-sm border border-slate-100 relative overflow-hidden">
-         {/* ลายน้ำพื้นหลัง (ไอคอนใหญ่ๆ จางๆ) */}
          <div className="absolute -right-10 -top-10 opacity-[0.03] transform rotate-12 pointer-events-none">
             <platform.icon size={350} />
          </div>
-
          <div className="relative z-10 flex flex-col gap-8">
             <div className="flex items-center gap-5">
               <button onClick={onBack} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-slate-100 hover:scale-105 text-slate-500 transition-all shadow-sm group">
@@ -322,8 +318,6 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
                 </p>
               </div>
             </div>
-
-            {/* กล่องแสดงยอดเงินรวมแบบใหม่ ใหญ่และชัดเจน */}
             <div className="bg-slate-50/70 p-6 md:p-8 rounded-[2.5rem] border border-slate-100 inline-block w-full md:w-auto shadow-inner">
                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
                  <Wallet size={16} /> Total Disbursement
@@ -338,7 +332,6 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
          </div>
       </div>
 
-      {/* 🌟 2. การ์ดรายละเอียด: เติมแถบสีด้านล่างให้ดูมีมิติ ไม่จืดชืด */}
       <div>
         <div className="flex items-center gap-3 mb-5 px-2">
            <List size={20} className="text-slate-400" />
@@ -554,18 +547,24 @@ export default function App() {
   }, [claims, filterYear, filterUnit]);
 
   const expenseReportData = useMemo(() => {
-    if (filterUnit !== 'all' && filterUnit !== '05954') return { rows: [], grandTotal: 0, monthlyTotals: Array(12).fill(0) };
-    const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    const filteredByYear = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
+    const filtered = filteredByYear.length > 0 ? filteredByYear : expenses;
+    const isYearFallback = filteredByYear.length === 0 && expenses.length > 0;
+
     const grouped = {};
     let grandTotal = 0;
     const monthlyTotals = Array(12).fill(0);
-    
+
     filtered.forEach(item => {
-        const categoryId = String(item.category);
-        const catName = EXPENSE_CATEGORY_NAMES[categoryId] || categoryId || 'อื่นๆ'; 
-        
-        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
-        const mIdx = monthMapping[String(item.month)] ?? -1;
+        const catKey = String(item.category_name ?? item.category ?? '').trim();
+        const catName = EXPENSE_CATEGORY_NAMES[catKey] || catKey || 'ไม่ระบุ';
+        const rawAmt = item.amount;
+        const amt = (rawAmt === null || rawAmt === undefined) ? 0 :
+            (typeof rawAmt === 'number' ? rawAmt :
+             parseFloat(String(rawAmt).replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0);
+
+        const mKey = String(item.month ?? '').trim();
+        const mIdx = monthMapping[mKey] !== undefined ? monthMapping[mKey] : -1;
         
         if (!grouped[catName]) grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
         grouped[catName].total += amt;
@@ -576,8 +575,13 @@ export default function App() {
             monthlyTotals[mIdx] += amt;
         }
     });
-    return { rows: Object.values(grouped).sort((a, b) => b.total - a.total), grandTotal, monthlyTotals };
-  }, [expenses, filterYear, filterUnit]);
+    return {
+      rows: Object.values(grouped).sort((a, b) => b.total - a.total),
+      grandTotal,
+      monthlyTotals,
+      isYearFallback,
+    };
+  }, [expenses, filterYear]);
 
   const top3ExpenseData = useMemo(() => {
     const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]'];
@@ -624,7 +628,6 @@ export default function App() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
             
-            {/* ✅ ส่งชื่อ selectedHospitalName เข้าไปให้ Platform Detail */}
             {selectedPlatform ? (
               <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} />
             ) : (
@@ -656,7 +659,6 @@ export default function App() {
                   <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
                     <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
-                    {/* ✅ เพิ่มชื่อหน่วยบริการตรงยอดเงินรวมเบิกชดเชย */}
                     <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">
                       ยอดเงินรวมเบิกชดเชยประจำปี {filterYear} <br className="hidden md:block" />
                       <span className="text-emerald-400 text-lg md:text-xl">หน่วยบริการ: {selectedHospitalName}</span>
@@ -666,7 +668,6 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
                   <div className="lg:col-span-8">
                       {/* 🌟 อัปเกรด Financial Surveillance: เพิ่มเงาฟุ้งๆ ขอบขาวหนาๆ และเอฟเฟกต์ลอยตัว */}
                       <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] p-10 md:p-14 h-full flex flex-col shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
@@ -726,7 +727,6 @@ export default function App() {
                                                 <span className="text-xs font-bold text-slate-600 line-clamp-1" title={item.label}>{item.label}</span>
                                                 <span className="text-sm font-black text-emerald-950 whitespace-nowrap ml-2">{item.value} ฿</span>
                                             </div>
-                                            {/* เพิ่มเงาในหลอด Progress Bar ให้ดูมีมิติ */}
                                             <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
                                                 <div className={`absolute top-0 left-0 h-full ${item.color} rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]`} style={{ width: `${item.percent}%` }}></div>
                                             </div>
@@ -746,46 +746,45 @@ export default function App() {
                       </div>
                   </div>
                 </div>
-             <section className="py-6 pb-20">
-  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
-    
-    {/* ✅ ข้อความหัวข้อที่หายไป นำกลับมาใส่ให้เหมือนเดิมเป๊ะๆ แล้วครับ! */}
-    <div className="flex items-center gap-5 mb-10">
-      <div className="p-4 bg-emerald-100/50 text-emerald-800 rounded-2xl shadow-sm">
-        <Layers size={32} className="text-emerald-600" />
-      </div>
-      <div>
-        <h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Service Platform Breakdown</h3>
-        <p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Analytical Overview By System</p>
-      </div>
-    </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
-      {platformCards.map((card) => {
-        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
-        return (
-          <div 
-            key={card.key} 
-            onClick={() => setSelectedPlatform(card)} 
-            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95`} 
-            style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
-          >
-            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
-            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
-            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-</section>
+                {/* ✅ หัวข้อที่หายไปกลับมาอย่างสวยงามแล้วครับ */}
+                <section className="py-6 pb-20">
+                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
+                    <div className="flex items-center gap-5 mb-10">
+                      <div className="p-4 bg-emerald-100/50 text-emerald-800 rounded-2xl shadow-sm">
+                        <Layers size={32} className="text-emerald-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Service Platform Breakdown</h3>
+                        <p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Analytical Overview By System</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
+                      {platformCards.map((card) => {
+                        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
+                        return (
+                          <div 
+                            key={card.key} 
+                            onClick={() => setSelectedPlatform(card)} 
+                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95`} 
+                            style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
+                          >
+                            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
+                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
+                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
               </>
             )}
           </div>
         </div>
       </div>
       
- {/* 🌟 MODAL REPORT 12 เดือน: อัปเกรดดีไซน์ใหม่ */}
+      {/* 🌟 MODAL REPORT 12 เดือน: อัปเกรดดีไซน์ใหม่พรีเมียม 100% */}
       {showExpenseReport && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-[1300px] rounded-[3rem] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
