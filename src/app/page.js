@@ -276,7 +276,7 @@ const PlatformComparisonChart = ({ data }) => {
   );
 };
 
-// ✅ รับค่า selectedHospitalName เข้ามาเพื่อโชว์ในหน้ารายละเอียดแพลตฟอร์ม
+// ✅ แปลงโฉม PlatformDetailView ให้ดูหรูหรา มีมิติ และเน้นตัวเลขให้โดดเด่น
 const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
@@ -299,48 +299,65 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-3 bg-white border border-emerald-100 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 text-slate-400 transition-all shadow-sm group">
-            <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
-                <platform.icon size={24} style={{ color: platformColor }} />
-              </div>
-              <div>
-                <h2 className="text-3xl font-black text-emerald-950 uppercase tracking-tight leading-none">{platform.title} Details</h2>
-                {/* ✅ โชว์ชื่อหน่วยบริการในหน้า Platform Detail */}
-                <p className="text-sm font-bold mt-1.5 opacity-90" style={{ color: platformColor }}>หน่วยบริการ: {selectedHospitalName}</p>
+      
+      {/* 🌟 1. ส่วนหัวใหม่: ย้ายยอดเงินมารวมกับชื่อ จัดเลย์เอาต์ให้ดูอลังการ */}
+      <div className="bg-white rounded-[3.5rem] p-8 md:p-12 shadow-sm border border-slate-100 relative overflow-hidden">
+         {/* ลายน้ำพื้นหลัง (ไอคอนใหญ่ๆ จางๆ) */}
+         <div className="absolute -right-10 -top-10 opacity-[0.03] transform rotate-12 pointer-events-none">
+            <platform.icon size={350} />
+         </div>
+
+         <div className="relative z-10 flex flex-col gap-8">
+            <div className="flex items-center gap-5">
+              <button onClick={onBack} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-slate-100 hover:scale-105 text-slate-500 transition-all shadow-sm group">
+                <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+              </button>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3">
+                   <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-slate-800">{platform.title}</h2>
+                   <div className="hidden sm:block px-3 py-1 rounded-full bg-slate-100 text-[10px] font-black text-slate-400 tracking-widest">DETAILS</div>
+                </div>
+                <p className="text-sm font-bold mt-2 flex items-center gap-2" style={{ color: platformColor }}>
+                  <Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}
+                </p>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl border border-emerald-100 shadow-sm">
-           <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</p>
-              <p className="text-2xl font-black tracking-tight leading-none" style={{ color: platformColor }}>{fmt(platform.value)} <span className="text-sm text-slate-400">บาท</span></p>
-           </div>
-        </div>
+
+            {/* กล่องแสดงยอดเงินรวมแบบใหม่ ใหญ่และชัดเจน */}
+            <div className="bg-slate-50/70 p-6 md:p-8 rounded-[2.5rem] border border-slate-100 inline-block w-full md:w-auto shadow-inner">
+               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                 <Wallet size={16} /> Total Disbursement
+               </p>
+               <div className="flex items-baseline gap-3">
+                  <span className="text-5xl md:text-7xl font-black tracking-tighter drop-shadow-sm" style={{ color: platformColor }}>
+                    {fmt(platform.value)}
+                  </span>
+                  <span className="text-xl md:text-2xl font-bold text-slate-400">บาท</span>
+               </div>
+            </div>
+         </div>
       </div>
 
+      {/* 🌟 2. การ์ดรายละเอียด: เติมแถบสีด้านล่างให้ดูมีมิติ ไม่จืดชืด */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-5 px-2">
            <List size={20} className="text-slate-400" />
            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">Service Overview</h3>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {subItems.map((item, idx) => (
-            <div key={idx} className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full group">
-               <div className="mb-3">
-                  <p className="text-xs font-bold text-slate-500 group-hover:text-emerald-700 transition-colors line-clamp-2">{item.name}</p>
+            <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 border-b-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col justify-between h-full group" style={{ borderBottomColor: platformColor }}>
+               <div className="mb-4">
+                  <p className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors line-clamp-2">{item.name}</p>
                </div>
                <div className="flex items-end justify-between">
-                  <div className="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                    <Activity size={16} />
+                  <div className="p-2.5 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-slate-100 transition-colors" style={{ color: platformColor }}>
+                    <Activity size={18} />
                   </div>
-                  <p className="text-lg font-black text-emerald-950">{fmt(item.value)} <span className="text-[10px] text-slate-400 font-bold">บาท</span></p>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-slate-800 tracking-tight">{fmt(item.value)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">บาท</p>
+                  </div>
                </div>
             </div>
           ))}
@@ -348,10 +365,10 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white border border-emerald-100 rounded-[3rem] p-8 shadow-sm flex flex-col">
+        <div className="lg:col-span-2 bg-white border border-emerald-100 rounded-[3.5rem] p-8 md:p-10 shadow-sm flex flex-col">
            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-5">
-                <div className="p-4 bg-emerald-100 text-emerald-800 rounded-2xl shadow-sm"><Table2 size={32} /></div>
+                <div className="p-4 rounded-2xl shadow-sm text-white" style={{ backgroundColor: platformColor }}><Table2 size={32} /></div>
                 <div><h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Monthly Breakdown</h3><p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Detailed Monthly Disbursement</p></div>
               </div>
            </div>
@@ -359,17 +376,17 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
              <table className="w-full min-w-[900px] border-separate border-spacing-y-2">
                <thead>
                  <tr>
-                   <th className="text-left py-4 px-6 text-xs font-black text-slate-500 uppercase tracking-wider bg-slate-50/50 rounded-l-2xl sticky left-0 z-10">รายการบริการ</th>
+                   <th className="text-left py-4 px-6 text-xs font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 rounded-l-2xl sticky left-0 z-10">รายการบริการ</th>
                    {months.map((m, i) => <th key={i} className="text-right py-4 px-3 text-[11px] font-black uppercase bg-slate-50/50" style={{ color: platformColor }}>{m}</th>)}
-                   <th className="text-right py-4 px-6 text-xs font-black text-slate-700 uppercase bg-emerald-50/50 rounded-r-2xl">Total</th>
+                   <th className="text-right py-4 px-6 text-xs font-black text-white uppercase rounded-r-2xl" style={{ backgroundColor: platformColor }}>Total</th>
                  </tr>
                </thead>
                <tbody>
                  {subItems.map((item, idx) => (
                    <tr key={idx} className="group hover:scale-[1.005] transition-transform">
                      <td className="py-5 px-6 bg-white border-y border-l border-slate-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
-                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-500 group-hover:text-emerald-900 group-hover:font-bold transition-colors">{fmt(amount)}</td>)}
-                     <td className="py-5 px-6 bg-emerald-50/30 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-emerald-950 shadow-sm">{fmt(item.value)}</td>
+                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-400 group-hover:text-slate-800 transition-colors">{amount > 0 ? fmt(amount) : '-'}</td>)}
+                     <td className="py-5 px-6 bg-slate-50/80 border-y border-r border-slate-100 rounded-r-2xl text-right text-sm font-black text-slate-800 shadow-sm">{fmt(item.value)}</td>
                    </tr>
                  ))}
                </tbody>
@@ -377,21 +394,21 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
            </div>
         </div>
 
-        <div className="lg:col-span-1 bg-white border border-emerald-100 rounded-[3.5rem] p-10 shadow-sm flex flex-col">
+        <div className="lg:col-span-1 bg-white border border-emerald-100 rounded-[3.5rem] p-8 md:p-10 shadow-sm flex flex-col">
            <h3 className="font-black text-xl text-emerald-950 mb-8 flex items-center gap-3">
               <Building2 size={24} className="text-slate-400" />
               Top Units Share
            </h3>
            <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-2">
               {topPlatformUnits.length > 0 ? topPlatformUnits.map((hos, idx) => (
-                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-emerald-200 transition-all hover:translate-x-1 gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-sm shrink-0">{idx + 1}</div>
+                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-slate-300 transition-all hover:translate-x-1 gap-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 text-white shadow-sm" style={{ backgroundColor: platformColor }}>{idx + 1}</div>
                     <div className="flex-1 min-w-0">
                        <p className="text-sm font-bold text-slate-700 truncate">{hos.name}</p>
                        <p className="text-[11px] font-bold text-slate-400 mt-1">{hos.cases} Cases</p>
                     </div>
                     <div className="text-right shrink-0">
-                       <p className="text-base font-black text-emerald-900">{fmt(hos.amount)}</p>
+                       <p className="text-base font-black text-slate-800">{fmt(hos.amount)}</p>
                        <p className="text-[10px] font-bold text-slate-400">บาท</p>
                     </div>
                  </div>
