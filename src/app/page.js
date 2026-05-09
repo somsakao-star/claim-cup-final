@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
+
 const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
 const hospitals = [
   { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800', inactive: 'bg-slate-100 text-slate-600' },
@@ -21,8 +22,6 @@ const hospitals = [
 const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
 const monthMapping = { "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11, "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5, "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11 };
 
-// ✅ map รหัส → ชื่อจริงจาก paymentcategory (จาก Railway DB screenshot)
-// ✅ map รหัส → ชื่อจริงจาก paymentcategory
 const EXPENSE_CATEGORY_NAMES = {
   "1": "ค่ายาและเวชภัณฑ์",
   "2": "ค่าวัสดุ",
@@ -38,6 +37,7 @@ const EXPENSE_CATEGORY_NAMES = {
   "12": "จ่ายค่าสนับสนุนลูกข่าย",
   "13": "ภาษี"
 };
+
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
 function processData(claims, yearFilter, unitFilter) {
@@ -121,10 +121,6 @@ function processData(claims, yearFilter, unitFilter) {
 
   return { totalAmount, platformCards, monthlyTotal, yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, rankingList, monthlyByPlatform };
 }
-
-// ==========================================
-// ✅ นำคอมโพเนนต์ที่หายไปกลับมา (LiveClock, SimplePieChart, YoYTrendChart, PlatformComparisonChart, PlatformDetailView, LoginScreen)
-// ==========================================
 
 const LiveClock = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -280,8 +276,8 @@ const PlatformComparisonChart = ({ data }) => {
   );
 };
 
-// ✅ เพิ่มคอมโพเนนต์ PlatformDetailView กลับมาเพื่อให้กดดูรายละเอียดได้
-const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
+// ✅ รับค่า selectedHospitalName เข้ามาเพื่อโชว์ในหน้ารายละเอียดแพลตฟอร์ม
+const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
   
@@ -313,7 +309,11 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear }) => {
               <div className="p-2 rounded-xl bg-white border border-emerald-100 shadow-sm">
                 <platform.icon size={24} style={{ color: platformColor }} />
               </div>
-              <h2 className="text-3xl font-black text-emerald-950 uppercase tracking-tight">{platform.title} Details</h2>
+              <div>
+                <h2 className="text-3xl font-black text-emerald-950 uppercase tracking-tight leading-none">{platform.title} Details</h2>
+                {/* ✅ โชว์ชื่อหน่วยบริการในหน้า Platform Detail */}
+                <p className="text-sm font-bold mt-1.5 opacity-90" style={{ color: platformColor }}>หน่วยบริการ: {selectedHospitalName}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -504,24 +504,11 @@ export default function App() {
             // 2. ดึงข้อมูลรายจ่าย (Expenses)
             try {
                 const resE = await fetch(`${API_BASE_URL}/api/expenses`);
-                // ✅ แก้ไข: ไม่เช็ค content-type เพราะบาง server ไม่ส่ง header นั้น
-                const rawText = await resE.text();
-                try {
-                    const dataE = JSON.parse(rawText);
-                    if (Array.isArray(dataE)) {
-                        console.log(`✅ โหลด expenses สำเร็จ: ${dataE.length} รายการ`);
-                        if (dataE.length > 0) {
-                            // ✅ Debug: แสดง field names ของ record แรก เพื่อตรวจว่า column ชื่ออะไร
-                            console.log('📋 ตัวอย่าง expense record:', JSON.stringify(dataE[0]));
-                        }
-                        setExpenses(dataE);
-                    } else {
-                        console.error('❌ API /expenses ไม่ได้ส่ง Array กลับมา:', dataE);
-                    }
-                } catch (parseErr) {
-                    console.error('❌ Parse JSON ล้มเหลว, raw response:', rawText.substring(0, 200));
+                if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
+                    const dataE = await resE.json();
+                    if (Array.isArray(dataE)) setExpenses(dataE);
                 }
-            } catch (err) { console.error("❌ fetch /expenses ไม่ได้:", err); }
+            } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
 
             // 3. ดึงวันที่อัปเดต
             try {
@@ -550,48 +537,30 @@ export default function App() {
   }, [claims, filterYear, filterUnit]);
 
   const expenseReportData = useMemo(() => {
-    // ✅ แก้ไข Bug 1: ลบ restriction filterUnit ออก — Expense Report เป็นข้อมูลระดับ CUP เสมอ
-    // กรองตามปีงบประมาณที่เลือก
-    const filteredByYear = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
-    
-    // ✅ แก้ไข Bug 2: ถ้ากรองปีแล้วไม่มีข้อมูลเลย (เช่น เลือก 2569 แต่ข้อมูลอยู่ที่ 2568)
-    // ให้ fallback ไปดึงข้อมูลทุกปีแทน พร้อมแจ้งเตือน
-    const filtered = filteredByYear.length > 0 ? filteredByYear : expenses;
-    const isYearFallback = filteredByYear.length === 0 && expenses.length > 0;
-
+    if (filterUnit !== 'all' && filterUnit !== '05954') return { rows: [], grandTotal: 0, monthlyTotals: Array(12).fill(0) };
+    const filtered = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
     const grouped = {};
     let grandTotal = 0;
     const monthlyTotals = Array(12).fill(0);
-
+    
     filtered.forEach(item => {
-        const catKey = String(item.category_name ?? item.category ?? '').trim();
-        const catName = EXPENSE_CATEGORY_NAMES[catKey] || catKey || 'ไม่ระบุ';
+        const categoryId = String(item.category);
+        const catName = EXPENSE_CATEGORY_NAMES[categoryId] || categoryId || 'อื่นๆ'; 
         
-        // ✅ แก้ไข Bug 3: MySQL DECIMAL คืนเป็น string — ใช้ parsing ที่ครอบคลุมทุกกรณี
-        const rawAmt = item.amount;
-        const amt = (rawAmt === null || rawAmt === undefined) ? 0 :
-            (typeof rawAmt === 'number' ? rawAmt :
-             parseFloat(String(rawAmt).replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0);
-
-        // ✅ แก้ไข: รองรับ month เป็น integer (10), string ("10"), หรือชื่อไทย ("ตุลาคม")
-        const mKey = String(item.month ?? '').trim();
-        const mIdx = monthMapping[mKey] !== undefined ? monthMapping[mKey] : -1;
-
+        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount).replace(/,/g, '')) || 0;
+        const mIdx = monthMapping[String(item.month)] ?? -1;
+        
         if (!grouped[catName]) grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
         grouped[catName].total += amt;
         grandTotal += amt;
+        
         if (mIdx >= 0 && mIdx < 12) {
             grouped[catName].monthlyData[mIdx] += amt;
             monthlyTotals[mIdx] += amt;
         }
     });
-    return {
-      rows: Object.values(grouped).sort((a, b) => b.total - a.total),
-      grandTotal,
-      monthlyTotals,
-      isYearFallback, // ✅ flag สำหรับแสดงป้ายเตือนใน UI
-    };
-  }, [expenses, filterYear]);
+    return { rows: Object.values(grouped).sort((a, b) => b.total - a.total), grandTotal, monthlyTotals };
+  }, [expenses, filterYear, filterUnit]);
 
   const top3ExpenseData = useMemo(() => {
     const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]'];
@@ -638,9 +607,9 @@ export default function App() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
             
-            {/* ✅ แสดงหน้า Platform Detail ถ้ายูสเซอร์คลิกไพ่ */}
+            {/* ✅ ส่งชื่อ selectedHospitalName เข้าไปให้ Platform Detail */}
             {selectedPlatform ? (
-              <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} />
+              <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} />
             ) : (
               <>
                 <section className="space-y-6">
@@ -670,7 +639,11 @@ export default function App() {
                   <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
                     <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
                     <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
-                    <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">ยอดเงินรวมเบิกชดเชยประจำปี {filterYear}</p>
+                    {/* ✅ เพิ่มชื่อหน่วยบริการตรงยอดเงินรวมเบิกชดเชย */}
+                    <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                      ยอดเงินรวมเบิกชดเชยประจำปี {filterYear} <br className="hidden md:block" />
+                      <span className="text-emerald-400 text-lg md:text-xl">หน่วยบริการ: {selectedHospitalName}</span>
+                    </p>
                   </div>
                   <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
                 </div>
@@ -710,17 +683,10 @@ export default function App() {
                           </div>
                       </div>
 
-                      {/* ส่วนแสดงรายจ่ายที่ปลอดภัยแบบ 100% */}
                       <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
                           <div className="p-8 pb-4 flex items-center justify-between relative z-10">
                               <div>
                                   <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
-                                  {/* ✅ ป้ายเตือนเมื่อ fallback ปี */}
-                                  {expenseReportData.isYearFallback && (
-                                    <p className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 inline-block">
-                                      ⚠️ ไม่พบข้อมูลปี {filterYear} — แสดงข้อมูลทุกปีแทน
-                                    </p>
-                                  )}
                               </div>
                               <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"><ArrowUpRight size={20} /></button>
                           </div>
@@ -731,7 +697,7 @@ export default function App() {
                                     top3ExpenseData.map((item, idx) => (
                                         <div key={idx} className="group/item">
                                             <div className="flex justify-between items-end mb-2">
-                                                <span className="text-xs font-bold text-slate-600 line-clamp-1">{item.label}</span>
+                                                <span className="text-xs font-bold text-slate-600 line-clamp-1" title={item.label}>{item.label}</span>
                                                 <span className="text-sm font-black text-emerald-950 whitespace-nowrap ml-2">{item.value} ฿</span>
                                             </div>
                                             <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
@@ -754,27 +720,39 @@ export default function App() {
                   </div>
                 </div>
 
-                <section className="py-6 pb-20">
-                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
-                      {platformCards.map((card) => {
-                        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
-                        return (
-                          <div 
-                            key={card.key} 
-                            onClick={() => setSelectedPlatform(card)} // ✅ ใส่ปุ่มคลิกกลับมาแล้ว
-                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95`} 
-                            style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
-                          >
-                            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
-                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
-                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
+             <section className="py-6 pb-20">
+  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
+    
+    {/* ✅ ข้อความหัวข้อที่หายไป นำกลับมาใส่ให้เหมือนเดิมเป๊ะๆ แล้วครับ! */}
+    <div className="flex items-center gap-5 mb-10">
+      <div className="p-4 bg-emerald-100/50 text-emerald-800 rounded-2xl shadow-sm">
+        <Layers size={32} className="text-emerald-600" />
+      </div>
+      <div>
+        <h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Service Platform Breakdown</h3>
+        <p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Analytical Overview By System</p>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
+      {platformCards.map((card) => {
+        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
+        return (
+          <div 
+            key={card.key} 
+            onClick={() => setSelectedPlatform(card)} 
+            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95`} 
+            style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
+          >
+            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
+            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
+            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
               </>
             )}
           </div>
@@ -790,12 +768,6 @@ export default function App() {
                         <div className="p-3 bg-emerald-600 text-white rounded-2xl"><List size={24} /></div>
                         <div>
                             <h3 className="font-black text-emerald-950 text-xl uppercase">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
-                            {/* ✅ แสดงปีงบ + แจ้งเตือนถ้า fallback */}
-                            <p className="text-xs text-emerald-700/60 font-bold mt-1">
-                              {expenseReportData.isYearFallback
-                                ? `⚠️ ไม่พบข้อมูลปี ${filterYear} — แสดงข้อมูลทุกปีงบประมาณ`
-                                : `ปีงบประมาณ ${filterYear}`}
-                            </p>
                         </div>
                     </div>
                     <button onClick={() => setShowExpenseReport(false)} className="text-slate-400 hover:text-rose-500 text-2xl font-black">&times;</button>
@@ -804,7 +776,7 @@ export default function App() {
                     <table className="w-full min-w-[1000px] text-left border-collapse border-separate border-spacing-y-1">
                         <thead>
                             <tr className="bg-emerald-50 text-emerald-800 text-[11px] font-black uppercase">
-                                <th className="p-4 py-3 sticky left-0 z-20 bg-emerald-50">หมวดหมู่รายการจ่าย</th>
+                                <th className="p-4 py-3 sticky left-0 z-20 bg-emerald-50 w-64">หมวดหมู่รายการจ่าย</th>
                                 {months.map((m, i) => <th key={i} className="p-4 py-3 text-right">{m}</th>)}
                                 <th className="p-4 py-3 text-right">รวมทั้งสิ้น</th>
                             </tr>
@@ -812,7 +784,7 @@ export default function App() {
                         <tbody className="divide-y divide-emerald-50/50">
                             {expenseReportData.rows.length > 0 ? expenseReportData.rows.map((item, idx) => (
                                 <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="p-4 py-3 text-sm text-slate-700 font-bold sticky left-0 z-10 bg-white">{idx + 1}. {item.label}</td>
+                                    <td className="p-4 py-3 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white border-r border-slate-50">{idx + 1}. {item.label}</td>
                                     {item.monthlyData.map((val, mIdx) => <td key={mIdx} className="p-4 py-3 text-[12px] text-slate-500 text-right">{val > 0 ? fmt(val) : '-'}</td>)}
                                     <td className="p-4 py-3 text-sm text-emerald-900 font-black text-right bg-emerald-50/30">{fmt(item.total)}</td>
                                 </tr>
@@ -821,7 +793,7 @@ export default function App() {
                         {expenseReportData.rows.length > 0 && (
                             <tfoot>
                                 <tr className="bg-emerald-600 text-white">
-                                    <td className="p-4 py-4 text-sm font-bold text-right sticky left-0 z-20 bg-emerald-600">รวมทุกหมวดหมู่</td>
+                                    <td className="p-4 py-4 text-sm font-bold text-right sticky left-0 z-20 bg-emerald-600 border-r border-emerald-500">รวมทุกหมวดหมู่</td>
                                     {expenseReportData.monthlyTotals.map((total, i) => <td key={i} className="p-4 py-4 text-[12px] font-bold text-right">{total > 0 ? fmt(total) : '-'}</td>)}
                                     <td className="p-4 py-4 text-base font-black text-right bg-emerald-700">{fmt(expenseReportData.grandTotal)}</td>
                                 </tr>
