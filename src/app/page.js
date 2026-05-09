@@ -276,7 +276,6 @@ const PlatformComparisonChart = ({ data }) => {
   );
 };
 
-// ✅ อัปเกรด PlatformDetailView ดีไซน์ใหม่ล่าสุด
 const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName }) => {
   const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
   const subItems = platform.items || [];
@@ -299,13 +298,13 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-[3.5rem] p-8 md:p-12 shadow-sm border border-slate-100 relative overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] relative overflow-hidden">
          <div className="absolute -right-10 -top-10 opacity-[0.03] transform rotate-12 pointer-events-none">
             <platform.icon size={350} />
          </div>
          <div className="relative z-10 flex flex-col gap-8">
             <div className="flex items-center gap-5">
-              <button onClick={onBack} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-slate-100 hover:scale-105 text-slate-500 transition-all shadow-sm group">
+              <button onClick={onBack} className="p-4 bg-slate-50 border border-emerald-200 rounded-2xl hover:bg-slate-100 hover:scale-105 text-slate-500 transition-all shadow-sm group">
                 <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
               </button>
               <div className="flex flex-col">
@@ -318,7 +317,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
                 </p>
               </div>
             </div>
-            <div className="bg-slate-50/70 p-6 md:p-8 rounded-[2.5rem] border border-slate-100 inline-block w-full md:w-auto shadow-inner">
+            <div className="bg-slate-50/70 p-6 md:p-8 rounded-[2.5rem] border border-emerald-100 inline-block w-full md:w-auto shadow-inner">
                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
                  <Wallet size={16} /> Total Disbursement
                </p>
@@ -341,9 +340,10 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
           {subItems.map((item, idx) => (
             <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 border-b-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col justify-between h-full group" style={{ borderBottomColor: platformColor }}>
                <div className="mb-4">
-                  <p className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors line-clamp-2">{item.name}</p>
+                  {/* เอาคำสั่งจำกัดบรรทัดออก เพื่อให้แสดงชื่อยาวๆ ได้เต็มที่ */}
+                  <p className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{item.name}</p>
                </div>
-               <div className="flex items-end justify-between">
+               <div className="flex items-end justify-between mt-2">
                   <div className="p-2.5 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-slate-100 transition-colors" style={{ color: platformColor }}>
                     <Activity size={18} />
                   </div>
@@ -358,7 +358,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white border border-emerald-100 rounded-[3.5rem] p-8 md:p-10 shadow-sm flex flex-col">
+        <div className="lg:col-span-2 bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] flex flex-col">
            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-5">
                 <div className="p-4 rounded-2xl shadow-sm text-white" style={{ backgroundColor: platformColor }}><Table2 size={32} /></div>
@@ -377,9 +377,9 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
                <tbody>
                  {subItems.map((item, idx) => (
                    <tr key={idx} className="group hover:scale-[1.005] transition-transform">
-                     <td className="py-5 px-6 bg-white border-y border-l border-slate-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
-                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-slate-100 text-right text-[12px] font-medium text-slate-400 group-hover:text-slate-800 transition-colors">{amount > 0 ? fmt(amount) : '-'}</td>)}
-                     <td className="py-5 px-6 bg-slate-50/80 border-y border-r border-slate-100 rounded-r-2xl text-right text-sm font-black text-slate-800 shadow-sm">{fmt(item.value)}</td>
+                     <td className="py-5 px-6 bg-white border-y border-l border-emerald-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
+                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-emerald-100 text-right text-[12px] font-medium text-slate-400 group-hover:text-slate-800 transition-colors">{amount > 0 ? fmt(amount) : '-'}</td>)}
+                     <td className="py-5 px-6 bg-slate-50/80 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-slate-800 shadow-sm">{fmt(item.value)}</td>
                    </tr>
                  ))}
                </tbody>
@@ -387,14 +387,14 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
            </div>
         </div>
 
-        <div className="lg:col-span-1 bg-white border border-emerald-100 rounded-[3.5rem] p-8 md:p-10 shadow-sm flex flex-col">
+        <div className="lg:col-span-1 bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] flex flex-col">
            <h3 className="font-black text-xl text-emerald-950 mb-8 flex items-center gap-3">
               <Building2 size={24} className="text-slate-400" />
               Top Units Share
            </h3>
            <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-2">
               {topPlatformUnits.length > 0 ? topPlatformUnits.map((hos, idx) => (
-                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-slate-300 transition-all hover:translate-x-1 gap-4">
+                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-emerald-100 hover:border-slate-300 transition-all hover:translate-x-1 gap-4">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 text-white shadow-sm" style={{ backgroundColor: platformColor }}>{idx + 1}</div>
                     <div className="flex-1 min-w-0">
                        <p className="text-sm font-bold text-slate-700 truncate">{hos.name}</p>
@@ -628,6 +628,7 @@ export default function App() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
             
+            {/* ✅ ส่งชื่อ selectedHospitalName เข้าไปให้ Platform Detail */}
             {selectedPlatform ? (
               <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} />
             ) : (
@@ -669,8 +670,8 @@ export default function App() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
                   <div className="lg:col-span-8">
-                      {/* 🌟 อัปเกรด Financial Surveillance: เพิ่มเงาฟุ้งๆ ขอบขาวหนาๆ และเอฟเฟกต์ลอยตัว */}
-                      <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] p-10 md:p-14 h-full flex flex-col shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
+                      {/* 🌟 หน้าหลัก: เพิ่มขอบสีเขียวอ่อน (border-2 border-emerald-200) และเงา */}
+                      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-10 md:p-14 h-full flex flex-col shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
                           <div className="flex items-center gap-6 mb-14">
                               <div className="p-5 bg-gradient-to-br from-emerald-800 to-emerald-950 rounded-[1.5rem] text-white shadow-[0_10px_20px_rgba(5,150,105,0.3)]"><Activity size={36} /></div>
                               <div className="flex flex-col">
@@ -686,14 +687,14 @@ export default function App() {
                   </div>
                   
                   <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
-                      {/* 🌟 อัปเกรด Top Units */}
-                      <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] flex flex-col flex-1 min-h-[350px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
-                          <div className="p-8 border-b border-emerald-900/5 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 to-transparent">
+                      {/* 🌟 กล่อง Top Units: ขอบสีเขียวอ่อน */}
+                      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] flex flex-col flex-1 min-h-[350px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
+                          <div className="p-8 border-b border-emerald-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 to-transparent">
                               <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
                           </div>
                           <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                               {rankingList.map((hospital, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50 hover:border-emerald-200 transition-colors group">
+                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-100 hover:border-emerald-300 transition-colors group">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm group-hover:scale-110 transition-transform">{index + 1}</div>
                                     <div><h4 className="font-bold text-emerald-950 text-sm">{hospital.name}</h4></div>
@@ -704,9 +705,9 @@ export default function App() {
                           </div>
                       </div>
 
-                      {/* 🌟 อัปเกรด Expense Report Widget */}
-                      <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] flex flex-col overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500 relative group">
-                          <div className="p-8 pb-4 flex items-center justify-between relative z-10 bg-gradient-to-r from-emerald-50/50 to-transparent">
+                      {/* 🌟 กล่อง Expense Report: ขอบสีเขียวอ่อน */}
+                      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] flex flex-col overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500 relative group">
+                          <div className="p-8 pb-4 flex items-center justify-between relative z-10 bg-gradient-to-r from-emerald-50/50 to-transparent border-b border-emerald-100">
                               <div>
                                   <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
                                   {expenseReportData.isYearFallback && (
@@ -719,13 +720,14 @@ export default function App() {
                           </div>
                           
                           <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
-                             <div className="space-y-5 flex-1">
+                             <div className="space-y-5 flex-1 mt-4">
                                 {top3ExpenseData.length > 0 ? (
                                     top3ExpenseData.map((item, idx) => (
                                         <div key={idx} className="group/item">
-                                            <div className="flex justify-between items-end mb-2">
-                                                <span className="text-xs font-bold text-slate-600 line-clamp-1" title={item.label}>{item.label}</span>
-                                                <span className="text-sm font-black text-emerald-950 whitespace-nowrap ml-2">{item.value} ฿</span>
+                                            {/* เอาคำสั่งตัดคำ (line-clamp-1) ออก เพื่อให้ชื่อแสดงครบถ้วน */}
+                                            <div className="flex justify-between items-end mb-2 gap-2">
+                                                <span className="text-xs font-bold text-slate-600" title={item.label}>{item.label}</span>
+                                                <span className="text-sm font-black text-emerald-950 whitespace-nowrap">{item.value} ฿</span>
                                             </div>
                                             <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
                                                 <div className={`absolute top-0 left-0 h-full ${item.color} rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]`} style={{ width: `${item.percent}%` }}></div>
@@ -740,18 +742,17 @@ export default function App() {
                                 )}
                              </div>
                              {top3ExpenseData.length > 0 && (
-                                <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200 text-emerald-800 py-3 rounded-2xl text-sm font-bold transition-all border border-emerald-100 shadow-sm hover:shadow-md"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
+                                <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200 text-emerald-800 py-3 rounded-2xl text-sm font-bold transition-all border border-emerald-200 shadow-sm hover:shadow-md"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
                              )}
                           </div>
                       </div>
                   </div>
                 </div>
 
-                {/* ✅ หัวข้อที่หายไปกลับมาอย่างสวยงามแล้วครับ */}
                 <section className="py-6 pb-20">
-                  <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
+                  <div className="bg-white border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)]">
                     <div className="flex items-center gap-5 mb-10">
-                      <div className="p-4 bg-emerald-100/50 text-emerald-800 rounded-2xl shadow-sm">
+                      <div className="p-4 bg-emerald-100/50 text-emerald-800 rounded-2xl shadow-sm border border-emerald-200">
                         <Layers size={32} className="text-emerald-600" />
                       </div>
                       <div>
@@ -766,7 +767,7 @@ export default function App() {
                           <div 
                             key={card.key} 
                             onClick={() => setSelectedPlatform(card)} 
-                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95`} 
+                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95 border-2 border-white/30`} 
                             style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
                           >
                             <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
@@ -784,7 +785,7 @@ export default function App() {
         </div>
       </div>
       
-      {/* 🌟 MODAL REPORT 12 เดือน: อัปเกรดดีไซน์ใหม่พรีเมียม 100% */}
+      {/* 🌟 MODAL REPORT 12 เดือน: ดีไซน์ใหม่พรีเมียม 100% */}
       {showExpenseReport && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-[1300px] rounded-[3rem] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
@@ -805,22 +806,23 @@ export default function App() {
                 </div>
 
                 <div className="p-8 md:p-10 overflow-auto custom-scrollbar flex-1 bg-slate-50/50">
-                    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden">
                       <table className="w-full min-w-[1100px] text-left border-collapse">
                           <thead>
-                              <tr className="bg-emerald-50/80 text-emerald-800 text-[12px] font-black uppercase tracking-widest border-b border-emerald-100/50">
-                                  <th className="p-5 py-4 sticky left-0 z-20 bg-emerald-50/90 backdrop-blur-sm w-72 border-r border-emerald-100/50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.05)]">หมวดหมู่รายการจ่าย</th>
+                              <tr className="bg-emerald-50/80 text-emerald-800 text-[12px] font-black uppercase tracking-widest border-b border-emerald-200/50">
+                                  <th className="p-5 py-4 sticky left-0 z-20 bg-emerald-50/90 backdrop-blur-sm w-72 border-r border-emerald-200/50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.05)]">หมวดหมู่รายการจ่าย</th>
                                   {months.map((m, i) => <th key={i} className="p-5 py-4 text-right">{m}</th>)}
-                                  <th className="p-5 py-4 text-right bg-emerald-100/30">รวมทั้งสิ้น</th>
+                                  <th className="p-5 py-4 text-right bg-emerald-100/50">รวมทั้งสิ้น</th>
                               </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-emerald-100/50">
                               {expenseReportData.rows.length > 0 ? expenseReportData.rows.map((item, idx) => (
                                   <tr key={idx} className="hover:bg-emerald-50/40 hover:scale-[1.002] transition-all group">
-                                      <td className="p-5 py-4 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white group-hover:bg-emerald-50/40 border-r border-slate-50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.02)] transition-colors">
+                                      <td className="p-5 py-4 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white group-hover:bg-emerald-50/40 border-r border-emerald-50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.02)] transition-colors">
                                         <div className="flex items-center gap-3">
-                                          <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 font-black group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors">{idx + 1}</span>
-                                          <span className="line-clamp-1">{item.label}</span>
+                                          <span className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[10px] text-emerald-600 font-black group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors shrink-0">{idx + 1}</span>
+                                          {/* เอาคำสั่งจำกัดบรรทัดออก เพื่อให้แสดงชื่อยาวๆ ได้เต็มที่ */}
+                                          <span>{item.label}</span>
                                         </div>
                                       </td>
                                       {item.monthlyData.map((val, mIdx) => <td key={mIdx} className="p-5 py-4 text-[13px] text-slate-500 text-right group-hover:text-emerald-900 transition-colors">{val > 0 ? fmt(val) : '-'}</td>)}
@@ -840,8 +842,8 @@ export default function App() {
                       </table>
                     </div>
                 </div>
-                <div className="px-10 py-6 bg-white border-t border-slate-100 flex justify-end gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] relative z-30">
-                    <button onClick={() => setShowExpenseReport(false)} className="px-8 py-3 text-sm font-bold text-slate-500 bg-slate-50 hover:bg-slate-200 hover:text-slate-700 rounded-2xl transition-all">ปิดหน้าต่าง</button>
+                <div className="px-10 py-6 bg-white border-t border-emerald-100 flex justify-end gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] relative z-30">
+                    <button onClick={() => setShowExpenseReport(false)} className="px-8 py-3 text-sm font-bold text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-200 hover:text-slate-700 rounded-2xl transition-all">ปิดหน้าต่าง</button>
                     <button onClick={() => window.print()} className="px-8 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-2xl flex items-center gap-2 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all"><Table2 size={20} /> พิมพ์รายงาน</button>
                 </div>
             </div>
