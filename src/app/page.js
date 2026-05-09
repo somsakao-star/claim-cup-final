@@ -666,10 +666,12 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
                   <div className="lg:col-span-8">
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-10 md:p-14 shadow-sm h-full flex flex-col hover:shadow-xl transition-all duration-700">
+                      {/* 🌟 อัปเกรด Financial Surveillance: เพิ่มเงาฟุ้งๆ ขอบขาวหนาๆ และเอฟเฟกต์ลอยตัว */}
+                      <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] p-10 md:p-14 h-full flex flex-col shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
                           <div className="flex items-center gap-6 mb-14">
-                              <div className="p-5 bg-emerald-900 rounded-[1.5rem] text-white shadow-lg shadow-emerald-900/20"><Activity size={36} /></div>
+                              <div className="p-5 bg-gradient-to-br from-emerald-800 to-emerald-950 rounded-[1.5rem] text-white shadow-[0_10px_20px_rgba(5,150,105,0.3)]"><Activity size={36} /></div>
                               <div className="flex flex-col">
                                   <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
                                   <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2"><Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}</p>
@@ -683,15 +685,16 @@ export default function App() {
                   </div>
                   
                   <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col flex-1 min-h-[350px] overflow-hidden hover:shadow-xl transition-all duration-700">
-                          <div className="p-8 border-b border-emerald-950/5 flex items-center justify-between bg-emerald-50/50">
+                      {/* 🌟 อัปเกรด Top Units */}
+                      <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] flex flex-col flex-1 min-h-[350px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
+                          <div className="p-8 border-b border-emerald-900/5 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 to-transparent">
                               <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
                           </div>
                           <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                               {rankingList.map((hospital, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50">
+                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-50 hover:border-emerald-200 transition-colors group">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm">{index + 1}</div>
+                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm group-hover:scale-110 transition-transform">{index + 1}</div>
                                     <div><h4 className="font-bold text-emerald-950 text-sm">{hospital.name}</h4></div>
                                   </div>
                                   <div className="text-right"><p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p></div>
@@ -700,12 +703,18 @@ export default function App() {
                           </div>
                       </div>
 
-                      <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] shadow-sm flex flex-col overflow-hidden hover:shadow-xl transition-all duration-700 relative group">
-                          <div className="p-8 pb-4 flex items-center justify-between relative z-10">
+                      {/* 🌟 อัปเกรด Expense Report Widget */}
+                      <div className="bg-white/90 backdrop-blur-xl border-4 border-white rounded-[3.5rem] flex flex-col overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500 relative group">
+                          <div className="p-8 pb-4 flex items-center justify-between relative z-10 bg-gradient-to-r from-emerald-50/50 to-transparent">
                               <div>
                                   <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
+                                  {expenseReportData.isYearFallback && (
+                                    <p className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 inline-block">
+                                      ⚠️ ไม่พบข้อมูลปี {filterYear} — แสดงข้อมูลทุกปีแทน
+                                    </p>
+                                  )}
                               </div>
-                              <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"><ArrowUpRight size={20} /></button>
+                              <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-100/50 flex items-center justify-center text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><ArrowUpRight size={20} /></button>
                           </div>
                           
                           <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
@@ -717,8 +726,9 @@ export default function App() {
                                                 <span className="text-xs font-bold text-slate-600 line-clamp-1" title={item.label}>{item.label}</span>
                                                 <span className="text-sm font-black text-emerald-950 whitespace-nowrap ml-2">{item.value} ฿</span>
                                             </div>
-                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                                <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.percent}%` }}></div>
+                                            {/* เพิ่มเงาในหลอด Progress Bar ให้ดูมีมิติ */}
+                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
+                                                <div className={`absolute top-0 left-0 h-full ${item.color} rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]`} style={{ width: `${item.percent}%` }}></div>
                                             </div>
                                         </div>
                                     ))
@@ -730,13 +740,12 @@ export default function App() {
                                 )}
                              </div>
                              {top3ExpenseData.length > 0 && (
-                                <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-2xl text-sm font-bold transition-all"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
+                                <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200 text-emerald-800 py-3 rounded-2xl text-sm font-bold transition-all border border-emerald-100 shadow-sm hover:shadow-md"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
                              )}
                           </div>
                       </div>
                   </div>
                 </div>
-
              <section className="py-6 pb-20">
   <div className="bg-white border border-emerald-900/10 rounded-[3.5rem] p-8 md:p-12 shadow-sm">
     
@@ -776,51 +785,65 @@ export default function App() {
         </div>
       </div>
       
-      {/* MODAL REPORT 12 เดือน */}
+ {/* 🌟 MODAL REPORT 12 เดือน: อัปเกรดดีไซน์ใหม่ */}
       {showExpenseReport && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-[1200px] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="px-8 py-6 border-b border-emerald-100/50 flex justify-between items-center bg-emerald-50/50">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-600 text-white rounded-2xl"><List size={24} /></div>
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-[1300px] rounded-[3rem] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
+                
+                {/* Header สีเขียวเข้มพรีเมียม */}
+                <div className="px-10 py-8 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 flex justify-between items-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform translate-x-10 -translate-y-10"><Wallet size={200} /></div>
+                    <div className="flex items-center gap-5 relative z-10">
+                        <div className="p-4 bg-white/10 backdrop-blur-sm text-white rounded-2xl border border-white/20 shadow-inner"><List size={32} /></div>
                         <div>
-                            <h3 className="font-black text-emerald-950 text-xl uppercase">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
+                            <h3 className="font-black text-white text-2xl md:text-3xl uppercase tracking-wider drop-shadow-md">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
+                            <p className="text-sm text-emerald-200/80 font-bold mt-1.5 tracking-widest uppercase">
+                              {expenseReportData.isYearFallback ? `⚠️ ไม่พบข้อมูลปี ${filterYear} — แสดงข้อมูลทุกปีงบประมาณ` : `ประจำปีงบประมาณ ${filterYear}`}
+                            </p>
                         </div>
                     </div>
-                    <button onClick={() => setShowExpenseReport(false)} className="text-slate-400 hover:text-rose-500 text-2xl font-black">&times;</button>
+                    <button onClick={() => setShowExpenseReport(false)} className="w-12 h-12 rounded-full bg-white/10 hover:bg-rose-500 text-white flex items-center justify-center text-2xl font-black transition-all relative z-10">&times;</button>
                 </div>
-                <div className="p-8 overflow-auto custom-scrollbar flex-1">
-                    <table className="w-full min-w-[1000px] text-left border-collapse border-separate border-spacing-y-1">
-                        <thead>
-                            <tr className="bg-emerald-50 text-emerald-800 text-[11px] font-black uppercase">
-                                <th className="p-4 py-3 sticky left-0 z-20 bg-emerald-50 w-64">หมวดหมู่รายการจ่าย</th>
-                                {months.map((m, i) => <th key={i} className="p-4 py-3 text-right">{m}</th>)}
-                                <th className="p-4 py-3 text-right">รวมทั้งสิ้น</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-emerald-50/50">
-                            {expenseReportData.rows.length > 0 ? expenseReportData.rows.map((item, idx) => (
-                                <tr key={idx} className="hover:bg-slate-50">
-                                    <td className="p-4 py-3 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white border-r border-slate-50">{idx + 1}. {item.label}</td>
-                                    {item.monthlyData.map((val, mIdx) => <td key={mIdx} className="p-4 py-3 text-[12px] text-slate-500 text-right">{val > 0 ? fmt(val) : '-'}</td>)}
-                                    <td className="p-4 py-3 text-sm text-emerald-900 font-black text-right bg-emerald-50/30">{fmt(item.total)}</td>
-                                </tr>
-                            )) : <tr><td colSpan="14" className="text-center py-10 text-slate-400">ไม่มีข้อมูล</td></tr>}
-                        </tbody>
-                        {expenseReportData.rows.length > 0 && (
-                            <tfoot>
-                                <tr className="bg-emerald-600 text-white">
-                                    <td className="p-4 py-4 text-sm font-bold text-right sticky left-0 z-20 bg-emerald-600 border-r border-emerald-500">รวมทุกหมวดหมู่</td>
-                                    {expenseReportData.monthlyTotals.map((total, i) => <td key={i} className="p-4 py-4 text-[12px] font-bold text-right">{total > 0 ? fmt(total) : '-'}</td>)}
-                                    <td className="p-4 py-4 text-base font-black text-right bg-emerald-700">{fmt(expenseReportData.grandTotal)}</td>
-                                </tr>
-                            </tfoot>
-                        )}
-                    </table>
+
+                <div className="p-8 md:p-10 overflow-auto custom-scrollbar flex-1 bg-slate-50/50">
+                    <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                      <table className="w-full min-w-[1100px] text-left border-collapse">
+                          <thead>
+                              <tr className="bg-emerald-50/80 text-emerald-800 text-[12px] font-black uppercase tracking-widest border-b border-emerald-100/50">
+                                  <th className="p-5 py-4 sticky left-0 z-20 bg-emerald-50/90 backdrop-blur-sm w-72 border-r border-emerald-100/50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.05)]">หมวดหมู่รายการจ่าย</th>
+                                  {months.map((m, i) => <th key={i} className="p-5 py-4 text-right">{m}</th>)}
+                                  <th className="p-5 py-4 text-right bg-emerald-100/30">รวมทั้งสิ้น</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                              {expenseReportData.rows.length > 0 ? expenseReportData.rows.map((item, idx) => (
+                                  <tr key={idx} className="hover:bg-emerald-50/40 hover:scale-[1.002] transition-all group">
+                                      <td className="p-5 py-4 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white group-hover:bg-emerald-50/40 border-r border-slate-50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.02)] transition-colors">
+                                        <div className="flex items-center gap-3">
+                                          <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 font-black group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors">{idx + 1}</span>
+                                          <span className="line-clamp-1">{item.label}</span>
+                                        </div>
+                                      </td>
+                                      {item.monthlyData.map((val, mIdx) => <td key={mIdx} className="p-5 py-4 text-[13px] text-slate-500 text-right group-hover:text-emerald-900 transition-colors">{val > 0 ? fmt(val) : '-'}</td>)}
+                                      <td className="p-5 py-4 text-[14px] text-emerald-900 font-black text-right bg-emerald-50/30 group-hover:bg-emerald-100/40 transition-colors">{fmt(item.total)}</td>
+                                  </tr>
+                              )) : <tr><td colSpan="14" className="text-center py-16 text-slate-400 font-bold">ยังไม่มีข้อมูลการเบิกจ่าย</td></tr>}
+                          </tbody>
+                          {expenseReportData.rows.length > 0 && (
+                              <tfoot>
+                                  <tr className="bg-emerald-600 text-white shadow-[0_-10px_20px_rgba(5,150,105,0.15)] relative z-20">
+                                      <td className="p-6 py-5 text-[15px] font-black text-right sticky left-0 z-20 bg-emerald-600 border-r border-emerald-500 uppercase tracking-widest shadow-[10px_0_15px_-10px_rgba(0,0,0,0.2)]">รวมทุกหมวดหมู่</td>
+                                      {expenseReportData.monthlyTotals.map((total, i) => <td key={i} className="p-6 py-5 text-[13px] font-bold text-right">{total > 0 ? fmt(total) : '-'}</td>)}
+                                      <td className="p-6 py-5 text-[18px] font-black text-right bg-emerald-700">{fmt(expenseReportData.grandTotal)}</td>
+                                  </tr>
+                              </tfoot>
+                          )}
+                      </table>
+                    </div>
                 </div>
-                <div className="px-8 py-5 border-t border-emerald-100/50 bg-slate-50 flex justify-end gap-3">
-                    <button onClick={() => setShowExpenseReport(false)} className="px-6 py-2.5 text-sm font-bold text-slate-600 border border-slate-200 rounded-xl">ปิด</button>
-                    <button onClick={() => window.print()} className="px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl flex items-center gap-2"><Table2 size={18} />พิมพ์รายงาน</button>
+                <div className="px-10 py-6 bg-white border-t border-slate-100 flex justify-end gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] relative z-30">
+                    <button onClick={() => setShowExpenseReport(false)} className="px-8 py-3 text-sm font-bold text-slate-500 bg-slate-50 hover:bg-slate-200 hover:text-slate-700 rounded-2xl transition-all">ปิดหน้าต่าง</button>
+                    <button onClick={() => window.print()} className="px-8 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-2xl flex items-center gap-2 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all"><Table2 size={20} /> พิมพ์รายงาน</button>
                 </div>
             </div>
         </div>
