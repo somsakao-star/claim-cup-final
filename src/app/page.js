@@ -492,12 +492,12 @@ const LoginScreen = ({ onLoginSuccess }) => {
       )}
       <div className={`bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24 transition-all duration-1000 ease-out transform ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
         
-        {/* 🌟 จุดที่เพิ่มโลโก้ครับ */}
+      {/* 🌟 จุดที่เพิ่มโลโก้ครับ (อัปเกรดขนาดใหญ่ขึ้นเป็น w-36 h-36) */}
         <div className="text-center mb-8 flex flex-col items-center">
           <img 
             src="/my-logo.png" 
             alt="โลโก้ รพ.สต." 
-            className="w-24 h-24 mb-5 rounded-full object-cover shadow-[0_8px_20px_rgb(0,0,0,0.1)] bg-white border-2 border-emerald-100" 
+            className="w-36 h-36 mb-5 rounded-full object-cover shadow-[0_8px_20px_rgb(0,0,0,0.1)] bg-white border-4 border-emerald-100" 
           />
           <h2 className="text-3xl font-black text-emerald-900 mb-2">ClaimCup</h2>
           <p className="text-emerald-600 font-medium">Sankhong Portal</p>
