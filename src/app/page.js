@@ -10,7 +10,6 @@ const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 
 const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
 
-// 🌟 ปุ่มกดหน้าหลัก: เก็บไว้เฉพาะหน่วยบริการหลัก ไม่ต้องใส่นักกายภาพตรงนี้แล้ว
 const HOSPITAL_BUTTONS = [
   { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800', inactive: 'bg-slate-100 text-slate-600' },
   { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', active: 'bg-blue-600 text-white shadow-blue-300 ring-2 ring-blue-600', inactive: 'bg-blue-50 text-blue-700' },
@@ -42,7 +41,6 @@ const EXPENSE_CATEGORY_NAMES = {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
-// ✅ ฟังก์ชันคำนวณข้อมูลหลัก: รับพจนานุกรมชื่อมาจากฐานข้อมูล (hospitalMap)
 function processData(claims, yearFilter, unitFilter, hospitalMap) {
   const filtered = claims.filter(c => {
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
@@ -96,13 +94,9 @@ function processData(claims, yearFilter, unitFilter, hospitalMap) {
 
   const rankingMap = {};
   claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
-    // ✅ ข้ามกายภาพ ไม่เอามารวมใน Top Units ของหน้าหลัก
     if (c.platform && c.platform.toLowerCase() === 'physical') return;
-    
-    // ✅ ดึงชื่อจากฐานข้อมูล (hospitalMap)
     const hName = hospitalMap[String(c.hcode)] || (c.hcode || "Unknown");
     if (hName === "All Cup" || !hName) return;
-    
     if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
     let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
     rankingMap[hName].amount += amt;
@@ -287,15 +281,11 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
   const subItems = platform.items || [];
   
   const topPlatformUnits = useMemo(() => {
-    // ✅ ในหน้ารายละเอียด อนุญาตให้กายภาพดึงรายชื่อมาโชว์ในตาราง Top Units Share ได้
     const map = {};
     claims.forEach(c => {
       if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
-        
-        // ✅ ดึงชื่อจากฐานข้อมูลตรงๆ ถ้ารหัส 54 ก็จะแปลเป็น พัทธนันท์ อัตโนมัติ
         const hName = hospitalMap[String(c.hcode)] || c.hcode;
         if (hName === "All Cup" || !hName) return;
-        
         if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
         map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
         map[hName].cases += 1;
@@ -303,6 +293,19 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
     });
     return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
   }, [claims, platform.key, filterYear, hospitalMap]);
+
+  // ✅ คำนวณยอดรวมแต่ละเดือนของแพลตฟอร์มนี้
+  const { platformMonthlyTotals, platformGrandTotal } = useMemo(() => {
+    const pTotals = Array(12).fill(0);
+    let pGrand = 0;
+    subItems.forEach(item => {
+      item.monthlyData?.forEach((amount, mIdx) => {
+        pTotals[mIdx] += (amount || 0);
+      });
+      pGrand += (item.value || 0);
+    });
+    return { platformMonthlyTotals: pTotals, platformGrandTotal: pGrand };
+  }, [subItems]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -390,6 +393,24 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
                    </tr>
                  ))}
                </tbody>
+               {/* ✅ เพิ่มแถบสีเขียวเข้มสรุปยอดรวมของแต่ละเดือน (Monthly Total) ให้แพลตฟอร์มนี้ */}
+               {subItems.length > 0 && (
+                 <tfoot>
+                   <tr className="group transition-transform">
+                     <td className="py-5 px-6 bg-emerald-700 border-y border-l border-emerald-800 rounded-l-2xl text-sm font-black text-white sticky left-0 z-10 shadow-sm uppercase tracking-widest">
+                       รวมทุกรายการ
+                     </td>
+                     {platformMonthlyTotals.map((total, mIdx) => (
+                       <td key={mIdx} className="py-5 px-3 bg-emerald-700 border-y border-emerald-800 text-right text-[12px] font-bold text-white shadow-sm">
+                         {total > 0 ? fmt(total) : '-'}
+                       </td>
+                     ))}
+                     <td className="py-5 px-6 bg-emerald-800 border-y border-r border-emerald-900 rounded-r-2xl text-right text-base font-black text-emerald-100 shadow-sm">
+                       {fmt(platformGrandTotal)}
+                     </td>
+                   </tr>
+                 </tfoot>
+               )}
              </table>
            </div>
         </div>
@@ -498,9 +519,34 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
   const [showExpenseReport, setShowExpenseReport] = useState(false);
-
-  // ✅ 1. เพิ่ม State เพื่อเก็บพจนานุกรมชื่อหน่วยบริการที่ดึงมาจาก Database
   const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
+
+  // ✅ ระบบ Auto-Logout ตัดจบอัตโนมัติถ้าไม่มีการใช้งาน 30 นาที
+  useEffect(() => {
+    if (!currentUser) return;
+    const INACTIVITY_TIME = 30 * 60 * 1000; // 30 นาที
+    let timeoutId;
+    
+    const handleAutoLogout = () => {
+      localStorage.removeItem('claimcup_user');
+      setCurrentUser(null);
+      alert('🔒 ระบบได้ออกจากระบบอัตโนมัติ เนื่องจากไม่มีการใช้งานเป็นเวลานานครับ');
+    };
+    
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoLogout, INACTIVITY_TIME);
+    };
+    
+    resetTimer(); // เริ่มจับเวลา
+    const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('claimcup_user');
@@ -512,7 +558,6 @@ export default function App() {
   useEffect(() => {
     const fetchAllData = async () => {
         try {
-            // ดึงข้อมูลรายรับ (Claims)
             try {
                 const resC = await fetch(`${API_BASE_URL}/api/claims`);
                 if (resC.ok && resC.headers.get("content-type")?.includes("application/json")) {
@@ -521,7 +566,6 @@ export default function App() {
                 }
             } catch (err) { console.error("ดึง Claims ไม่ได้:", err); }
 
-            // ดึงข้อมูลรายจ่าย (Expenses)
             try {
                 const resE = await fetch(`${API_BASE_URL}/api/expenses`);
                 if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
@@ -530,7 +574,6 @@ export default function App() {
                 }
             } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
 
-            // ✅ 2. เพิ่มการดึงข้อมูลจากตาราง Hospitals มาแปลงเป็นพจนานุกรม { '05954': 'รพ.สต.บ้านสันโค้ง', '54': 'พัทธนันท์' }
             try {
                 const resH = await fetch(`${API_BASE_URL}/api/hospitals`);
                 if (resH.ok) {
@@ -543,7 +586,6 @@ export default function App() {
                 }
             } catch (err) { console.error("ดึง Hospitals ไม่ได้", err); }
 
-            // ดึงวันที่อัปเดต
             try {
                 const resU = await fetch(`${API_BASE_URL}/api/last-updated`);
                 if (resU.ok) {
@@ -563,10 +605,8 @@ export default function App() {
     fetchAllData();
   }, []);
 
-  // ✅ เปลี่ยนมาใช้ชื่อที่อ่านมาจาก Database แทน
   const selectedHospitalName = useMemo(() => hospitalMap[filterUnit] || 'All Cup', [filterUnit, hospitalMap]);
 
-  // ✅ ส่ง hospitalMap เข้าไปใน processData ด้วย
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
       return processData(claims, filterYear, filterUnit, hospitalMap);
   }, [claims, filterYear, filterUnit, hospitalMap]);
@@ -653,7 +693,6 @@ export default function App() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
           <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
             
-            {/* ✅ ส่ง hospitalMap เข้าไปใน Platform Detail ด้วย */}
             {selectedPlatform ? (
               <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} hospitalMap={hospitalMap} />
             ) : (
