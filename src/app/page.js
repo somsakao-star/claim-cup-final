@@ -1011,7 +1011,7 @@ export default function App() {
                 <div className="text-xs text-sky-100 mt-1">ให้บริการโดยนักกายภาพบำบัดกลาง 3 คน ครอบคลุมทุกหน่วยบริการ (ไม่แยกยอดตามหน่วยบริการ)</div>
               </div>
               <div className="flex gap-6 text-right text-sm font-semibold">
-                <div><span>จำนวนรายการ</span><div className="text-xl font-bold">{fmt(physicalStats.count)} รายการ</div></div>
+                <div><span>จำนวนครั้ง</span><div className="text-xl font-bold">{fmt(physicalStats.count)} ครั้ง</div></div>
               </div>
             </div>
 
@@ -1034,7 +1034,7 @@ export default function App() {
                         </div>
                       </div>
                       <div className="space-y-2 text-xs">
-                        <div className="flex justify-between"><span className="text-slate-500">จำนวนรายการ</span><span className="font-bold text-slate-900">{fmt(qty)} รายการ</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">จำนวนครั้ง</span><span className="font-bold text-slate-900">{fmt(qty)} ครั้ง</span></div>
                         <div className="flex justify-between"><span className="text-slate-500">ยอดเบิก</span><span className="font-bold text-slate-900">฿{fmt(amt)}</span></div>
                       </div>
                       <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
@@ -1056,7 +1056,7 @@ export default function App() {
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                     <th className="p-3">ประเภทบริการ</th>
-                    <th className="p-3 text-right">จำนวนรายการ</th>
+                    <th className="p-3 text-right">จำนวนครั้ง</th>
                     <th className="p-3 text-right">ยอดเบิก (บาท)</th>
                     <th className="p-3 text-left w-[200px]">สัดส่วน</th>
                   </tr>
@@ -1092,7 +1092,7 @@ export default function App() {
                   <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                     <th className="p-3">HCODE</th>
                     <th className="p-3">ชื่อหน่วยบริการ</th>
-                    <th className="p-3 text-right">จำนวนรายการ</th>
+                    <th className="p-3 text-right">จำนวนครั้ง</th>
                     <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
                   </tr>
                 </thead>
@@ -1132,8 +1132,8 @@ export default function App() {
                     <div className="p-5">
                       <div className="grid grid-cols-2 gap-3 mb-5">
                         <div className="bg-slate-50 rounded-xl p-3">
-                          <div className="text-[11px] text-slate-500 font-semibold">จำนวนรายการรวม</div>
-                          <div className="text-lg font-black text-slate-900 mt-0.5">{fmt(tQty)} รายการ</div>
+                          <div className="text-[11px] text-slate-500 font-semibold">จำนวนครั้งรวม</div>
+                          <div className="text-lg font-black text-slate-900 mt-0.5">{fmt(tQty)} ครั้ง</div>
                         </div>
                         <div className="bg-slate-50 rounded-xl p-3">
                           <div className="text-[11px] text-slate-500 font-semibold">ยอดเบิกรวม</div>
@@ -1145,7 +1145,7 @@ export default function App() {
                         <thead>
                           <tr className="border-b border-slate-100">
                             <th className="text-left py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">บริการ</th>
-                            <th className="text-right py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">รายการ</th>
+                            <th className="text-right py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">ครั้ง</th>
                             <th className="text-right py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">บาท</th>
                           </tr>
                         </thead>
