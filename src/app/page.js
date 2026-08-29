@@ -10,9 +10,8 @@ import {
 
 const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 
-const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
-const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
-const monthMapping = { "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11, "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5, "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11 };
+
+
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -105,16 +104,11 @@ export default function App() {
 
   const [claims, setClaims] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [herbal, setHerbal] = useState([]);
-  const [thai, setThai] = useState([]);
-  const [physical, setPhysical] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
   const [clockTime, setClockTime] = useState('');
 
-  const trendChartRef = useRef(null);
   const donutChartRef = useRef(null);
-  const trendCanvasRef = useRef(null);
   const donutCanvasRef = useRef(null);
 
   // Auto-Logout 30 mins[cite: 2]
@@ -156,23 +150,23 @@ export default function App() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [resC, resE, resH, resT, resP, resHos] = await Promise.allSettled([
+        const [resC, resE, resHos] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/api/claims`).then(r => r.json()),
           fetch(`${API_BASE_URL}/api/expenses`).then(r => r.json()),
-          fetch(`${API_BASE_URL}/api/herbal`).then(r => r.json()),
-          fetch(`${API_BASE_URL}/api/thai`).then(r => r.json()),
-          fetch(`${API_BASE_URL}/api/physical`).then(r => r.json()),
           fetch(`${API_BASE_URL}/api/hospitals`).then(r => r.json()),
         ]);
 
         if (resC.status === 'fulfilled' && Array.isArray(resC.value)) setClaims(resC.value);
         if (resE.status === 'fulfilled' && Array.isArray(resE.value)) setExpenses(resE.value);
-        if (resH.status === 'fulfilled' && Array.isArray(resH.value)) setHerbal(resH.value);
-        if (resT.status === 'fulfilled' && Array.isArray(resT.value)) setThai(resT.value);
-        if (resP.status === 'fulfilled' && Array.isArray(resP.value)) setPhysical(resP.value);
         if (resHos.status === 'fulfilled' && Array.isArray(resHos.value)) {
           const hMap = { 'all': 'All Cup' };
-          resHos.value.forEach(h => { hMap[String(h.hcode)] = h.name; });
+          resHos.value.forEach(h => {
+            const code = String(h.hcode);
+            // กรอง hcode 2 หลักออก (54, 56, 62) เอาเฉพาะ 5 หลัก
+            if (code.length >= 5) {
+              hMap[code] = h.name;
+            }
+          });
           setHospitalMap(hMap);
         }
       } catch (err) {
@@ -188,79 +182,98 @@ export default function App() {
 
   const processedData = useMemo(() => {
     let totalAmt = 0;
-    const monthly68 = Array(12).fill(0);
-    const monthly69 = Array(12).fill(0);
-    const hospTotals = { '05954': 0, '05962': 0, '05957': 0, '05959': 0, '05956': 0 };
+    const hospTotals = {};
+    const groupStats = {};
+
+    // สร้าง hospTotals จาก hospitalMap (เฉพาะ 5 หลัก)
+    Object.keys(hospitalMap).forEach(k => {
+      if (k !== 'all') hospTotals[k] = 0;
+    });
 
     claims.forEach(c => {
       const yr = String(c.fiscal_year || '');
       const hcode = String(c.hcode || '');
       const amt = parseFloat(String(c.amount || 0).replace(/,/g, '')) || 0;
-      const mStr = String(c.month || '');
-      const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
+      const group = String(c.group || 'อื่นๆ');
 
+      // คำนวณยอดรวมทั้งหมด (filter ตามปีงบ + หน่วยบริการ)
       if (currentHosp === 'all' || hcode === currentHosp) {
         if (currentYear === 'all' || yr === currentYear) {
           totalAmt += amt;
+
+          // คำนวณยอดแยกตาม group
+          if (!groupStats[group]) {
+            groupStats[group] = { total: 0, items: {}, topItem: '', topAmt: 0 };
+          }
+          groupStats[group].total += amt;
+          const sItem = c.service_item || 'ไม่ระบุ';
+          groupStats[group].items[sItem] = (groupStats[group].items[sItem] || 0) + amt;
+          if (groupStats[group].items[sItem] > groupStats[group].topAmt) {
+            groupStats[group].topAmt = groupStats[group].items[sItem];
+            groupStats[group].topItem = sItem;
+          }
         }
       }
-      if (hospTotals[hcode] !== undefined) hospTotals[hcode] += amt;
 
-      if (mIdx >= 0 && mIdx < 12) {
-        if (yr === '2568') monthly68[mIdx] += amt;
-        if (yr === '2569') monthly69[mIdx] += amt;
+      // คำนวณ hospTotals (filter ตามปีเท่านั้น)
+      if (currentYear === 'all' || yr === currentYear) {
+        if (hospTotals[hcode] !== undefined) {
+          hospTotals[hcode] += amt;
+        }
       }
     });
 
-    herbal.forEach(h => {
-      const amt = parseFloat(String(h.amount || 0).replace(/,/g, '')) || 0;
-      if (currentHosp === 'all' || String(h.hcode) === currentHosp) totalAmt += amt;
-    });
-    thai.forEach(t => {
-      const amt = parseFloat(String(t.amount || 0).replace(/,/g, '')) || 0;
-      if (currentHosp === 'all' || String(t.hcode) === currentHosp) totalAmt += amt;
-    });
-    physical.forEach(p => {
-      const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
-      if (currentHosp === 'all' || String(p.hcode) === currentHosp) totalAmt += amt;
-    });
+    // คำนวณ rankingList — Top 5 หน่วยบริการ (sort by amount)
+    const rankingList = Object.entries(hospTotals)
+      .map(([hcode, amount]) => {
+        // นับจำนวนรายการ
+        const itemCount = claims.filter(c => {
+          const yr = String(c.fiscal_year || '');
+          return String(c.hcode) === hcode && (currentYear === 'all' || yr === currentYear);
+        }).length;
+        return {
+          hcode,
+          name: hospitalMap[hcode] || hcode,
+          amount,
+          items: itemCount,
+        };
+      })
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
 
-    return { totalAmt, monthly68, monthly69, hospTotals };
-  }, [claims, herbal, thai, physical, currentYear, currentHosp]);
+    // แปลง groupStats เป็น array sorted by total
+    const groupCards = Object.entries(groupStats)
+      .map(([group, data]) => ({
+        group,
+        total: data.total,
+        topItem: data.topItem,
+        topAmt: data.topAmt,
+        itemCount: Object.keys(data.items).length,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    return { totalAmt, hospTotals, rankingList, groupCards };
+  }, [claims, currentYear, currentHosp, hospitalMap]);
 
   useEffect(() => {
     if (currentView !== 'overview') return;
 
-    if (trendCanvasRef.current) {
-      if (trendChartRef.current) trendChartRef.current.destroy();
-      trendChartRef.current = new Chart(trendCanvasRef.current, {
-        type: 'line',
-        data: {
-          labels: months,
-          datasets: [
-            { label: 'ปีงบ 2568', data: processedData.monthly68, borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.06)', borderDash: [5, 4], tension: 0.4, fill: true },
-            { label: 'ปีงบ 2569', data: processedData.monthly69, borderColor: '#064e3b', backgroundColor: 'rgba(6,78,59,0.08)', tension: 0.4, fill: true }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'top' } },
-          scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
-        }
-      });
-    }
-
     if (donutCanvasRef.current) {
       if (donutChartRef.current) donutChartRef.current.destroy();
-      const hValues = Object.values(processedData.hospTotals);
+      
+      // ใช้ข้อมูลจริงจาก hospTotals — dynamic labels จาก hospitalMap
+      const hospEntries = Object.entries(processedData.hospTotals).filter(([, v]) => v > 0);
+      const labels = hospEntries.map(([code]) => hospitalMap[code] || code);
+      const values = hospEntries.map(([, v]) => v);
+      const colors = ['#3b82f6', '#10b981', '#f97316', '#a855f7', '#ec4899'];
+
       donutChartRef.current = new Chart(donutCanvasRef.current, {
         type: 'doughnut',
         data: {
-          labels: ['รพ.สต.บ้านสันโค้ง', 'รพ.สต.บ้านต้นเปา', 'รพ.สต.บ้านกอสะเรียม', 'รพ.สต.บ้านแม่ผาแหน', 'รพ.สต.บ้านป่าตาล'],
+          labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
           datasets: [{
-            data: hValues.some(v => v > 0) ? hValues : [1173268, 494217, 427296, 370688, 221840],
-            backgroundColor: ['#3b82f6', '#10b981', '#f97316', '#a855f7', '#ec4899'],
+            data: values.length > 0 ? values : [1],
+            backgroundColor: values.length > 0 ? colors.slice(0, values.length) : ['#e2e8f0'],
             borderWidth: 0
           }]
         },
@@ -274,10 +287,9 @@ export default function App() {
     }
 
     return () => {
-      if (trendChartRef.current) trendChartRef.current.destroy();
       if (donutChartRef.current) donutChartRef.current.destroy();
     };
-  }, [currentView, processedData]);
+  }, [currentView, processedData, hospitalMap]);
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#F4FAF7]"><div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div></div>;
   if (!currentUser) return <LoginScreen onLoginSuccess={setCurrentUser} />;
@@ -384,7 +396,7 @@ export default function App() {
                 </div>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold text-[#34d399]">฿</span>
-                  <span className="text-5xl font-black tracking-tight">{fmt(processedData.totalAmt || 2847530)}</span>
+                  <span className="text-5xl font-black tracking-tight">{fmt(processedData.totalAmt)}</span>
                 </div>
                 <div className="text-sm font-semibold text-[#d1fae5] mb-2">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
                 <div className="text-xs font-bold text-red-400">หน่วยบริการ: {selectedHospName}</div>
@@ -408,63 +420,48 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div onClick={() => setCurrentView('physical')} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#0284c7]">
-                <div className="text-xs font-bold text-[#475569] mb-1">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
-                <div className="text-2xl font-black text-[#0f172a] mb-2">392,535.34</div>
-                <div className="text-[11px] font-semibold text-[#0369a1]">สูงสุด: กายภาพบำบัด_IMC (฿259,650)</div>
-              </div>
-              <div onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#8b5cf6]">
-                <div className="text-xs font-bold text-[#475569] mb-1">รายได้งบ PPFS ปี {currentYear.slice(2)}</div>
-                <div className="text-2xl font-black text-[#0f172a] mb-2">294,185.00</div>
-                <div className="text-[11px] font-semibold text-[#7c3aed]">สูงสุด: เจาะเลือดตรวจน้ำตาล/ไขมัน</div>
-              </div>
-              <div onClick={() => { setActiveDetailTab('thai'); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#f59e0b]">
-                <div className="text-xs font-bold text-[#475569] mb-1">ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)}</div>
-                <div className="text-2xl font-black text-[#0f172a] mb-2">226,930.50</div>
-                <div className="text-[11px] font-semibold text-[#d97706]">สูงสุด: ค่าบริการนวดและประคบ</div>
-              </div>
-              <div onClick={() => { setActiveDetailTab('herbal'); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#10b981]">
-                <div className="text-xs font-bold text-[#475569] mb-1">ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)}</div>
-                <div className="text-2xl font-black text-[#0f172a] mb-2">86,420.00</div>
-                <div className="text-[11px] font-semibold text-[#059669]">สูงสุด: ยาขมิ้นชัน / ยาแก้ไอ</div>
-              </div>
+              {processedData.groupCards.length > 0 ? processedData.groupCards.slice(0, 4).map((card, idx) => {
+                const borderColors = ['#0284c7', '#8b5cf6', '#f59e0b', '#10b981'];
+                const textColors = ['#0369a1', '#7c3aed', '#d97706', '#059669'];
+                return (
+                  <div key={card.group} onClick={() => { setActiveDetailTab(card.group); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4" style={{ borderLeftColor: borderColors[idx % 4] }}>
+                    <div className="text-xs font-bold text-[#475569] mb-1">{card.group} ปี {currentYear.slice(2)}</div>
+                    <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(card.total)}</div>
+                    <div className="text-[11px] font-semibold" style={{ color: textColors[idx % 4] }}>สูงสุด: {card.topItem} (฿{fmt(card.topAmt)})</div>
+                  </div>
+                );
+              }) : (
+                <div className="col-span-4 bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm text-center text-slate-400 font-bold">
+                  ไม่มีข้อมูลสำหรับปีงบประมาณ {currentYear}
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <div className="font-black text-base text-[#0f172a] flex items-center gap-2">
-                  <Trophy size={18} className="text-amber-500" /> การจัดลำดับ 1-5 ภายในเครือข่าย CUP ทรายมูล
+                  <Trophy size={18} className="text-amber-500" /> การจัดลำดับ 1-5 ภายในเครือข่าย CUP สันโค้ง
                 </div>
-                <span className="text-[11px] font-bold bg-[#fef3c7] text-[#b45309] px-3 py-1 rounded-full border border-[#fde68a]">Top 5 Internal Ranking</span>
+                <span className="text-[11px] font-bold bg-[#fef3c7] text-[#b45309] px-3 py-1 rounded-full border border-[#fde68a]">Top 5 Internal Ranking — ปี {currentYear}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                {[
-                  { rank: 1, name: 'รพ.สต.บ้านสันโค้ง', code: '05954 (แม่ข่าย)', items: '6,940 รายการ', amt: '฿1,173,268' },
-                  { rank: 2, name: 'รพ.สต.บ้านต้นเปา', code: '05962 (ลูกข่าย)', items: '4,311 รายการ', amt: '฿494,217' },
-                  { rank: 3, name: 'รพ.สต.บ้านกอสะเรียม', code: '05957 (ลูกข่าย)', items: '4,092 รายการ', amt: '฿427,296' },
-                  { rank: 4, name: 'รพ.สต.บ้านแม่ผาแหน', code: '05959 (ลูกข่าย)', items: '3,369 รายการ', amt: '฿370,688' },
-                  { rank: 5, name: 'รพ.สต.บ้านป่าตาล', code: '05956 (ลูกข่าย)', items: '2,214 รายการ', amt: '฿221,840' },
-                ].map((item) => (
-                  <div key={item.rank} onClick={() => setCurrentHosp(item.code.slice(0, 5))} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-emerald-500 cursor-pointer transition-all">
+                {processedData.rankingList.map((item, idx) => (
+                  <div key={item.hcode} onClick={() => setCurrentHosp(item.hcode)} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-emerald-500 cursor-pointer transition-all">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">อันดับ {item.rank}</span>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{item.items}</span>
+                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">อันดับ {idx + 1}</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{fmt(item.items)} รายการ</span>
                     </div>
                     <div className="font-bold text-sm text-slate-800">{item.name}</div>
-                    <div className="text-[10px] text-slate-400 mb-3">{item.code}</div>
+                    <div className="text-[10px] text-slate-400 mb-3">{item.hcode}</div>
                     <div className="pt-2 border-t border-slate-200">
                       <div className="text-[10px] text-slate-400">ยอดชดเชย</div>
-                      <div className="text-base font-black text-emerald-900">{item.amt}</div>
+                      <div className="text-base font-black text-emerald-900">฿{fmt(item.amount)}</div>
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
-              <div className="font-bold text-slate-800 mb-2">เปรียบเทียบยอดเบิกรายเดือน (YoY) — ปีงบ 2568 vs 2569</div>
-              <div className="relative h-[300px] w-full">
-                <canvas ref={trendCanvasRef}></canvas>
+                {processedData.rankingList.length === 0 && (
+                  <div className="col-span-5 text-center text-slate-400 font-bold py-4">ไม่มีข้อมูล</div>
+                )}
               </div>
             </div>
           </div>
@@ -577,10 +574,10 @@ export default function App() {
                   <p className="text-sm text-slate-500">ตรวจสอบรายละเอียดรายกิจกรรมและหน่วยบริการ</p>
                 </div>
               </div>
-              <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200">
-                {['ppfs', 'thai', 'herbal'].map(tab => (
-                  <button key={tab} onClick={() => setActiveDetailTab(tab)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${activeDetailTab === tab ? 'bg-emerald-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                    {tab}
+              <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200 flex-wrap">
+                {processedData.groupCards.map(card => (
+                  <button key={card.group} onClick={() => setActiveDetailTab(card.group)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${activeDetailTab === card.group ? 'bg-emerald-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+                    {card.group}
                   </button>
                 ))}
               </div>
@@ -589,13 +586,51 @@ export default function App() {
             <div className="bg-[#16121b] border border-amber-500/20 rounded-2xl p-6 text-white flex justify-between items-center shadow-lg">
               <div>
                 <span className="text-[11px] font-bold bg-amber-500/20 text-yellow-300 px-2.5 py-1 rounded border border-amber-500/30">แหล่งข้อมูลจริงจากระบบ</span>
-                <h3 className="text-xl font-black mt-2">หมวดหมู่: {activeDetailTab.toUpperCase()}</h3>
-                <p className="text-xs text-slate-300 mt-1">ข้อมูลเชิงลึกการเบิกจ่ายชดเชยของเครือข่าย CUP สันโค้ง (เชื่อมตาราง Thai และ Herbal สำเร็จ)</p>
+                <h3 className="text-xl font-black mt-2">หมวดหมู่: {activeDetailTab}</h3>
+                <p className="text-xs text-slate-300 mt-1">ข้อมูลเชิงลึกการเบิกจ่ายชดเชยของเครือข่าย CUP สันโค้ง — หน่วยบริการ: {selectedHospName}</p>
               </div>
               <div className="bg-slate-900/80 border border-white/10 rounded-xl p-4 text-right">
                 <div className="text-[11px] text-slate-400 font-bold uppercase">ยอดเงินรวม ปี {currentYear}</div>
-                <div className="text-2xl font-black text-amber-400 mt-0.5">฿294,185.00</div>
+                <div className="text-2xl font-black text-amber-400 mt-0.5">฿{fmtD(processedData.groupCards.find(g => g.group === activeDetailTab)?.total || 0)}</div>
               </div>
+            </div>
+
+            {/* แสดงรายการบริการทั้งหมดใน group ที่เลือก */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Layers size={18} className="text-emerald-600" /> รายการบริการในหมวด {activeDetailTab}
+              </h3>
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                    <th className="p-3">#</th>
+                    <th className="p-3">รายการบริการ</th>
+                    <th className="p-3 text-right">จำนวน (Qty)</th>
+                    <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {claims
+                    .filter(c => {
+                      const yr = String(c.fiscal_year || '');
+                      const hcode = String(c.hcode || '');
+                      const group = String(c.group || 'อื่นๆ');
+                      return group === activeDetailTab
+                        && (currentYear === 'all' || yr === currentYear)
+                        && (currentHosp === 'all' || hcode === currentHosp);
+                    })
+                    .sort((a, b) => (parseFloat(String(b.amount || 0).replace(/,/g, '')) || 0) - (parseFloat(String(a.amount || 0).replace(/,/g, '')) || 0))
+                    .map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="p-3 text-slate-400 font-mono">{idx + 1}</td>
+                        <td className="p-3 font-semibold text-slate-800">{item.service_item || 'ไม่ระบุ'}</td>
+                        <td className="p-3 text-right text-slate-600">{fmt(item.quantity || 0)}</td>
+                        <td className="p-3 text-right font-black text-slate-900">฿{fmtD(parseFloat(String(item.amount || 0).replace(/,/g, '')) || 0)}</td>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
             </div>
           </div>
         )}
