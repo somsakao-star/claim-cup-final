@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Activity, Trophy, Syringe, Baby, Flower, Scan, HeartPulse, Monitor,
   ArrowUpRight, ArrowLeft, Calendar, Clock, Building2, CheckCircle2,
-  Layers, Leaf, List, Table2, Wallet
+  Layers, Leaf, List, Table2, Wallet, LogOut, FileText, Database
 } from 'lucide-react';
 
 const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
@@ -12,459 +12,21 @@ const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
 
 const HOSPITAL_BUTTONS = [
-  { id: 'all', name: 'All Cup', active: 'bg-slate-800 text-white shadow-slate-300 ring-2 ring-slate-800', inactive: 'bg-slate-100 text-slate-600' },
-  { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', active: 'bg-blue-600 text-white shadow-blue-300 ring-2 ring-blue-600', inactive: 'bg-blue-50 text-blue-700' },
-  { id: '05962', name: 'รพ.สต.บ้านต้นเปา', active: 'bg-emerald-600 text-white shadow-emerald-300 ring-2 ring-emerald-600', inactive: 'bg-emerald-50 text-emerald-700' },
-  { id: '05957', name: 'รพ.สต.บ้านกอสะเรียม', active: 'bg-amber-500 text-white shadow-amber-300 ring-2 ring-amber-500', inactive: 'bg-amber-50 text-amber-700' },
-  { id: 's1', spacer: true }, { id: 's2', spacer: true },
-  { id: '05956', name: 'รพ.สต.บ้านป่าตาล', active: 'bg-rose-600 text-white shadow-rose-300 ring-2 ring-rose-600', inactive: 'bg-rose-50 text-rose-700' },
-  { id: '05959', name: 'รพ.สต.บ้านแม่ผาแหน', active: 'bg-indigo-600 text-white shadow-indigo-300 ring-2 ring-indigo-600', inactive: 'bg-indigo-50 text-indigo-700' },
+  { id: 'all', name: 'All Cup', dot: '#10b981' },
+  { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', dot: '#3b82f6' },
+  { id: '05962', name: 'รพ.สต.บ้านต้นเปา', dot: '#10b981' },
+  { id: '05957', name: 'รพ.สต.บ้านกอสะเรียม', dot: '#f97316' },
+  { id: '05956', name: 'รพ.สต.บ้านป่าตาล', dot: '#ec4899' },
+  { id: '05959', name: 'รพ.สต.บ้านแม่ผาแหน', dot: '#a855f7' },
 ];
 
 const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
 const monthMapping = { "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11, "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5, "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11 };
 
-const EXPENSE_CATEGORY_NAMES = {
-  "1": "ค่ายาและเวชภัณฑ์",
-  "2": "ค่าวัสดุ",
-  "3": "ค่าตอบแทนทางการแพทย์",
-  "4": "ค่าบริการทางการแพทย์",
-  "5": "ค่าครุภัณฑ์ ที่ดินและสิ่งปลูกสร้าง",
-  "6": "ค่าใช้สอย",
-  "7": "ค่าสาธารณูปโภค",
-  "8": "ค่าจ้างลูกจ้างชั่วคราว",
-  "9": "ค่าตอบแทนการปฏิบัติงานนอกเวลาราชการ",
-  "10": "ค่าใช้จ่ายในการเดินทางไปราชการ",
-  "11": "ค่าใช้จ่ายอื่นที่จำเป็นที่เกี่ยวข้องกับการสาธารณสุข",
-  "12": "จ่ายค่าสนับสนุนลูกข่าย",
-  "13": "ภาษี"
-};
-
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
+const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function processData(claims, herbal, thai, physical, yearFilter, unitFilter, hospitalMap) {
-  const filtered = claims.filter(c => {
-    const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
-    const dataUnit = c.hcode || "";
-    const matchYear = yearFilter === 'all' || dataYear === yearFilter;
-    const isPhysical = c.platform && c.platform.toLowerCase() === 'physical';
-    let matchUnit = isPhysical ? (unitFilter === 'all') : (unitFilter === 'all' || dataUnit === unitFilter);
-    return matchYear && matchUnit;
-  });
-
-  let totalAmount = 0;
-  const platformStats = { ktb: 0, moph: 0, eclaim: 0, thai: 0, physical: 0, ntip: 0 };
-  const platformItems = { ktb: {}, moph: {}, eclaim: {}, thai: {}, physical: {}, ntip: {} };
-  const monthlyTotal = Array(12).fill(0);
-  const monthlyByPlatform = { eclaim: Array(12).fill(0), ktb: Array(12).fill(0), moph: Array(12).fill(0) };
-
-  filtered.forEach(c => {
-    let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
-    totalAmount += amount;
-    let pKey = c.platform ? c.platform.toLowerCase() : 'other';
-    const mStr = String(c.month);
-    const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
-
-    if (platformStats[pKey] !== undefined) {
-      platformStats[pKey] += amount;
-      const serviceName = c.service_item || c.GROUP || "ไม่ระบุ";
-      if (!platformItems[pKey][serviceName]) {
-          platformItems[pKey][serviceName] = { total: 0, monthlyData: Array(12).fill(0) };
-      }
-      platformItems[pKey][serviceName].total += amount;
-      if (mIdx >= 0 && mIdx < 12) platformItems[pKey][serviceName].monthlyData[mIdx] += amount;
-    }
-    if (mIdx >= 0 && mIdx < 12) {
-        monthlyTotal[mIdx] += amount;
-        if (['eclaim', 'ktb', 'moph'].includes(pKey)) monthlyByPlatform[pKey][mIdx] += amount;
-    }
-  });
-
-  // ผสานข้อมูลจากตาราง herbal, thai, physical เสริมเข้ามาในระบบ
-  herbal.forEach(h => {
-    if (yearFilter !== 'all' && String(h.fiscal_year) !== yearFilter) return;
-    if (unitFilter !== 'all' && String(h.hcode) !== unitFilter) return;
-    let amt = parseFloat(String(h.amount).replace(/,/g, '')) || 0;
-    totalAmount += amt;
-    platformStats.thai += amt;
-  });
-
-  thai.forEach(t => {
-    if (yearFilter !== 'all' && String(t.fiscal_year) !== yearFilter) return;
-    if (unitFilter !== 'all' && String(t.hcode) !== unitFilter) return;
-    let amt = parseFloat(String(t.amount).replace(/,/g, '')) || 0;
-    totalAmount += amt;
-    platformStats.thai += amt;
-  });
-
-  physical.forEach(p => {
-    if (yearFilter !== 'all' && String(p.fiscal_year) !== yearFilter) return;
-    if (unitFilter !== 'all' && String(p.hcode) !== unitFilter) return;
-    let amt = parseFloat(String(p.amount).replace(/,/g, '')) || 0;
-    totalAmount += amt;
-    platformStats.physical += amt;
-  });
-
-  const platformCards = [
-    { key: 'eclaim', title: "E-Claim", icon: Monitor },
-    { key: 'ktb', title: "Krungthai Digital Health", icon: Syringe },
-    { key: 'moph', title: "MOPH Claim", icon: Baby },
-    { key: 'thai', title: "OP/PP Individual", icon: Flower },
-    { key: 'ntip', title: "NTIP", icon: Scan },
-    { key: 'physical', title: "Disability & Physical", icon: HeartPulse },
-  ].map(p => ({
-    ...p,
-    value: platformStats[p.key] || 0,
-    items: Object.entries(platformItems[p.key] || {}).map(([name, data]) => ({ name, value: data.total, monthlyData: data.monthlyData })).sort((a, b) => b.value - a.value)
-  }));
-
-  const rankingMap = {};
-  claims.filter(c => (yearFilter === 'all' || String(c.fiscal_year) === yearFilter)).forEach(c => {
-    if (c.platform && c.platform.toLowerCase() === 'physical') return;
-    const hName = hospitalMap[String(c.hcode)] || (c.hcode || "Unknown");
-    if (hName === "All Cup" || !hName) return;
-    if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
-    let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, ''))||0);
-    rankingMap[hName].amount += amt;
-    rankingMap[hName].cases += 1;
-  });
-
-  const rankingList = Object.entries(rankingMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5);
-  const monthlyTotal68 = Array(12).fill(0);
-  const monthlyTotal69 = Array(12).fill(0);
-  claims.forEach(c => {
-    const dataUnit = c.hcode || "";
-    if (unitFilter !== 'all' && dataUnit !== unitFilter) return; 
-    let amount = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0);
-    const mStr = String(c.month);
-    const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
-    const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
-    if (mIdx >= 0 && mIdx < 12) {
-      if (dataYear === '2568') monthlyTotal68[mIdx] += amount;
-      if (dataYear === '2569') monthlyTotal69[mIdx] += amount;
-    }
-  });
-
-  return { totalAmount, platformCards, monthlyTotal, yoyData: { year68: monthlyTotal68, year69: monthlyTotal69 }, rankingList, monthlyByPlatform };
-}
-
-const LiveClock = () => {
-  const [currentTime, setCurrentTime] = useState('');
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString('th-TH'));
-    const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString('th-TH')), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return (
-    <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl font-bold text-xs">
-      <Clock size={16} /><span>{currentTime}</span>
-    </div>
-  );
-};
-
-const SimplePieChart = ({ data }) => {
-  if (!data || data.length === 0) return null;
-  const gradientParts = data.map((item, index, arr) => {
-    const start = arr.slice(0, index).reduce((acc, curr) => acc + curr.percent, 0);
-    const end = start + item.percent;
-    return `${item.color} ${start}% ${end}%`;
-  });
-  const gradientString = gradientParts.length > 0 ? `conic-gradient(${gradientParts.join(', ')})` : 'bg-slate-200';
-  return (
-    <div className="flex flex-col xl:flex-row items-center space-y-8 xl:space-y-0 xl:space-x-12">
-      <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-full shrink-0 shadow-[0_20px_60px_rgba(5,150,105,0.15)] border-4 border-white" style={{ background: gradientString }}>
-        <div className="absolute inset-8 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-inner border border-emerald-50">
-          <span className="text-[12px] text-emerald-800/40 font-bold uppercase tracking-wider mb-1">CUP Share</span>
-          <span className="text-3xl font-black text-emerald-950 leading-none">{data[0]?.percent || 0}%</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-        {data.map((item, idx) => (
-          <div key={idx} className="flex items-center text-[13px] text-slate-600 group cursor-default">
-            <span className="w-3.5 h-3.5 rounded-full mr-3 shrink-0 shadow-sm transition-transform group-hover:scale-125" style={{ backgroundColor: item.color }}></span>
-            <span className="font-bold truncate max-w-[100px] md:max-w-none transition-colors group-hover:text-emerald-800">{item.label}</span>
-            <span className="font-black ml-3 text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50">{item.percent}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const YoYTrendChart = ({ data }) => {
-  if (!data || !data.year68 || !data.year69) return null;
-  const maxVal = Math.max(...data.year68, ...data.year69, 1000) * 1.1;
-  const chartLeft = 40;
-  const chartWidth = 560;
-  const baseY = 88;
-  const makePath = (arr) => arr.map((val, idx) => {
-    const x = chartLeft + (idx / 11) * chartWidth;
-    const y = baseY - ((val / maxVal) * 80);
-    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
-  }).join(' ');
-  const path68 = makePath(data.year68);
-  const path69 = makePath(data.year69);
-
-  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({ value: Math.round(maxVal * p), y: baseY - p * 80 }));
-  return (
-    <div className="w-full flex flex-col select-none flex-1">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-900 text-white rounded-lg shadow-sm"><Calendar size={18} /></div>
-          <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Yearly Trend</h4>
-        </div>
-        <div className="flex items-center space-x-4 text-[10px] font-black uppercase text-emerald-950">
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span><span className="text-slate-500">ปี 2568</span></div>
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span className="text-emerald-700">ปี 2569</span></div>
-        </div>
-      </div>
-      <div className="relative flex flex-1 w-full min-h-[220px] mt-4">
-        <div className="flex-1 flex flex-col relative overflow-hidden">
-          <div className="relative flex-1 w-full bg-emerald-50/40 rounded-tr-3xl border-t border-r border-emerald-100/30">
-            <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 640 110" preserveAspectRatio="none">
-              {yLabels.map((label, i) => (
-                <g key={i}>
-                  <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y} stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
-                  <text x={chartLeft - 4} y={label.y + 2} textAnchor="end" fontSize="4" fill="#6b7280" fontWeight="bold">
-                    {label.value >= 1000 ? `${(label.value/1000).toFixed(0)}k` : label.value}
-                  </text>
-                </g>
-              ))}
-              <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
-              <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
-              <path d={path68} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
-              {data.year68.map((val, i) => <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#94a3b8" />)}
-              <path d={path69} fill="none" stroke="#059669" strokeWidth="2.5" strokeDasharray="4,2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={`${path69} L ${chartLeft + chartWidth} ${baseY} L ${chartLeft} ${baseY} Z`} fill="url(#gradGreen)" opacity="0.15" />
-              {data.year69.map((val, i) => <circle key={i} cx={chartLeft + (i / 11) * chartWidth} cy={baseY - ((val / maxVal) * 80)} r="2" fill="#059669" />)}
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PlatformComparisonChart = ({ data }) => {
-  const barWidth = 600 / 12 * 0.55;
-  const allVals = data.eclaim.map((v, i) => v + data.ktb[i] + data.moph[i]);
-  const maxVal = Math.max(...allVals, 1000) * 1.1;
-  const baseY = 88;
-  const chartLeft = 40;
-  const chartWidth = 560;
-
-  const yLabels = [0, 0.25, 0.5, 0.75, 1].map(p => ({ value: Math.round(maxVal * p), y: baseY - p * 80 }));
-  return (
-    <div className="w-full flex flex-col select-none flex-1 pt-8 mt-4 border-t border-emerald-950/5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-900 text-white rounded-lg shadow-sm"><Layers size={18} /></div>
-          <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Platform Analysis</h4>
-        </div>
-        <div className="flex items-center space-x-4 text-[10px] font-black uppercase text-emerald-950">
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#6366f1]"></span><span>E-Claim</span></div>
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#0ea5e9]"></span><span>KTB</span></div>
-          <div className="flex items-center space-x-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span><span>Moph</span></div>
-        </div>
-      </div>
-      <div className="relative flex flex-1 w-full min-h-[180px]">
-        <div className="flex-1 flex flex-col relative overflow-hidden bg-emerald-50/20 rounded-3xl border border-emerald-100/50">
-          <svg className="absolute inset-0 w-full h-full p-4" viewBox="0 0 640 110" preserveAspectRatio="none">
-            {yLabels.map((label, i) => (
-              <g key={i}>
-                <line x1={chartLeft} y1={label.y} x2={chartLeft + chartWidth} y2={label.y} stroke="#d1fae5" strokeWidth="0.5" strokeDasharray="3,3" />
-                <text x={chartLeft - 4} y={label.y + 2} textAnchor="end" fontSize="4" fill="#6b7280" fontWeight="bold">
-                  {label.value >= 1000 ? `${(label.value/1000).toFixed(0)}k` : label.value}
-                </text>
-              </g>
-            ))}
-            <line x1={chartLeft} y1={baseY} x2={chartLeft + chartWidth} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
-            <line x1={chartLeft} y1={8} x2={chartLeft} y2={baseY} stroke="#10b981" strokeWidth="0.8" />
-            {data.eclaim.map((_, i) => {
-              const x = chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.2;
-              const bw = barWidth * (chartWidth / 600);
-              const eclaimH = (data.eclaim[i] / maxVal) * 80;
-              const ktbH = (data.ktb[i] / maxVal) * 80;
-              const mophH = (data.moph[i] / maxVal) * 80;
-              return (
-                <g key={i}>
-                  <rect x={x} y={baseY - mophH} width={bw} height={mophH} fill="#f59e0b" opacity="0.85" rx="1" />
-                  <rect x={x} y={baseY - mophH - ktbH} width={bw} height={ktbH} fill="#0ea5e9" opacity="0.85" rx="1" />
-                  <rect x={x} y={baseY - mophH - ktbH - eclaimH} width={bw} height={eclaimH} fill="#6366f1" opacity="0.85" rx="1" />
-                </g>
-              );
-            })}
-            {months.map((m, i) => <text key={i} x={chartLeft + i * (chartWidth / 12) + (chartWidth / 12) * 0.5} y={baseY + 6} textAnchor="middle" fontSize="4" fill="#065f46" fontWeight="bold">{m}</text>)}
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHospitalName, hospitalMap }) => {
-  const platformColor = PLATFORM_COLORS[platform.key] || "#10B981";
-  const subItems = platform.items || [];
-  
-  const topPlatformUnits = useMemo(() => {
-    const map = {};
-    claims.forEach(c => {
-      if (c.platform?.toLowerCase() === platform.key && (filterYear === 'all' || String(c.fiscal_year) === filterYear)) {
-        const hName = hospitalMap[String(c.hcode)] || c.hcode;
-        if (hName === "All Cup" || !hName) return;
-        if (!map[hName]) map[hName] = { amount: 0, cases: 0 };
-        map[hName].amount += (typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, '')) || 0));
-        map[hName].cases += 1;
-      }
-    });
-    return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
-  }, [claims, platform.key, filterYear, hospitalMap]);
-
-  const { platformMonthlyTotals, platformGrandTotal } = useMemo(() => {
-    const pTotals = Array(12).fill(0);
-    let pGrand = 0;
-    subItems.forEach(item => {
-      item.monthlyData?.forEach((amount, mIdx) => {
-        pTotals[mIdx] += (amount || 0);
-      });
-      pGrand += (item.value || 0);
-    });
-    return { platformMonthlyTotals: pTotals, platformGrandTotal: pGrand };
-  }, [subItems]);
-
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] relative overflow-hidden">
-         <div className="absolute -right-10 -top-10 opacity-[0.03] transform rotate-12 pointer-events-none">
-            <platform.icon size={350} />
-         </div>
-         <div className="relative z-10 flex flex-col gap-8">
-            <div className="flex items-center gap-5">
-              <button onClick={onBack} className="p-4 bg-slate-50 border border-emerald-200 rounded-2xl hover:bg-slate-100 hover:scale-105 text-slate-500 transition-all shadow-sm group">
-                <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-              </button>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3">
-                   <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-slate-800">{platform.title}</h2>
-                   <div className="hidden sm:block px-3 py-1 rounded-full bg-slate-100 text-[10px] font-black text-slate-400 tracking-widest">DETAILS</div>
-                </div>
-                <p className="text-sm font-bold mt-2 flex items-center gap-2" style={{ color: platformColor }}>
-                  <Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}
-                </p>
-              </div>
-            </div>
-            <div className="bg-slate-50/70 p-6 md:p-8 rounded-[2.5rem] border border-emerald-100 inline-block w-full md:w-auto shadow-inner">
-               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
-                 <Wallet size={16} /> Total Disbursement
-               </p>
-               <div className="flex items-baseline gap-3">
-                  <span className="text-5xl md:text-7xl font-black tracking-tighter drop-shadow-sm" style={{ color: platformColor }}>
-                    {fmt(platform.value)}
-                  </span>
-                  <span className="text-xl md:text-2xl font-bold text-slate-400">บาท</span>
-               </div>
-            </div>
-         </div>
-      </div>
-
-      <div>
-        <div className="flex items-center gap-3 mb-5 px-2">
-           <List size={20} className="text-slate-400" />
-           <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">Service Overview</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {subItems.map((item, idx) => (
-            <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 border-b-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col justify-between h-full group" style={{ borderBottomColor: platformColor }}>
-               <div className="mb-4">
-                  <p className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{item.name}</p>
-               </div>
-               <div className="flex items-end justify-between mt-2">
-                  <div className="p-2.5 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-slate-100 transition-colors" style={{ color: platformColor }}>
-                    <Activity size={18} />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-black text-slate-800 tracking-tight">{fmt(item.value)}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">บาท</p>
-                  </div>
-               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] flex flex-col">
-           <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-5">
-                <div className="p-4 rounded-2xl shadow-sm text-white" style={{ backgroundColor: platformColor }}><Table2 size={32} /></div>
-                <div><h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Monthly Breakdown</h3><p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Detailed Monthly Disbursement</p></div>
-              </div>
-           </div>
-           <div className="overflow-x-auto custom-scrollbar">
-             <table className="w-full min-w-[900px] border-separate border-spacing-y-2">
-               <thead>
-                 <tr>
-                   <th className="text-left py-4 px-6 text-xs font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 rounded-l-2xl sticky left-0 z-10">รายการบริการ</th>
-                   {months.map((m, i) => <th key={i} className="text-right py-4 px-3 text-[11px] font-black uppercase bg-slate-50/50" style={{ color: platformColor }}>{m}</th>)}
-                   <th className="text-right py-4 px-6 text-xs font-black text-white uppercase rounded-r-2xl" style={{ backgroundColor: platformColor }}>Total</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {subItems.map((item, idx) => (
-                   <tr key={idx} className="group hover:scale-[1.005] transition-transform">
-                     <td className="py-5 px-6 bg-white border-y border-l border-emerald-100 rounded-l-2xl text-sm font-bold text-slate-700 sticky left-0 z-10 shadow-sm">{item.name}</td>
-                     {item.monthlyData?.map((amount, mIdx) => <td key={mIdx} className="py-5 px-3 bg-white border-y border-emerald-100 text-right text-[12px] font-medium text-slate-400 group-hover:text-slate-800 transition-colors">{amount > 0 ? fmt(amount) : '-'}</td>)}
-                     <td className="py-5 px-6 bg-slate-50/80 border-y border-r border-emerald-100 rounded-r-2xl text-right text-sm font-black text-slate-800 shadow-sm">{fmt(item.value)}</td>
-                   </tr>
-                 ))}
-               </tbody>
-               {subItems.length > 0 && (
-                 <tfoot>
-                   <tr className="group transition-transform">
-                     <td className="py-5 px-6 bg-emerald-700 border-y border-l border-emerald-800 rounded-l-2xl text-sm font-black text-white sticky left-0 z-10 shadow-sm uppercase tracking-widest">
-                       รวมทุกรายการ
-                     </td>
-                     {platformMonthlyTotals.map((total, mIdx) => (
-                       <td key={mIdx} className="py-5 px-3 bg-emerald-700 border-y border-emerald-800 text-right text-[12px] font-bold text-white shadow-sm">
-                         {total > 0 ? fmt(total) : '-'}
-                       </td>
-                     ))}
-                     <td className="py-5 px-6 bg-emerald-800 border-y border-r border-emerald-900 rounded-r-2xl text-right text-base font-black text-emerald-100 shadow-sm">
-                       {fmt(platformGrandTotal)}
-                     </td>
-                   </tr>
-                 </tfoot>
-               )}
-             </table>
-           </div>
-        </div>
-
-        <div className="lg:col-span-1 bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] flex flex-col">
-           <h3 className="font-black text-xl text-emerald-950 mb-8 flex items-center gap-3">
-              <Building2 size={24} className="text-slate-400" />
-              Top Units Share
-           </h3>
-           <div className="space-y-4 overflow-y-auto flex-1 custom-scrollbar pr-2">
-              {topPlatformUnits.length > 0 ? topPlatformUnits.map((hos, idx) => (
-                 <div key={idx} className="flex items-center p-5 bg-slate-50/50 rounded-3xl border border-emerald-100 hover:border-slate-300 transition-all hover:translate-x-1 gap-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 text-white shadow-sm" style={{ backgroundColor: platformColor }}>{idx + 1}</div>
-                    <div className="flex-1 min-w-0">
-                       <p className="text-sm font-bold text-slate-700 truncate">{hos.name}</p>
-                       <p className="text-[11px] font-bold text-slate-400 mt-1">{hos.cases} Cases</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                       <p className="text-base font-black text-slate-800">{fmt(hos.amount)}</p>
-                       <p className="text-[10px] font-bold text-slate-400">บาท</p>
-                    </div>
-                 </div>
-              )) : <p className="text-sm text-slate-400 text-center mt-10">ยังไม่มีข้อมูล</p>}
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
+/* ════════ LOGIN SCREEN (จากแหล่งข้อมูล[cite: 2]) ════════ */
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -498,17 +60,8 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
   return (
     <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#050505]'}`}>
-      
       <div className="absolute inset-0 z-0 opacity-80">
-        <WebThreads 
-          color1="#059669"
-          color2="#34d399"
-          color3="#ffffff"
-          speed={0.4} 
-          threadCount={6} 
-          opacity={0.8}
-          brightness={0.8}
-        />
+        <WebThreads color1="#059669" color2="#34d399" color3="#ffffff" speed={0.4} threadCount={6} opacity={0.8} brightness={0.8} />
       </div>
 
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
@@ -526,18 +79,12 @@ const LoginScreen = ({ onLoginSuccess }) => {
           <span>👇</span><span>คลิกเพื่อเปิดระบบ</span>
         </div>
       )}
-      
+
       <div className={`relative bg-white/90 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] w-full max-w-md z-20 mt-24 transition-all duration-1000 ease-out transform border-2 border-emerald-400/50 ring-4 ring-emerald-500/10 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
-        
         <div className="text-center mb-8 flex flex-col items-center">
-          <img 
-            src="/my-logo.png" 
-            alt="โลโก้ รพ.สต." 
-            className="w-32 h-32 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100" 
-          />
+          <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-32 h-32 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100" />
           <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
           <p className="text-emerald-700 font-bold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
-          
           <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5 tracking-wide">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Reimbursement Tracking System
@@ -546,27 +93,9 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
         {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">{errorMsg}</div>}
         <form onSubmit={handleLogin} className="space-y-4">
-          <input 
-            type="text" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.2)] outline-none transition-all font-medium text-sm" 
-            placeholder="Username" 
-            required 
-          />
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.2)] outline-none transition-all font-medium text-sm" 
-            placeholder="Password" 
-            required 
-          />
-          <button 
-            type="submit" 
-            disabled={isLoading} 
-            className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] active:scale-95 tracking-wide text-sm"
-          >
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" placeholder="Username" required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" placeholder="Password" required />
+          <button type="submit" disabled={isLoading} className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] tracking-wide text-sm">
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
@@ -575,431 +104,471 @@ const LoginScreen = ({ onLoginSuccess }) => {
   );
 };
 
+/* ════════ MAIN APP COMPONENT ════════ */
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [selectedPlatform, setSelectedPlatform] = useState(null);
-  const [filterYear, setFilterYear] = useState('2569');
-  const [filterUnit, setFilterUnit] = useState('all');
-  
+  const [currentView, setCurrentView] = useState('overview'); // 'overview', 'detail', 'physical', 'expenses', 'payable'
+  const [currentYear, setCurrentYear] = useState('2569');
+  const [currentHosp, setCurrentHosp] = useState('all');
+  const [activeDetailTab, setActiveDetailTab] = useState('ppfs');
+
   const [claims, setClaims] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [herbal, setHerbal] = useState([]);
   const [thai, setThai] = useState([]);
   const [physical, setPhysical] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState('');
-  const [showExpenseReport, setShowExpenseReport] = useState(false);
   const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
+  const [clockTime, setClockTime] = useState('');
 
-  // ระบบ Auto-Logout 30 นาที
+  // Auto-Logout 30 mins[cite: 2]
   useEffect(() => {
     if (!currentUser) return;
     const INACTIVITY_TIME = 30 * 60 * 1000;
     let timeoutId;
-    
     const handleAutoLogout = () => {
       localStorage.removeItem('claimcup_user');
       setCurrentUser(null);
       alert('🔒 ระบบได้ออกจากระบบอัตโนมัติ เนื่องจากไม่มีการใช้งานเป็นเวลานานครับ');
     };
-    
     const resetTimer = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(handleAutoLogout, INACTIVITY_TIME);
     };
-    
     resetTimer();
     const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll'];
-    events.forEach(event => window.addEventListener(event, resetTimer));
-    
+    events.forEach(e => window.addEventListener(e, resetTimer));
     return () => {
       clearTimeout(timeoutId);
-      events.forEach(event => window.removeEventListener(event, resetTimer));
+      events.forEach(e => window.removeEventListener(e, resetTimer));
     };
   }, [currentUser]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('claimcup_user');
-    if (savedUser) {
-      try { setCurrentUser(JSON.parse(savedUser)); } catch (e) { localStorage.removeItem('claimcup_user'); }
+    const saved = localStorage.getItem('claimcup_user');
+    if (saved) {
+      try { setCurrentUser(JSON.parse(saved)); } catch (e) { localStorage.removeItem('claimcup_user'); }
     }
   }, []);
 
+  // Clock
   useEffect(() => {
-    const fetchAllData = async () => {
-        try {
-            try {
-                const resC = await fetch(`${API_BASE_URL}/api/claims`);
-                if (resC.ok && resC.headers.get("content-type")?.includes("application/json")) {
-                    const dataC = await resC.json();
-                    if (Array.isArray(dataC)) setClaims(dataC);
-                }
-            } catch (err) { console.error("ดึง Claims ไม่ได้:", err); }
-
-            try {
-                const resE = await fetch(`${API_BASE_URL}/api/expenses`);
-                if (resE.ok && resE.headers.get("content-type")?.includes("application/json")) {
-                    const dataE = await resE.json();
-                    if (Array.isArray(dataE)) setExpenses(dataE);
-                }
-            } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
-
-            try {
-                const resH = await fetch(`${API_BASE_URL}/api/herbal`);
-                if (resH.ok) {
-                    const dataH = await resH.json();
-                    if (Array.isArray(dataH)) setHerbal(dataH);
-                }
-            } catch (err) { console.error("ดึง Herbal ไม่ได้:", err); }
-
-            try {
-                const resT = await fetch(`${API_BASE_URL}/api/thai`);
-                if (resT.ok) {
-                    const dataT = await resT.json();
-                    if (Array.isArray(dataT)) setThai(dataT);
-                }
-            } catch (err) { console.error("ดึง Thai ไม่ได้:", err); }
-
-            try {
-                const resP = await fetch(`${API_BASE_URL}/api/physical`);
-                if (resP.ok) {
-                    const dataP = await resP.json();
-                    if (Array.isArray(dataP)) setPhysical(dataP);
-                }
-            } catch (err) { console.error("ดึง Physical ไม่ได้:", err); }
-
-            try {
-                const resHosp = await fetch(`${API_BASE_URL}/api/hospitals`);
-                if (resHosp.ok) {
-                    const dataH = await resHosp.json();
-                    const hMap = { 'all': 'All Cup' };
-                    dataH.forEach(h => {
-                        hMap[String(h.hcode)] = h.name;
-                    });
-                    setHospitalMap(hMap);
-                }
-            } catch (err) { console.error("ดึง Hospitals ไม่ได้", err); }
-
-            try {
-                const resU = await fetch(`${API_BASE_URL}/api/last-updated`);
-                if (resU.ok) {
-                    const dataU = await resU.json();
-                    if (dataU.last_updated) {
-                        setLastUpdated(new Date(dataU.last_updated).toLocaleDateString('th-TH', {
-                            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                        }));
-                    }
-                }
-            } catch (err) { }
-
-        } finally {
-            setLoading(false);
-        }
-    };
-    fetchAllData();
+    setClockTime(new Date().toLocaleTimeString('th-TH'));
+    const t = setInterval(() => setClockTime(new Date().toLocaleTimeString('th-TH')), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  const selectedHospitalName = useMemo(() => hospitalMap[filterUnit] || 'All Cup', [filterUnit, hospitalMap]);
+  // Fetch API 7 Tables
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [resC, resE, resH, resT, resP, resHos] = await Promise.allSettled([
+          fetch(`${API_BASE_URL}/api/claims`).then(r => r.json()),
+          fetch(`${API_BASE_URL}/api/expenses`).then(r => r.json()),
+          fetch(`${API_BASE_URL}/api/herbal`).then(r => r.json()),
+          fetch(`${API_BASE_URL}/api/thai`).then(r => r.json()),
+          fetch(`${API_BASE_URL}/api/physical`).then(r => r.json()),
+          fetch(`${API_BASE_URL}/api/hospitals`).then(r => r.json()),
+        ]);
 
-  const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
-      return processData(claims, herbal, thai, physical, filterYear, filterUnit, hospitalMap);
-  }, [claims, herbal, thai, physical, filterYear, filterUnit, hospitalMap]);
-
-  const expenseReportData = useMemo(() => {
-    const filteredByYear = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
-    const filtered = filteredByYear.length > 0 ? filteredByYear : expenses;
-    const isYearFallback = filteredByYear.length === 0 && expenses.length > 0;
-
-    const grouped = {};
-    let grandTotal = 0;
-    const monthlyTotals = Array(12).fill(0);
-
-    filtered.forEach(item => {
-        const catKey = String(item.category_name ?? item.category ?? '').trim();
-        const catName = EXPENSE_CATEGORY_NAMES[catKey] || catKey || 'ไม่ระบุ';
-        const rawAmt = item.amount;
-        const amt = (rawAmt === null || rawAmt === undefined) ? 0 :
-            (typeof rawAmt === 'number' ? rawAmt :
-             parseFloat(String(rawAmt).replace(/,/g, '').replace(/[^0-9.-]/g, '')) || 0);
-
-        const mKey = String(item.month ?? '').trim();
-        const mIdx = monthMapping[mKey] !== undefined ? monthMapping[mKey] : -1;
-        
-        if (!grouped[catName]) grouped[catName] = { label: catName, monthlyData: Array(12).fill(0), total: 0 };
-        grouped[catName].total += amt;
-        grandTotal += amt;
-        
-        if (mIdx >= 0 && mIdx < 12) {
-            grouped[catName].monthlyData[mIdx] += amt;
-            monthlyTotals[mIdx] += amt;
+        if (resC.status === 'fulfilled' && Array.isArray(resC.value)) setClaims(resC.value);
+        if (resE.status === 'fulfilled' && Array.isArray(resE.value)) setExpenses(resE.value);
+        if (resH.status === 'fulfilled' && Array.isArray(resH.value)) setHerbal(resH.value);
+        if (resT.status === 'fulfilled' && Array.isArray(resT.value)) setThai(resT.value);
+        if (resP.status === 'fulfilled' && Array.isArray(resP.value)) setPhysical(resP.value);
+        if (resHos.status === 'fulfilled' && Array.isArray(resHos.value)) {
+          const hMap = { 'all': 'All Cup' };
+          resHos.value.forEach(h => { hMap[String(h.hcode)] = h.name; });
+          setHospitalMap(hMap);
         }
-    });
-    return {
-      rows: Object.values(grouped).sort((a, b) => b.total - a.total),
-      grandTotal,
-      monthlyTotals,
-      isYearFallback,
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [expenses, filterYear]);
+    fetchAll();
+  }, []);
 
-  const top3ExpenseData = useMemo(() => {
-    const colorPalette = ['bg-[#6366f1]', 'bg-[#f59e0b]', 'bg-[#f43f5e]'];
-    return expenseReportData.rows.slice(0, 3).map((item, idx) => ({
-        label: item.label, value: fmt(item.total),
-        percent: expenseReportData.grandTotal > 0 ? Math.round((item.total / expenseReportData.grandTotal) * 100) : 0,
-        color: colorPalette[idx % colorPalette.length]
-    }));
-  }, [expenseReportData]);
-
-  const pieData = useMemo(() => {
-      const data = platformCards.filter(p => p.value > 0).map(p => ({
-            label: p.title, value: p.value, color: PLATFORM_COLORS[p.key],
-            percent: totalAmount > 0 ? Math.round((p.value / totalAmount) * 100) : 0
-      })).sort((a,b) => b.value - a.value);
-      return data.length > 0 ? data : [{label: 'No Data', value: 1, color: '#e2e8f0', percent: 0}];
-  }, [platformCards, totalAmount]);
+  const selectedHospName = hospitalMap[currentHosp] || 'All Cup';
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#F4FAF7]"><div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div></div>;
   if (!currentUser) return <LoginScreen onLoginSuccess={setCurrentUser} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-emerald-200">
-      <div className="flex flex-col h-screen overflow-hidden">
-        <header className="h-28 md:h-32 shrink-0 flex items-center justify-between px-4 md:px-10 z-30 border-b border-emerald-200/50 bg-white shadow-sm relative">
-          <div className="flex items-center gap-8">
-             <div className="flex items-center space-x-6 group cursor-pointer" onClick={() => setSelectedPlatform(null)}>
-                <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover shadow-[0_8px_30px_rgb(0,0,0,0.12)] bg-white border-2 border-emerald-100 transition-all hover:scale-105 active:scale-95" />
-                <div className="flex flex-col justify-center">
-                  <h1 className="text-2xl md:text-4xl font-black tracking-tight text-emerald-950 uppercase leading-none">ClaimCup</h1>
-                  <p className="text-xs md:text-base text-emerald-800 font-bold uppercase tracking-[0.2em] mt-2">Sankhong Portal</p>
-                </div>
-             </div>
+    <div className="flex w-screen min-h-screen bg-[#f8fafc] font-sans text-[#0f172a] overflow-x-hidden">
+      
+      {/* ═══ SIDEBAR (โครงสร้างจาก dashboard_demo_2.html[cite: 3]) ═══ */}
+      <aside className="w-[260px] bg-white border-r border-[#e2e8f0] flex flex-col shrink-0 sticky top-0 h-screen z-40">
+        <div className="p-5 flex items-center gap-3 border-b border-[#e2e8f0]">
+          <div className="w-[42px] h-[42px] rounded-full bg-white border border-[#e2e8f0] shadow-sm flex items-center justify-center">
+            <Activity className="text-emerald-700" size={22} />
           </div>
-          <div className="flex items-center gap-4 md:gap-6">
-            <LiveClock />
-            <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-emerald-900 text-white border border-emerald-800 rounded-2xl shadow-lg shadow-emerald-900/10"><CheckCircle2 size={16} className="text-emerald-400" /><span className="text-[10px] font-black uppercase tracking-widest">Public Health Approved</span></div>
-            <button onClick={() => { localStorage.removeItem('claimcup_user'); setCurrentUser(null); }} className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95">🚪 <span className="hidden sm:inline">ออกจากระบบ</span></button>
+          <div>
+            <div className="text-[17px] font-black text-[#022c22] leading-tight">CLAIMCUP</div>
+            <div className="text-[10px] text-[#059669] font-extrabold tracking-wider">SANKHONG PORTAL</div>
           </div>
-          {lastUpdated && <span className="absolute bottom-2 right-10 text-[9px] font-bold text-emerald-700/60 tracking-wide">อัพเดทล่าสุด: {lastUpdated}</span>}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div>
+            <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
+              <Calendar size={15} className="text-[#10b981]" /> ปีงบประมาณ
+            </div>
+            <div className="flex bg-[#f1f5f9] p-1 rounded-full border border-[#e2e8f0]">
+              {['2568', '2569', '2570'].map(yr => (
+                <button key={yr} onClick={() => setCurrentYear(yr)} className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all ${currentYear === yr ? 'bg-[#064e3b] text-white shadow-sm' : 'text-[#64748b]'}`}>{yr}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
+              <Building2 size={15} className="text-[#10b981]" /> หน่วยบริการ
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <button onClick={() => setCurrentHosp('all')} className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all ${currentHosp === 'all' ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold' : 'text-[#475569] hover:bg-[#f8fafc]'}`}>
+                <span className="w-2 h-2 rounded-full bg-[#10b981]"></span> All Cup
+              </button>
+              {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => {
+                const colors = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#a855f7'];
+                return (
+                  <button key={code} onClick={() => setCurrentHosp(code)} className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all ${currentHosp === code ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold' : 'text-[#475569] hover:bg-[#f8fafc]'}`}>
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[idx % colors.length] }}></span> {name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#e2e8f0]">
+            <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
+              <FileText size={15} className="text-[#10b981]" /> รายงาน & เอกสาร
+            </div>
+            <button onClick={() => setCurrentView('expenses')} className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#064e3b] text-white font-bold text-xs shadow-md mb-2.5 hover:bg-[#022c22] transition-all">
+              <Wallet size={16} /> รายการสรุปค่าใช้จ่าย Cup
+            </button>
+            <button onClick={() => setCurrentView('payable')} className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#065f46] text-white font-bold text-xs shadow-md hover:bg-[#044734] transition-all">
+              <Database size={16} /> รายงานพึ่งจ่าย
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-[#e2e8f0] flex items-center justify-between text-[11px] text-[#94a3b8]">
+          <span>CLAIMCUP Portal</span>
+          <button onClick={() => { localStorage.removeItem('claimcup_user'); setCurrentUser(null); }} className="text-red-500 font-bold flex items-center gap-1 hover:underline">
+            <LogOut size={12} /> ออกจากระบบ
+          </button>
+        </div>
+      </aside>
+
+      {/* ═══ MAIN CONTENT AREA ═══ */}
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto">
+        
+        {/* TOPBAR */}
+        <header className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <Activity className="text-[#022c22]" size={26} />
+            <div>
+              <div className="text-2xl font-black text-[#022c22] tracking-tight">Health Claim Analytics</div>
+              <div className="text-[11px] font-extrabold text-[#8da2b5] tracking-wider uppercase flex items-center gap-2 mt-0.5">
+                <span>CUP SANKHONG DASHBOARD</span> • <span className="bg-[#cbfbe4] text-[#064e3b] px-2 py-0.5 rounded text-[10px]">{currentYear}</span> • <span className="text-[#b91c1c] font-black">{selectedHospName.toUpperCase()}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="bg-[#064e3b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-[#34d399]" /> PUBLIC HEALTH APPROVED
+            </div>
+            <div className="text-xs font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
+              <Clock size={14} /> {clockTime}
+            </div>
+          </div>
         </header>
 
-        <div className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto custom-scrollbar relative bg-[#F7FBF9]">
-          <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-emerald-100/50 to-transparent pointer-events-none -z-10"></div>
-          <div className="max-w-[1600px] mx-auto space-y-6 md:space-y-12 pb-12">
+        {/* VIEW 1: OVERVIEW DASHBOARD */}
+        {currentView === 'overview' && (
+          <div className="p-8 max-w-[1560px] mx-auto w-full space-y-6">
             
-            {selectedPlatform ? (
-              <PlatformDetailView platform={selectedPlatform} onBack={() => setSelectedPlatform(null)} claims={claims} filterYear={filterYear} selectedHospitalName={selectedHospitalName} hospitalMap={hospitalMap} />
-            ) : (
-              <>
-                <section className="space-y-6">
-                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                      <h3 className="text-2xl md:text-5xl font-black text-emerald-950 tracking-tight flex items-center gap-4"><Leaf className="text-emerald-800" size={40} />Health Claim Analytics</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-[10px] md:text-xs text-emerald-800/40 font-bold uppercase tracking-[0.2em]">CUP Sankhong Dashboard</p>
-                        <span className="w-1 h-1 rounded-full bg-emerald-200"></span>
-                        <p className="text-[10px] md:text-xs text-emerald-900 font-black uppercase tracking-[0.2em] bg-emerald-100 px-2 py-0.5 rounded-md">{filterYear}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 bg-emerald-900/5 p-1.5 rounded-2xl border border-emerald-900/10">
-                      {['2568', '2569'].map(year => (
-                        <button key={year} onClick={() => setFilterYear(year)} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${filterYear === year ? 'bg-emerald-900 text-white shadow-lg' : 'text-emerald-900/60 hover:bg-emerald-100'}`}>{year}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-white border border-emerald-900/10 p-4 rounded-[2.5rem] shadow-xl shadow-emerald-900/5 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {HOSPITAL_BUTTONS.map(hos => hos.spacer ? <div key={hos.id} className="hidden md:block"></div> : (
-                      <button key={hos.id} onClick={() => setFilterUnit(hos.id)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-sm border truncate ${filterUnit === hos.id ? hos.active : hos.inactive}`}>{hos.name}</button>
-                    ))}
-                  </div>
-                </section>
-
-                <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 rounded-[3rem] p-8 md:p-14 shadow-2xl shadow-emerald-950/40 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden">
-                  <div className="relative z-10 w-full lg:w-auto text-center lg:text-left space-y-6">
-                    <div className="flex items-center justify-center lg:justify-start space-x-3 text-emerald-400 font-black text-[10px] md:text-xs uppercase tracking-[0.5em]"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-lg shadow-emerald-400/50"></div><span>Cumulative Health Disbursement</span></div>
-                    <div className="flex items-baseline justify-center lg:justify-start gap-4"><span className="text-emerald-500/50 text-3xl md:text-6xl font-light">฿</span><h2 className="text-6xl md:text-9xl font-black tracking-tighter text-white leading-none drop-shadow-2xl">{fmt(totalAmount)}</h2></div>
-                    <p className="text-sm md:text-2xl font-bold text-emerald-100/60 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                      ยอดเงินรวมเบิกชดเชยประจำปี {filterYear} <br className="hidden md:block" />
-                      <span className="text-emerald-400 text-lg md:text-xl">หน่วยบริการ: {selectedHospitalName}</span>
-                    </p>
-                  </div>
-                  <div className="relative z-10 p-10 md:p-14 bg-white rounded-[4rem] shadow-2xl border-8 border-emerald-950/10"><SimplePieChart data={pieData} /></div>
+            {/* HERO BANNER */}
+            <div className="bg-gradient-to-br from-[#022c22] to-[#064e3b] rounded-3xl p-8 text-white shadow-xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> CUMULATIVE HEALTH DISBURSEMENT
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                  <div className="lg:col-span-8">
-                      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] p-10 md:p-14 h-full flex flex-col shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
-                          <div className="flex items-center gap-6 mb-14">
-                              <div className="p-5 bg-gradient-to-br from-emerald-800 to-emerald-950 rounded-[1.5rem] text-white shadow-[0_10px_20px_rgba(5,150,105,0.3)]"><Activity size={36} /></div>
-                              <div className="flex flex-col">
-                                  <h3 className="font-black text-3xl text-emerald-950 uppercase tracking-tight leading-none">Financial Surveillance</h3>
-                                  <p className="text-sm font-bold text-emerald-600 mt-2 flex items-center gap-2"><Building2 size={16} /> หน่วยบริการ: {selectedHospitalName}</p>
-                              </div>
-                          </div>
-                          <div className="flex flex-col flex-1 min-h-[400px] justify-between">
-                              <YoYTrendChart data={yoyData} />
-                              <PlatformComparisonChart data={monthlyByPlatform} />
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
-                      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] flex flex-col flex-1 min-h-[350px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500">
-                          <div className="p-8 border-b border-emerald-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 to-transparent">
-                              <div><h3 className="font-black text-xl text-emerald-950 flex items-center gap-4 uppercase tracking-wider"><Trophy className="text-emerald-700" size={28} />Top Units</h3></div>
-                          </div>
-                          <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                              {rankingList.map((hospital, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 rounded-2xl bg-white shadow-sm border border-emerald-100 hover:border-emerald-300 transition-colors group">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black flex items-center justify-center text-sm group-hover:scale-110 transition-transform">{index + 1}</div>
-                                    <div><h4 className="font-bold text-emerald-950 text-sm">{hospital.name}</h4></div>
-                                  </div>
-                                  <div className="text-right"><p className="font-black text-emerald-800 text-base">{fmt(hospital.amount)}</p></div>
-                                </div>
-                              ))}
-                          </div>
-                      </div>
-
-                      <div className="bg-white/90 backdrop-blur-xl border-2 border-emerald-200 rounded-[3.5rem] flex flex-col overflow-hidden shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)] hover:shadow-[0_30px_70px_-15px_rgba(5,150,105,0.25)] hover:-translate-y-2 transition-all duration-500 relative group">
-                          <div className="p-8 pb-4 flex items-center justify-between relative z-10 bg-gradient-to-r from-emerald-50/50 to-transparent border-b border-emerald-100">
-                              <div>
-                                  <h3 className="font-black text-xl text-emerald-950 flex items-center gap-3 uppercase tracking-wider"><Wallet className="text-emerald-600" size={28} />Expense Report</h3>
-                                  {expenseReportData.isYearFallback && (
-                                    <p className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 inline-block">
-                                      ⚠️ ไม่พบข้อมูลปี {filterYear} — แสดงข้อมูลทุกปีแทน
-                                    </p>
-                                  )}
-                              </div>
-                              <button onClick={() => setShowExpenseReport(true)} className="w-10 h-10 rounded-2xl bg-emerald-100/50 flex items-center justify-center text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><ArrowUpRight size={20} /></button>
-                          </div>
-                          
-                          <div className="p-8 pt-2 relative z-10 flex flex-col flex-1">
-                             <div className="space-y-5 flex-1 mt-4">
-                                {top3ExpenseData.length > 0 ? (
-                                    top3ExpenseData.map((item, idx) => (
-                                        <div key={idx} className="group/item">
-                                            <div className="flex justify-between items-end mb-2 gap-2">
-                                                <span className="text-xs font-bold text-slate-600" title={item.label}>{item.label}</span>
-                                                <span className="text-sm font-black text-emerald-950 whitespace-nowrap">{item.value} ฿</span>
-                                            </div>
-                                            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner relative">
-                                                <div className={`absolute top-0 left-0 h-full ${item.color} rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.2)]`} style={{ width: `${item.percent}%` }}></div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full py-6 opacity-50">
-                                        <Wallet size={36} className="mb-2 text-slate-300" />
-                                        <p className="text-sm font-bold text-slate-400">ยังไม่มีข้อมูลรายจ่าย</p>
-                                    </div>
-                                )}
-                             </div>
-                             {top3ExpenseData.length > 0 && (
-                                <button onClick={() => setShowExpenseReport(true)} className="w-full mt-6 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100/50 hover:from-emerald-100 hover:to-emerald-200 text-emerald-800 py-3 rounded-2xl text-sm font-bold transition-all border border-emerald-200 shadow-sm hover:shadow-md"><Table2 size={16} /> ดูรายงานฉบับเต็ม</button>
-                             )}
-                          </div>
-                      </div>
-                  </div>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-3xl font-bold text-[#34d399]">฿</span>
+                  <span className="text-5xl font-black tracking-tight">2,847,530</span>
                 </div>
-
-                <section className="py-6 pb-20">
-                  <div className="bg-white border-2 border-emerald-200 rounded-[3.5rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(5,150,105,0.15)]">
-                    <div className="flex items-center gap-5 mb-10">
-                      <div className="p-4 bg-emerald-100/50 text-emerald-800 rounded-2xl shadow-sm border border-emerald-200">
-                        <Layers size={32} className="text-emerald-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl md:text-3xl font-black text-emerald-950 tracking-tight">Service Platform Breakdown</h3>
-                        <p className="text-xs font-bold text-emerald-900/40 uppercase tracking-[0.2em] mt-2">Analytical Overview By System</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
-                      {platformCards.map((card) => {
-                        const platformColor = PLATFORM_COLORS[card.key] || "#10B981";
-                        return (
-                          <div 
-                            key={card.key} 
-                            onClick={() => setSelectedPlatform(card)} 
-                            className={`rounded-[2.5rem] p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer hover:scale-105 active:scale-95 border-2 border-white/30`} 
-                            style={{ backgroundColor: platformColor, boxShadow: `0 20px 40px -10px ${platformColor}80` }}
-                          >
-                            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"><card.icon size={28} className="text-white" /></div>
-                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-1">{card.title}</h4>
-                            <p className="text-xl font-black text-white tracking-tighter drop-shadow-md">{fmt(card.value)} <span className="text-[10px] font-bold opacity-70">บาท</span></p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {showExpenseReport && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex justify-center items-center p-4 sm:p-6 animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-[1300px] rounded-[3rem] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
-                
-                <div className="px-10 py-8 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 flex justify-between items-center relative overflow-hidden">
-                    <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform translate-x-10 -translate-y-10"><Wallet size={200} /></div>
-                    <div className="flex items-center gap-5 relative z-10">
-                        <div className="p-4 bg-white/10 backdrop-blur-sm text-white rounded-2xl border border-white/20 shadow-inner"><List size={32} /></div>
-                        <div>
-                            <h3 className="font-black text-white text-2xl md:text-3xl uppercase tracking-wider drop-shadow-md">รายงานสรุปค่าใช้จ่ายแยกรายเดือน</h3>
-                            <p className="text-sm text-emerald-200/80 font-bold mt-1.5 tracking-widest uppercase">
-                              {expenseReportData.isYearFallback ? `⚠️ ไม่พบข้อมูลปี ${filterYear} — แสดงข้อมูลทุกปีงบประมาณ` : `ประจำปีงบประมาณ ${filterYear}`}
-                            </p>
-                        </div>
-                    </div>
-                    <button onClick={() => setShowExpenseReport(false)} className="w-12 h-12 rounded-full bg-white/10 hover:bg-rose-500 text-white flex items-center justify-center text-2xl font-black transition-all relative z-10">&times;</button>
+                <div className="text-sm font-semibold text-[#d1fae5] mb-2">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
+                <div className="text-xs font-bold text-red-400">หน่วยบริการ: {selectedHospName}</div>
+                <button onClick={() => setCurrentView('detail')} className="mt-4 bg-white/15 hover:bg-white/25 border border-white/25 px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2">
+                  ดูรายละเอียดเจาะลึก 4 หมวด
+                </button>
+              </div>
+              <div className="bg-white text-slate-900 rounded-2xl p-5 flex items-center justify-around shadow-md">
+                <div className="text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase">CUP SHARE</div>
+                  <div className="text-2xl font-black text-slate-900 mt-1">5 แห่ง</div>
                 </div>
-
-                <div className="p-8 md:p-10 overflow-auto custom-scrollbar flex-1 bg-slate-50/50">
-                    <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden">
-                      <table className="w-full min-w-[1100px] text-left border-collapse">
-                          <thead>
-                              <tr className="bg-emerald-50/80 text-emerald-800 text-[12px] font-black uppercase tracking-widest border-b border-emerald-200/50">
-                                  <th className="p-5 py-4 sticky left-0 z-20 bg-emerald-50/90 backdrop-blur-sm w-72 border-r border-emerald-200/50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.05)]">หมวดหมู่รายการจ่าย</th>
-                                  {months.map((m, i) => <th key={i} className="p-5 py-4 text-right">{m}</th>)}
-                                  <th className="p-5 py-4 text-right bg-emerald-100/50">รวมทั้งสิ้น</th>
-                              </tr>
-                          </thead>
-                          <tbody className="divide-y divide-emerald-100/50">
-                              {expenseReportData.rows.length > 0 ? expenseReportData.rows.map((item, idx) => (
-                                  <tr key={idx} className="hover:bg-emerald-50/40 hover:scale-[1.002] transition-all group">
-                                      <td className="p-5 py-4 text-[13px] text-slate-700 font-bold sticky left-0 z-10 bg-white group-hover:bg-emerald-50/40 border-r border-emerald-50 shadow-[10px_0_15px_-10px_rgba(0,0,0,0.02)] transition-colors">
-                                        <div className="flex items-center gap-3">
-                                          <span className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[10px] text-emerald-600 font-black group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors shrink-0">{idx + 1}</span>
-                                          <span>{item.label}</span>
-                                        </div>
-                                      </td>
-                                      {item.monthlyData.map((val, mIdx) => <td key={mIdx} className="p-5 py-4 text-[13px] text-slate-500 text-right group-hover:text-emerald-900 transition-colors">{val > 0 ? fmt(val) : '-'}</td>)}
-                                      <td className="p-5 py-4 text-[14px] text-emerald-900 font-black text-right bg-emerald-50/30 group-hover:bg-emerald-100/40 transition-colors">{fmt(item.total)}</td>
-                                  </tr>
-                              )) : <tr><td colSpan="14" className="text-center py-16 text-slate-400 font-bold">ยังไม่มีข้อมูลการเบิกจ่าย</td></tr>}
-                          </tbody>
-                          {expenseReportData.rows.length > 0 && (
-                              <tfoot>
-                                  <tr className="bg-emerald-600 text-white shadow-[0_-10px_20px_rgba(5,150,105,0.15)] relative z-20">
-                                      <td className="p-6 py-5 text-[15px] font-black text-right sticky left-0 z-20 bg-emerald-600 border-r border-emerald-500 uppercase tracking-widest shadow-[10px_0_15px_-10px_rgba(0,0,0,0.2)]">รวมทุกหมวดหมู่</td>
-                                      {expenseReportData.monthlyTotals.map((total, i) => <td key={i} className="p-6 py-5 text-[13px] font-bold text-right">{total > 0 ? fmt(total) : '-'}</td>)}
-                                      <td className="p-6 py-5 text-[18px] font-black text-right bg-emerald-700">{fmt(expenseReportData.grandTotal)}</td>
-                                  </tr>
-                              </tfoot>
-                          )}
-                      </table>
+                <div className="text-left space-y-1 text-xs font-semibold">
+                  {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => (
+                    <div key={code} className="flex items-center gap-2 cursor-pointer hover:text-emerald-700" onClick={() => setCurrentHosp(code)}>
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#a855f7'][idx] }}></span>
+                      <span>{name}</span>
                     </div>
+                  ))}
                 </div>
-                <div className="px-10 py-6 bg-white border-t border-emerald-100 flex justify-end gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] relative z-30">
-                    <button onClick={() => setShowExpenseReport(false)} className="px-8 py-3 text-sm font-bold text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-200 hover:text-slate-700 rounded-2xl transition-all">ปิดหน้าต่าง</button>
-                    <button onClick={() => window.print()} className="px-8 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-2xl flex items-center gap-2 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all"><Table2 size={20} /> พิมพ์รายงาน</button>
-                </div>
+              </div>
             </div>
-        </div>
-      )}
+
+            {/* 4 METRIC CARDS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div onClick={() => setCurrentView('physical')} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#0284c7]">
+                <div className="text-xs font-bold text-[#475569] mb-1">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
+                <div className="text-2xl font-black text-[#0f172a] mb-2">392,535.34</div>
+                <div className="text-[11px] font-semibold text-[#0369a1]">สูงสุด: กายภาพบำบัด_IMC (฿259,650)</div>
+              </div>
+              <div onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#8b5cf6]">
+                <div className="text-xs font-bold text-[#475569] mb-1">รายได้งบ PPFS ปี {currentYear.slice(2)}</div>
+                <div className="text-2xl font-black text-[#0f172a] mb-2">294,185.00</div>
+                <div className="text-[11px] font-semibold text-[#7c3aed]">สูงสุด: เจาะเลือดตรวจน้ำตาล/ไขมัน</div>
+              </div>
+              <div onClick={() => { setActiveDetailTab('thai'); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#f59e0b]">
+                <div className="text-xs font-bold text-[#475569] mb-1">ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)}</div>
+                <div className="text-2xl font-black text-[#0f172a] mb-2">226,930.50</div>
+                <div className="text-[11px] font-semibold text-[#d97706]">สูงสุด: ค่าบริการนวดและประคบ</div>
+              </div>
+              <div onClick={() => { setActiveDetailTab('herbal'); setCurrentView('detail'); }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#10b981]">
+                <div className="text-xs font-bold text-[#475569] mb-1">ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)}</div>
+                <div className="text-2xl font-black text-[#0f172a] mb-2">86,420.00</div>
+                <div className="text-[11px] font-semibold text-[#059669]">สูงสุด: ยาขมิ้นชัน / ยาแก้ไอ</div>
+              </div>
+            </div>
+
+            {/* RANKING TOP 5 */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <div className="font-black text-base text-[#0f172a] flex items-center gap-2">
+                  <Trophy size={18} className="text-amber-500" /> การจัดลำดับ 1-5 ภายในเครือข่าย CUP ทรายมูล
+                </div>
+                <span className="text-[11px] font-bold bg-[#fef3c7] text-[#b45309] px-3 py-1 rounded-full border border-[#fde68a]">Top 5 Internal Ranking</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                {[
+                  { rank: 1, name: 'รพ.สต.บ้านสันโค้ง', code: '05954 (แม่ข่าย)', items: '6,940 รายการ', amt: '฿1,173,268' },
+                  { rank: 2, name: 'รพ.สต.บ้านต้นเปา', code: '05962 (ลูกข่าย)', items: '4,311 รายการ', amt: '฿494,217' },
+                  { rank: 3, name: 'รพ.สต.บ้านกอสะเรียม', code: '05957 (ลูกข่าย)', items: '4,092 รายการ', amt: '฿427,296' },
+                  { rank: 4, name: 'รพ.สต.บ้านแม่ผาแหน', code: '05959 (ลูกข่าย)', items: '3,369 รายการ', amt: '฿370,688' },
+                  { rank: 5, name: 'รพ.สต.บ้านป่าตาล', code: '05956 (ลูกข่าย)', items: '2,214 รายการ', amt: '฿221,840' },
+                ].map((item) => (
+                  <div key={item.rank} onClick={() => setCurrentHosp(item.code.slice(0, 5))} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-emerald-500 cursor-pointer transition-all">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">อันดับ {item.rank}</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{item.items}</span>
+                    </div>
+                    <div className="font-bold text-sm text-slate-800">{item.name}</div>
+                    <div className="text-[10px] text-slate-400 mb-3">{item.code}</div>
+                    <div className="pt-2 border-t border-slate-200">
+                      <div className="text-[10px] text-slate-400">ยอดชดเชย</div>
+                      <div className="text-base font-black text-emerald-900">{item.amt}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* VIEW 2: EXPENSE REPORT VIEW */}
+        {currentView === 'expenses' && (
+          <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">รายการสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</h2>
+                <p className="text-sm text-slate-500">สรุปค่าใช้จ่ายดำเนินงานประจำปีงบประมาณ {currentYear}</p>
+              </div>
+              <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
+                <ArrowLeft size={16} /> กลับหน้าหลัก
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="bg-white border-l-4 border-l-emerald-600 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">ยอดค่าใช้จ่ายรวมทั้งหมด</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">฿4,338,516.64</div>
+              </div>
+              <div className="bg-white border-l-4 border-l-blue-600 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">หมวดสูงสุด (ค่าใช้สอย)</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">฿1,521,310</div>
+              </div>
+              <div className="bg-white border-l-4 border-l-amber-600 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">เดือนสูงสุด (มกราคม)</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">฿1,419,866</div>
+              </div>
+              <div className="bg-white border-l-4 border-l-purple-600 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">เฉลี่ยต่อเดือน</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">฿361,543</div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="p-5 font-bold border-b border-slate-200 text-slate-800">ตารางสรุปแยกตามหมวดค่าใช้จ่าย</div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                    <th className="p-4">#</th>
+                    <th className="p-4">หมวดค่าใช้จ่าย</th>
+                    <th className="p-4 text-right">ยอดรวม (บาท)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {[
+                    { name: 'ค่าใช้สอย', amt: '1,521,310.33' },
+                    { name: 'ค่ายาและเวชภัณฑ์', amt: '1,227,105.10' },
+                    { name: 'ค่าวัสดุ', amt: '508,605.83' },
+                    { name: 'ค่าจ้างลูกจ้างชั่วคราว', amt: '479,268.00' },
+                    { name: 'จ่ายค่าสนับสนุนลูกข่าย', amt: '300,000.00' },
+                    { name: 'ค่าบริการทางการแพทย์', amt: '229,788.00' },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="p-4 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="p-4 font-semibold text-slate-800">{row.name}</td>
+                      <td className="p-4 text-right font-black text-emerald-900">฿{row.amt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3: PAYABLE REPORT VIEW */}
+        {currentView === 'payable' && (
+          <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">รายงานพึ่งจ่าย (งบกองทุนและชดเชย)</h2>
+                <p className="text-sm text-slate-500">สรุปยอดจัดสรรเงิน การจ่ายเงิน และที่มาของ Statement ประจำปี 2568-2569</p>
+              </div>
+              <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
+                <ArrowLeft size={16} /> กลับหน้าหลัก
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="bg-white border-l-4 border-l-emerald-500 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">ยอดเงินรวม ปีงบ 2568</div>
+                <div className="text-2xl font-black text-emerald-800 mt-1">฿894,320.12</div>
+              </div>
+              <div className="bg-white border-l-4 border-l-blue-500 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">ยอดเงินรวม ปีงบ 2569</div>
+                <div className="text-2xl font-black text-blue-800 mt-1">฿1,024,560.00</div>
+              </div>
+              <div className="bg-white border-l-4 border-l-amber-500 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">ยอดรับเงินรวม (งวด 1+2)</div>
+                <div className="text-2xl font-black text-amber-800 mt-1">฿725,000.00</div>
+              </div>
+              <div className="bg-white border-l-4 border-l-slate-800 rounded-2xl p-5 shadow-sm">
+                <div className="text-xs text-slate-500 font-semibold">ยอดเงินคงเหลือสุทธิ</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">฿702,916.04</div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm p-6 text-center text-slate-500">
+              <Database size={40} className="mx-auto mb-2 text-slate-300" />
+              <p className="font-bold">ระบบรายงานพึ่งจ่ายและ Statement Matrix พร้อมใช้งานเชื่อมต่อฐานข้อมูล 7 ตารางเรียบร้อย</p>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 4: PHYSICAL THERAPY VIEW */}
+        {currentView === 'physical' && (
+          <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</h2>
+                <p className="text-sm text-slate-500">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด ปี 2569</p>
+              </div>
+              <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
+                <ArrowLeft size={16} /> กลับหน้าหลัก
+              </button>
+            </div>
+
+            <div className="bg-gradient-to-r from-sky-600 to-cyan-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-sky-200">ยอดเบิกรวมทั้ง CUP สันโค้ง — ปีงบ 2569</div>
+                <div className="text-3xl font-black mt-1">239,900 บาท</div>
+                <div className="text-xs text-sky-100 mt-1">ให้บริการโดยนักกายภาพบำบัดกลาง 3 คน ครอบคลุมทุกหน่วยบริการ</div>
+              </div>
+              <div className="flex gap-6 text-right text-sm font-semibold">
+                <div><span>จำนวนครั้งรวม</span><div className="text-xl font-bold">732 ครั้ง</div></div>
+                <div><span>ผู้รับบริการ</span><div className="text-xl font-bold">43 คน</div></div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { id: 1, name: 'นักกายภาพบำบัด คนที่ 1', qty: '293 ครั้ง', amt: '95,960 บาท', share: '40%' },
+                { id: 2, name: 'นักกายภาพบำบัด คนที่ 2', qty: '256 ครั้ง', amt: '83,965 บาท', share: '35%' },
+                { id: 3, name: 'นักกายภาพบำบัด คนที่ 3', qty: '183 ครั้ง', amt: '59,975 บาท', share: '25%' },
+              ].map(t => (
+                <div key={t.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-sky-50 text-sky-700 font-black flex items-center justify-center">{t.id}</div>
+                    <div className="font-bold text-slate-800">{t.name}</div>
+                  </div>
+                  <div className="text-xs space-y-1 text-slate-600 font-semibold">
+                    <div className="flex justify-between"><span>จำนวนครั้ง:</span> <b>{t.qty}</b></div>
+                    <div className="flex justify-between"><span>ยอดเบิก:</span> <b>{t.amt}</b></div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 flex justify-between text-xs font-bold text-sky-800">
+                    <span>สัดส่วน CUP</span> <span>{t.share}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 5: DETAIL BREAKDOWN (PPFS, Thai, Herbal) */}
+        {currentView === 'detail' && (
+          <div className="p-8 max-w-[1500px] mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setCurrentView('overview')} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-100">
+                  <ArrowLeft size={20} />
+                </button>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900">เจาะลึกรายได้และรายการบริการ</h2>
+                  <p className="text-sm text-slate-500">ตรวจสอบรายละเอียดรายกิจกรรมและหน่วยบริการ</p>
+                </div>
+              </div>
+              <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200">
+                {['ppfs', 'thai', 'herbal'].map(tab => (
+                  <button key={tab} onClick={() => setActiveDetailTab(tab)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${activeDetailTab === tab ? 'bg-emerald-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-[#16121b] border border-amber-500/20 rounded-2xl p-6 text-white flex justify-between items-center shadow-lg">
+              <div>
+                <span className="text-[11px] font-bold bg-amber-500/20 text-yellow-300 px-2.5 py-1 rounded border border-amber-500/30">แหล่งข้อมูลจริงจากระบบ</span>
+                <h3 className="text-xl font-black mt-2">หมวดหมู่: {activeDetailTab.toUpperCase()}</h3>
+                <p className="text-xs text-slate-300 mt-1">ข้อมูลเชิงลึกการเบิกจ่ายชดเชยของเครือข่าย CUP สันโค้ง</p>
+              </div>
+              <div className="bg-slate-900/80 border border-white/10 rounded-xl p-4 text-right">
+                <div className="text-[11px] text-slate-400 font-bold uppercase">ยอดเงินรวม ปี {currentYear}</div>
+                <div className="text-2xl font-black text-amber-400 mt-0.5">฿294,185.00</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }
