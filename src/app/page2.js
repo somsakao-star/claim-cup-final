@@ -42,7 +42,7 @@ const EXPENSE_CATEGORY_NAMES = {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 
-function processData(claims, herbal, thai, physical, yearFilter, unitFilter, hospitalMap) {
+function processData(claims, yearFilter, unitFilter, hospitalMap) {
   const filtered = claims.filter(c => {
     const dataYear = c.fiscal_year ? String(c.fiscal_year) : "";
     const dataUnit = c.hcode || "";
@@ -67,7 +67,7 @@ function processData(claims, herbal, thai, physical, yearFilter, unitFilter, hos
 
     if (platformStats[pKey] !== undefined) {
       platformStats[pKey] += amount;
-      const serviceName = c.service_item || c.GROUP || "ไม่ระบุ";
+      const serviceName = c.service_item || "ไม่ระบุ";
       if (!platformItems[pKey][serviceName]) {
           platformItems[pKey][serviceName] = { total: 0, monthlyData: Array(12).fill(0) };
       }
@@ -80,38 +80,13 @@ function processData(claims, herbal, thai, physical, yearFilter, unitFilter, hos
     }
   });
 
-  // ผสานข้อมูลจากตาราง herbal, thai, physical เสริมเข้ามาในระบบ
-  herbal.forEach(h => {
-    if (yearFilter !== 'all' && String(h.fiscal_year) !== yearFilter) return;
-    if (unitFilter !== 'all' && String(h.hcode) !== unitFilter) return;
-    let amt = parseFloat(String(h.amount).replace(/,/g, '')) || 0;
-    totalAmount += amt;
-    platformStats.thai += amt;
-  });
-
-  thai.forEach(t => {
-    if (yearFilter !== 'all' && String(t.fiscal_year) !== yearFilter) return;
-    if (unitFilter !== 'all' && String(t.hcode) !== unitFilter) return;
-    let amt = parseFloat(String(t.amount).replace(/,/g, '')) || 0;
-    totalAmount += amt;
-    platformStats.thai += amt;
-  });
-
-  physical.forEach(p => {
-    if (yearFilter !== 'all' && String(p.fiscal_year) !== yearFilter) return;
-    if (unitFilter !== 'all' && String(p.hcode) !== unitFilter) return;
-    let amt = parseFloat(String(p.amount).replace(/,/g, '')) || 0;
-    totalAmount += amt;
-    platformStats.physical += amt;
-  });
-
   const platformCards = [
     { key: 'eclaim', title: "E-Claim", icon: Monitor },
     { key: 'ktb', title: "Krungthai Digital Health", icon: Syringe },
     { key: 'moph', title: "MOPH Claim", icon: Baby },
     { key: 'thai', title: "OP/PP Individual", icon: Flower },
     { key: 'ntip', title: "NTIP", icon: Scan },
-    { key: 'physical', title: "Disability & Physical", icon: HeartPulse },
+    { key: 'physical', title: "Disability", icon: HeartPulse },
   ].map(p => ({
     ...p,
     value: platformStats[p.key] || 0,
@@ -124,7 +99,7 @@ function processData(claims, herbal, thai, physical, yearFilter, unitFilter, hos
     const hName = hospitalMap[String(c.hcode)] || (c.hcode || "Unknown");
     if (hName === "All Cup" || !hName) return;
     if (!rankingMap[hName]) rankingMap[hName] = { amount: 0, cases: 0 };
-    let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g, ''))||0);
+    let amt = typeof c.amount === 'number' ? c.amount : (parseFloat(String(c.amount).replace(/,/g,''))||0);
     rankingMap[hName].amount += amt;
     rankingMap[hName].cases += 1;
   });
@@ -320,6 +295,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
     return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.amount - a.amount).slice(0, 5); 
   }, [claims, platform.key, filterYear, hospitalMap]);
 
+  // ✅ คำนวณยอดรวมแต่ละเดือนของแพลตฟอร์มนี้
   const { platformMonthlyTotals, platformGrandTotal } = useMemo(() => {
     const pTotals = Array(12).fill(0);
     let pGrand = 0;
@@ -418,6 +394,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
                    </tr>
                  ))}
                </tbody>
+               {/* ✅ เพิ่มแถบสีเขียวเข้มสรุปยอดรวมของแต่ละเดือน (Monthly Total) ให้แพลตฟอร์มนี้ */}
                {subItems.length > 0 && (
                  <tfoot>
                    <tr className="group transition-transform">
@@ -464,7 +441,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
     </div>
   );
 };
-
+// 🌟 หน้า LoginScreen แบบภาษาอังกฤษ และเส้นขอบการ์ดเรืองแสงพรีเมียม
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -527,6 +504,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
         </div>
       )}
       
+      {/* กรอบการ์ดพร้อมเส้นขอบเรืองแสง (Glow Border) */}
       <div className={`relative bg-white/90 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] w-full max-w-md z-20 mt-24 transition-all duration-1000 ease-out transform border-2 border-emerald-400/50 ring-4 ring-emerald-500/10 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
         
         <div className="text-center mb-8 flex flex-col items-center">
@@ -538,6 +516,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
           <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
           <p className="text-emerald-700 font-bold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
           
+          {/* ป้ายข้อความภาษาอังกฤษ */}
           <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5 tracking-wide">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Reimbursement Tracking System
@@ -583,18 +562,15 @@ export default function App() {
   
   const [claims, setClaims] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [herbal, setHerbal] = useState([]);
-  const [thai, setThai] = useState([]);
-  const [physical, setPhysical] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
   const [showExpenseReport, setShowExpenseReport] = useState(false);
   const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
 
-  // ระบบ Auto-Logout 30 นาที
+  // ✅ ระบบ Auto-Logout ตัดจบอัตโนมัติถ้าไม่มีการใช้งาน 30 นาที
   useEffect(() => {
     if (!currentUser) return;
-    const INACTIVITY_TIME = 30 * 60 * 1000;
+    const INACTIVITY_TIME = 30 * 60 * 1000; // 30 นาที
     let timeoutId;
     
     const handleAutoLogout = () => {
@@ -608,7 +584,7 @@ export default function App() {
       timeoutId = setTimeout(handleAutoLogout, INACTIVITY_TIME);
     };
     
-    resetTimer();
+    resetTimer(); // เริ่มจับเวลา
     const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll'];
     events.forEach(event => window.addEventListener(event, resetTimer));
     
@@ -645,33 +621,9 @@ export default function App() {
             } catch (err) { console.error("ดึง Expenses ไม่ได้:", err); }
 
             try {
-                const resH = await fetch(`${API_BASE_URL}/api/herbal`);
+                const resH = await fetch(`${API_BASE_URL}/api/hospitals`);
                 if (resH.ok) {
                     const dataH = await resH.json();
-                    if (Array.isArray(dataH)) setHerbal(dataH);
-                }
-            } catch (err) { console.error("ดึง Herbal ไม่ได้:", err); }
-
-            try {
-                const resT = await fetch(`${API_BASE_URL}/api/thai`);
-                if (resT.ok) {
-                    const dataT = await resT.json();
-                    if (Array.isArray(dataT)) setThai(dataT);
-                }
-            } catch (err) { console.error("ดึง Thai ไม่ได้:", err); }
-
-            try {
-                const resP = await fetch(`${API_BASE_URL}/api/physical`);
-                if (resP.ok) {
-                    const dataP = await resP.json();
-                    if (Array.isArray(dataP)) setPhysical(dataP);
-                }
-            } catch (err) { console.error("ดึง Physical ไม่ได้:", err); }
-
-            try {
-                const resHosp = await fetch(`${API_BASE_URL}/api/hospitals`);
-                if (resHosp.ok) {
-                    const dataH = await resHosp.json();
                     const hMap = { 'all': 'All Cup' };
                     dataH.forEach(h => {
                         hMap[String(h.hcode)] = h.name;
@@ -702,8 +654,8 @@ export default function App() {
   const selectedHospitalName = useMemo(() => hospitalMap[filterUnit] || 'All Cup', [filterUnit, hospitalMap]);
 
   const { totalAmount, platformCards, yoyData, rankingList, monthlyByPlatform } = useMemo(() => {
-      return processData(claims, herbal, thai, physical, filterYear, filterUnit, hospitalMap);
-  }, [claims, herbal, thai, physical, filterYear, filterUnit, hospitalMap]);
+      return processData(claims, filterYear, filterUnit, hospitalMap);
+  }, [claims, filterYear, filterUnit, hospitalMap]);
 
   const expenseReportData = useMemo(() => {
     const filteredByYear = expenses.filter(e => filterYear === 'all' || String(e.fiscal_year) === filterYear);
