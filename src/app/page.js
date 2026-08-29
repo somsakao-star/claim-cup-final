@@ -5,21 +5,20 @@ import Chart from 'chart.js/auto';
 import {
   Activity, Trophy, Syringe, Baby, Flower, Scan, HeartPulse, Monitor,
   ArrowUpRight, ArrowLeft, Calendar, Clock, Building2, CheckCircle2,
-  Layers, Leaf, List, Table2, Wallet, LogOut, FileText, Database, Printer
+  Layers, Leaf, List, Table2, Wallet, LogOut, FileText, Database, Printer,
+  Sparkles, DollarSign, Stethoscope, Pill, ChevronRight
 } from 'lucide-react';
 
 const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 
 const MONTHS_TH = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
 
-/* ⚠️ ข้อมูลชุดนี้ (PAY_DATA, PAY_MATRIX_*) เป็นข้อมูลสถิตจริงที่ยกมาจาก dashboard_demo.html โดยตรง
-   ไม่ได้ดึงจาก /api/claims, /api/expenses หรือ /api/hospitals — เพราะ API ปัจจุบันยังไม่มี endpoint
-   สำหรับ "รายงานพึ่งจ่าย" นี้โดยเฉพาะ ถ้ามี endpoint จริง (เช่น /api/payable) บอกได้เลย จะเปลี่ยนมา fetch แทน */
+/* ข้อมูลสถิติสำหรับรายงานพึ่งจ่าย (Statement Matrix) */
 const PAY_DATA = [
   { "หน่วยบริการ": "05954 - รพ.สต.บ้านสันโค้ง", "code": "05954", "รับเงินครั้งที่1": 290775.68, "รับเงินครั้งที่2": 113379.99, "หักเงิน": 0.0, "ยอดสุทธิ": 404155.67 },
+  { "หน่วยบริการ": "05962 - รพ.สต.บ้านต้นเปา", "code": "05962", "รับเงินครั้งที่1": 89473.84, "รับเงินครั้งที่2": 51756.50, "หักเงิน": 0.0, "ยอดสุทธิ": 141230.34 },
   { "หน่วยบริการ": "05957 - รพ.สต.บ้านกอสะเรียม", "code": "05957", "รับเงินครั้งที่1": 25133.87, "รับเงินครั้งที่2": 30050.50, "หักเงิน": 7920.0, "ยอดสุทธิ": 47264.37 },
   { "หน่วยบริการ": "05959 - รพ.สต.บ้านแม่ผาแหน", "code": "05959", "รับเงินครั้งที่1": 22735.00, "รับเงินครั้งที่2": 14381.00, "หักเงิน": 14160.0, "ยอดสุทธิ": 22956.00 },
-  { "หน่วยบริการ": "05962 - รพ.สต.บ้านต้นเปา", "code": "05962", "รับเงินครั้งที่1": 89473.84, "รับเงินครั้งที่2": 51756.50, "หักเงิน": 0.0, "ยอดสุทธิ": 141230.34 },
   { "หน่วยบริการ": "05956 - รพ.สต.บ้านป่าตาล", "code": "05956", "รับเงินครั้งที่1": 0.0, "รับเงินครั้งที่2": 0.0, "หักเงิน": 0.0, "ยอดสุทธิ": 0.0 }
 ];
 
@@ -104,32 +103,24 @@ const PAY_MATRIX_68 = {
 const PAYABLE_HOSP_OPTIONS = [
   { code: 'ALL', label: '🏢 ทุกหน่วยบริการ (ภาพรวม CUP สันโค้ง)' },
   { code: '05954', label: '05954 - รพ.สต.บ้านสันโค้ง' },
+  { code: '05962', label: '05962 - รพ.สต.บ้านต้นเปา' },
   { code: '05957', label: '05957 - รพ.สต.บ้านกอสะเรียม' },
   { code: '05959', label: '05959 - รพ.สต.บ้านแม่ผาแหน' },
-  { code: '05962', label: '05962 - รพ.สต.บ้านต้นเปา' },
   { code: '05956', label: '05956 - รพ.สต.บ้านป่าตาล' },
 ];
 
-/* ⚠️ ข้อสมมติ: กลุ่ม (c.group) ของรายการกายภาพบำบัดใน claims จริงไม่ทราบชื่อแน่ชัด
-   จึงตรวจจับแบบ fuzzy match จากคำว่า "กายภาพ" หรือ "ฟื้นฟู" — ถ้าไม่ตรงกับชื่อ group จริงจาก API
-   ให้แก้ไขคำค้นหาในนี้ */
-const PHYSICAL_GROUP_KEYWORDS = ['กายภาพ', 'ฟื้นฟู'];
+const PHYSICAL_GROUP_KEYWORDS = ['กายภาพ', 'ฟื้นฟู', 'physical'];
 const isPhysicalGroup = (group) => {
-  const g = String(group || '');
+  const g = String(group || '').toLowerCase();
   return PHYSICAL_GROUP_KEYWORDS.some(k => g.includes(k));
 };
 
-/* ⚠️ ไม่มีฟิลด์ "นักกายภาพ" ใน claims จริง — สัดส่วนรายคนนี้เป็นการแบ่งยอดรวมตามสัดส่วนสมมติ (40/35/25%)
-   เหมือนที่ทำใน dashboard_demo.html พอมีข้อมูลจริงรายคน ค่อยเปลี่ยนมาคำนวณจากข้อมูลจริงแทน */
 const THERAPIST_SPLIT = [
   { id: 1, name: 'นักกายภาพบำบัด คนที่ 1', pct: 0.40, color: '#0369a1', bg: '#e0f2fe' },
   { id: 2, name: 'นักกายภาพบำบัด คนที่ 2', pct: 0.35, color: '#15803d', bg: '#dcfce7' },
   { id: 3, name: 'นักกายภาพบำบัด คนที่ 3', pct: 0.25, color: '#b45309', bg: '#fef3c7' },
 ];
 
-
-
-/* mapping รหัส category → ชื่อหมวดค่าใช้จ่าย ตามตาราง paymentcategory (code เป็น foreign key ใน expenses.category) */
 const PAYMENT_CATEGORY_MAP = {
   '1': 'ค่ายาและเวชภัณฑ์',
   '2': 'ค่าวัสดุ',
@@ -148,6 +139,14 @@ const PAYMENT_CATEGORY_MAP = {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtS = (n) => {
+  const v = Math.abs(Math.round(n || 0));
+  if (v >= 1000000) return `${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1000) return `${(v / 1000).toFixed(1)}K`;
+  return `${v}`;
+};
+
+const HOSP_PALETTE = ['#3b82f6', '#10b981', '#f97316', '#a855f7', '#ec4899', '#06b6d4'];
 
 /* ════════ LOGIN SCREEN ════════ */
 const LoginScreen = ({ onLoginSuccess }) => {
@@ -198,14 +197,14 @@ const LoginScreen = ({ onLoginSuccess }) => {
         </div>
       </div>
       {!isPulled && (
-        <div className="absolute top-52 text-slate-300 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2 drop-shadow-md">
+        <div className="absolute top-52 text-slate-300 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2 drop-shadow-md cursor-pointer" onClick={() => setIsPulled(true)}>
           <span>👇</span><span>คลิกเพื่อเปิดระบบ</span>
         </div>
       )}
 
       <div className={`relative bg-white/90 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] w-full max-w-md z-20 mt-24 transition-all duration-1000 ease-out transform border-2 border-emerald-400/50 ring-4 ring-emerald-500/10 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
         <div className="text-center mb-8 flex flex-col items-center">
-          <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-32 h-32 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100" />
+          <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-28 h-28 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100" />
           <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
           <p className="text-emerald-700 font-bold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
           <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5 tracking-wide">
@@ -218,7 +217,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" placeholder="Username" required />
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" placeholder="Password" required />
-          <button type="submit" disabled={isLoading} className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] tracking-wide text-sm">
+          <button type="submit" disabled={isLoading} className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] tracking-wide text-sm cursor-pointer">
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
@@ -233,7 +232,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
   const [currentHosp, setCurrentHosp] = useState('all');
-  const [activeDetailTab, setActiveDetailTab] = useState('ppfs');
+  const [activeDetailTab, setActiveDetailTab] = useState('PP-FS');
+  const [detailFilterHosp, setDetailFilterHosp] = useState('all');
   const [payableHosp, setPayableHosp] = useState('ALL');
   const [payableYear, setPayableYear] = useState('69');
   const [therapistPopupId, setTherapistPopupId] = useState(null);
@@ -246,10 +246,14 @@ export default function App() {
 
   const donutChartRef = useRef(null);
   const donutCanvasRef = useRef(null);
+  const detailBarChartRef = useRef(null);
+  const detailBarCanvasRef = useRef(null);
   const expenseChartRef = useRef(null);
   const expenseCanvasRef = useRef(null);
+  const expDonutChartRef = useRef(null);
+  const expDonutCanvasRef = useRef(null);
 
-  // Auto-Logout 30 mins[cite: 2]
+  // Auto-Logout 30 mins
   useEffect(() => {
     if (!currentUser) return;
     const INACTIVITY_TIME = 30 * 60 * 1000;
@@ -318,12 +322,12 @@ export default function App() {
 
   const selectedHospName = hospitalMap[currentHosp] || 'All Cup';
 
+  /* ─── Processed Data for Overview & Ranking ─── */
   const processedData = useMemo(() => {
     let totalAmt = 0;
     const hospTotals = {};
     const groupStats = {};
 
-    // สร้าง hospTotals จาก hospitalMap (เฉพาะ 5 หลัก)
     Object.keys(hospitalMap).forEach(k => {
       if (k !== 'all') hospTotals[k] = 0;
     });
@@ -334,12 +338,10 @@ export default function App() {
       const amt = parseFloat(String(c.amount || 0).replace(/,/g, '')) || 0;
       const group = String(c.group || 'อื่นๆ');
 
-      // คำนวณยอดรวมทั้งหมด (filter ตามปีงบ + หน่วยบริการ)
       if (currentHosp === 'all' || hcode === currentHosp) {
         if (currentYear === 'all' || yr === currentYear) {
           totalAmt += amt;
 
-          // คำนวณยอดแยกตาม group
           if (!groupStats[group]) {
             groupStats[group] = { total: 0, items: {}, topItem: '', topAmt: 0 };
           }
@@ -353,7 +355,6 @@ export default function App() {
         }
       }
 
-      // คำนวณ hospTotals (filter ตามปีเท่านั้น)
       if (currentYear === 'all' || yr === currentYear) {
         if (hospTotals[hcode] !== undefined) {
           hospTotals[hcode] += amt;
@@ -361,17 +362,16 @@ export default function App() {
       }
     });
 
-    // คำนวณ rankingList — Top 5 หน่วยบริการ (sort by amount)
+    // Top 5 ranking
     const rankingList = Object.entries(hospTotals)
       .map(([hcode, amount]) => {
-        // นับจำนวนรายการ
         const itemCount = claims.filter(c => {
           const yr = String(c.fiscal_year || '');
           return String(c.hcode) === hcode && (currentYear === 'all' || yr === currentYear);
         }).length;
         return {
           hcode,
-          name: hospitalMap[hcode] || hcode,
+          name: hospitalMap[hcode] ? hospitalMap[hcode].replace(/^[0-9]+\s*[-–]?\s*/, '') : hcode,
           amount,
           items: itemCount,
         };
@@ -379,7 +379,6 @@ export default function App() {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
 
-    // แปลง groupStats เป็น array sorted by total
     const groupCards = Object.entries(groupStats)
       .map(([group, data]) => ({
         group,
@@ -393,9 +392,62 @@ export default function App() {
     return { totalAmt, hospTotals, rankingList, groupCards };
   }, [claims, currentYear, currentHosp, hospitalMap]);
 
-  /* ยืนยันโครงสร้างจริงของ `expenses` (จาก /api/expenses) แล้ว:
-     { id, month (ชื่อเดือนภาษาไทย เช่น "ตุลาคม"), category (รหัส FK → ตาราง paymentcategory), amount, fiscal_year }
-     category เป็นแค่รหัส ต้อง map ผ่าน PAYMENT_CATEGORY_MAP ถึงจะได้ชื่อหมวดที่อ่านได้ */
+  /* ─── Detail Comparison Table Data (2568 vs 2569) ─── */
+  const detailComparisonData = useMemo(() => {
+    const itemMap = {};
+
+    claims.forEach(c => {
+      const group = String(c.group || 'อื่นๆ');
+      const hcode = String(c.hcode || '');
+      const yr = String(c.fiscal_year || '');
+      const service = c.service_item || 'ไม่ระบุ';
+      const qty = parseInt(String(c.quantity || 0), 10) || 0;
+      const amt = parseFloat(String(c.amount || 0).replace(/,/g, '')) || 0;
+
+      // Filter by active category group and hospital filter in detail view
+      const matchGroup = activeDetailTab === 'all' || group.toLowerCase() === activeDetailTab.toLowerCase();
+      const matchHosp = detailFilterHosp === 'all' || hcode === detailFilterHosp;
+
+      if (matchGroup && matchHosp) {
+        if (!itemMap[service]) {
+          itemMap[service] = {
+            group: group,
+            service: service,
+            qty68: 0,
+            amt68: 0,
+            qty69: 0,
+            amt69: 0,
+          };
+        }
+        if (yr === '2568') {
+          itemMap[service].qty68 += qty;
+          itemMap[service].amt68 += amt;
+        } else if (yr === '2569') {
+          itemMap[service].qty69 += qty;
+          itemMap[service].amt69 += amt;
+        }
+      }
+    });
+
+    const rows = Object.values(itemMap).map(r => ({
+      ...r,
+      diffAmt: r.amt69 - r.amt68,
+      diffQty: r.qty69 - r.qty68
+    })).sort((a, b) => b.amt69 - a.amt69);
+
+    let sumQty68 = 0, sumAmt68 = 0, sumQty69 = 0, sumAmt69 = 0;
+    rows.forEach(r => {
+      sumQty68 += r.qty68;
+      sumAmt68 += r.amt68;
+      sumQty69 += r.qty69;
+      sumAmt69 += r.amt69;
+    });
+
+    const totalDiffAmt = sumAmt69 - sumAmt68;
+    return { rows, sumQty68, sumAmt68, sumQty69, sumAmt69, totalDiffAmt };
+  }, [claims, activeDetailTab, detailFilterHosp]);
+
+  /* ─── Expenses Stats ─── */
   const expenseStats = useMemo(() => {
     const filtered = expenses.filter(e => {
       const yr = String(e.fiscal_year || e.year || '');
@@ -415,7 +467,6 @@ export default function App() {
       const cat = PAYMENT_CATEGORY_MAP[rawCode] || e.expense_type || e.name || `หมวดไม่ทราบรหัส (${rawCode || 'ไม่ระบุ'})`;
       catMap[cat] = (catMap[cat] || 0) + amt;
 
-      // month field may come as short Thai month ("ต.ค.") or full name ("ตุลาคม") — try to match either
       const mRaw = String(e.month || '').trim();
       const shortMonth = MONTHS_TH.find(m => m === mRaw) ||
         MONTHS_TH[["ตุลาคม","พฤศจิกายน","ธันวาคม","มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน"].indexOf(mRaw)];
@@ -435,6 +486,7 @@ export default function App() {
     return { total, count: filtered.length, categories, monthlyEntries, topCategory, topMonth, avgPerMonth };
   }, [expenses, currentYear]);
 
+  /* ─── Payable Stats ─── */
   const payableStats = useMemo(() => {
     const filteredPayData = PAY_DATA.filter(r => payableHosp === 'ALL' || r.code === payableHosp);
     let p1 = 0, p2 = 0, ded = 0;
@@ -462,6 +514,7 @@ export default function App() {
     return { filteredPayData, p1, p2, ded, totalReceived, netRemain, sum68, sum69, matrixRows, matrixTotal };
   }, [payableHosp, payableYear]);
 
+  /* ─── Physical Therapy Stats ─── */
   const physicalStats = useMemo(() => {
     const rows = claims.filter(c => {
       const yr = String(c.fiscal_year || '');
@@ -488,7 +541,7 @@ export default function App() {
     });
 
     const hcodeBreakdown = Object.values(hcodeMap)
-      .map(h => ({ ...h, name: hospitalMap[h.hcode] || h.hcode }))
+      .map(h => ({ ...h, name: hospitalMap[h.hcode] ? hospitalMap[h.hcode].replace(/^[0-9]+\s*[-–]?\s*/, '') : h.hcode }))
       .sort((a, b) => b.amount - a.amount);
 
     const serviceBreakdown = Object.values(serviceMap).sort((a, b) => b.amount - a.amount);
@@ -496,510 +549,958 @@ export default function App() {
     return { total, count: rows.length, hcodeBreakdown, serviceBreakdown };
   }, [claims, currentYear, hospitalMap]);
 
+  /* ─── Chart: Donut in Overview ─── */
   useEffect(() => {
     if (currentView !== 'overview') return;
+    if (!donutCanvasRef.current) return;
 
-    if (donutCanvasRef.current) {
-      if (donutChartRef.current) donutChartRef.current.destroy();
-      
-      // ใช้ข้อมูลจริงจาก hospTotals — dynamic labels จาก hospitalMap
-      const hospEntries = Object.entries(processedData.hospTotals).filter(([, v]) => v > 0);
-      const labels = hospEntries.map(([code]) => hospitalMap[code] || code);
-      const values = hospEntries.map(([, v]) => v);
-      const colors = ['#3b82f6', '#10b981', '#f97316', '#a855f7', '#ec4899'];
+    if (donutChartRef.current) donutChartRef.current.destroy();
 
-      donutChartRef.current = new Chart(donutCanvasRef.current, {
-        type: 'doughnut',
-        data: {
-          labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
-          datasets: [{
-            data: values.length > 0 ? values : [1],
-            backgroundColor: values.length > 0 ? colors.slice(0, values.length) : ['#e2e8f0'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '68%',
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
+    const hospEntries = Object.entries(processedData.hospTotals).filter(([, v]) => v > 0);
+    const labels = hospEntries.map(([code]) => {
+      const raw = hospitalMap[code] || code;
+      return raw.replace(/^[0-9]+\s*[-–]?\s*/, '').replace('รพ.สต.', '');
+    });
+    const values = hospEntries.map(([, v]) => v);
+
+    donutChartRef.current = new Chart(donutCanvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
+        datasets: [{
+          data: values.length > 0 ? values : [1],
+          backgroundColor: values.length > 0 ? HOSP_PALETTE.slice(0, values.length) : ['#e2e8f0'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: { legend: { display: false } }
+      }
+    });
 
     return () => {
       if (donutChartRef.current) donutChartRef.current.destroy();
     };
   }, [currentView, processedData, hospitalMap]);
 
+  /* ─── Chart: Detail View Top Items Horizontal Bar ─── */
   useEffect(() => {
-    if (currentView !== 'expenses') return;
-    if (!expenseCanvasRef.current) return;
+    if (currentView !== 'detail') return;
+    if (!detailBarCanvasRef.current) return;
 
-    if (expenseChartRef.current) expenseChartRef.current.destroy();
-    expenseChartRef.current = new Chart(expenseCanvasRef.current, {
+    if (detailBarChartRef.current) detailBarChartRef.current.destroy();
+
+    const topItems = detailComparisonData.rows.slice(0, 8);
+    const labels = topItems.map(d => d.service.length > 20 ? d.service.slice(0, 20) + '...' : d.service);
+    const values = topItems.map(d => d.amt69);
+
+    detailBarChartRef.current = new Chart(detailBarCanvasRef.current, {
       type: 'bar',
       data: {
-        labels: expenseStats.monthlyEntries.map(m => m.month),
+        labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
         datasets: [{
-          label: 'ยอดค่าใช้จ่าย',
-          data: expenseStats.monthlyEntries.map(m => m.amount),
-          backgroundColor: '#0284c7',
+          label: 'ยอดชดเชย ปี 69 (บาท)',
+          data: values.length > 0 ? values : [0],
+          backgroundColor: '#d97706',
           borderRadius: 6,
-          maxBarThickness: 40,
         }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => `${fmt(ctx.parsed.y)} บาท` } },
+          tooltip: { callbacks: { label: (ctx) => `${fmtD(ctx.parsed.x)} บาท` } }
         },
         scales: {
-          y: { ticks: { callback: (v) => fmt(v) }, grid: { color: '#f1f5f9' } },
-          x: { grid: { display: false } },
-        },
-      },
+          x: { ticks: { callback: v => fmtS(v) }, grid: { color: '#f1f5f9' } },
+          y: { grid: { display: false } }
+        }
+      }
     });
 
     return () => {
+      if (detailBarChartRef.current) detailBarChartRef.current.destroy();
+    };
+  }, [currentView, detailComparisonData]);
+
+  /* ─── Charts: Expense View ─── */
+  useEffect(() => {
+    if (currentView !== 'expenses') return;
+
+    if (expenseCanvasRef.current) {
       if (expenseChartRef.current) expenseChartRef.current.destroy();
+      expenseChartRef.current = new Chart(expenseCanvasRef.current, {
+        type: 'line',
+        data: {
+          labels: expenseStats.monthlyEntries.map(m => m.month),
+          datasets: [{
+            label: 'ค่าใช้จ่าย',
+            data: expenseStats.monthlyEntries.map(m => m.amount),
+            borderColor: '#1D9E75',
+            backgroundColor: 'rgba(29,158,117,0.08)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => `${fmt(ctx.parsed.y)} บาท` } },
+          },
+          scales: {
+            y: { ticks: { callback: (v) => fmtS(v) }, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    if (expDonutCanvasRef.current) {
+      if (expDonutChartRef.current) expDonutChartRef.current.destroy();
+      const top5Cats = expenseStats.categories.slice(0, 5);
+      expDonutChartRef.current = new Chart(expDonutCanvasRef.current, {
+        type: 'doughnut',
+        data: {
+          labels: top5Cats.map(c => c.name),
+          datasets: [{
+            data: top5Cats.map(c => c.amount),
+            backgroundColor: ['#1D9E75', '#2563EB', '#F59E0B', '#8B5CF6', '#94A3B8'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    return () => {
+      if (expenseChartRef.current) expenseChartRef.current.destroy();
+      if (expDonutChartRef.current) expDonutChartRef.current.destroy();
     };
   }, [currentView, expenseStats]);
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-[#F4FAF7]"><div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div></div>;
+  // Handle Loading & Login
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">กำลังโหลดข้อมูล Dashboard...</p>
+      </div>
+    </div>
+  );
   if (!currentUser) return <LoginScreen onLoginSuccess={setCurrentUser} />;
+
+  // Calculate cup share percentages for hero white card
+  const cupTotalAll = Object.values(processedData.hospTotals).reduce((a, b) => a + b, 0) || 1;
+  const currentHospAmt = currentHosp === 'all' ? processedData.totalAmt : (processedData.hospTotals[currentHosp] || 0);
+  const currentHospPct = Math.round((currentHospAmt / cupTotalAll) * 100);
 
   return (
     <div className="flex w-screen min-h-screen bg-[#f8fafc] font-sans text-[#0f172a] overflow-x-hidden">
       
-      {/* ═══ SIDEBAR (ซ่อน hcode 56, 54, 62 ตามสั่ง) ═══ */}
-      <aside className="print:hidden w-[260px] bg-white border-r border-[#e2e8f0] flex flex-col shrink-0 sticky top-0 h-screen z-40">
-        <div className="p-5 flex items-center gap-3 border-b border-[#e2e8f0]">
-          <div className="w-[42px] h-[42px] rounded-full bg-white border border-[#e2e8f0] shadow-sm flex items-center justify-center">
-            <Activity className="text-emerald-700" size={22} />
-          </div>
-          <div>
-            <div className="text-[17px] font-black text-[#022c22] leading-tight">CLAIMCUP</div>
-            <div className="text-[10px] text-[#059669] font-extrabold tracking-wider">SANKHONG PORTAL</div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div>
-            <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
-              <Calendar size={15} className="text-[#10b981]" /> ปีงบประมาณ
+      {/* ═══════════════ 1. SIDEBAR ═══════════════ */}
+      {currentView === 'overview' && (
+        <aside className="print:hidden w-[260px] bg-white border-r border-[#e2e8f0] flex flex-col shrink-0 sticky top-0 h-screen z-40">
+          <div className="p-5 flex items-center gap-3 border-b border-[#e2e8f0]">
+            <div className="w-[42px] h-[42px] rounded-xl bg-[#022c22] shadow-[0_4px_10px_rgba(2,44,34,0.2)] flex items-center justify-center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.3">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
             </div>
-            <div className="flex bg-[#f1f5f9] p-1 rounded-full border border-[#e2e8f0]">
-              {['2568', '2569', '2570'].map(yr => (
-                <button key={yr} onClick={() => setCurrentYear(yr)} className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all ${currentYear === yr ? 'bg-[#064e3b] text-white shadow-sm' : 'text-[#64748b]'}`}>{yr}</button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
-              <Building2 size={15} className="text-[#10b981]" /> หน่วยบริการ
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <button onClick={() => setCurrentHosp('all')} className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all ${currentHosp === 'all' ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold' : 'text-[#475569] hover:bg-[#f8fafc]'}`}>
-                <span className="w-2 h-2 rounded-full bg-[#10b981]"></span> All Cup
-              </button>
-              {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => {
-                const colors = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#a855f7'];
-                // ตัดรหัส hcode ออกจากชื่อในเมนูด้านข้างตามที่สั่ง
-                const cleanName = name.replace(/^[0-9]+\s*[-–]?\s*/, '').replace(/รพ\.สต\./, 'รพ.สต.');
-                return (
-                  <button key={code} onClick={() => setCurrentHosp(code)} className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all ${currentHosp === code ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold' : 'text-[#475569] hover:bg-[#f8fafc]'}`}>
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[idx % colors.length] }}></span> {cleanName}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-[#e2e8f0]">
-            <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
-              <FileText size={15} className="text-[#10b981]" /> รายงาน & เอกสาร
-            </div>
-            <button onClick={() => setCurrentView('expenses')} className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#064e3b] text-white font-bold text-xs shadow-md mb-2.5 hover:bg-[#022c22] transition-all">
-              <Wallet size={16} /> รายการสรุปค่าใช้จ่าย Cup
-            </button>
-            <button onClick={() => setCurrentView('payable')} className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#065f46] text-white font-bold text-xs shadow-md hover:bg-[#044734] transition-all">
-              <Database size={16} /> รายงานพึ่งจ่าย
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-[#e2e8f0] flex items-center justify-between text-[11px] text-[#94a3b8]">
-          <span>CLAIMCUP Portal</span>
-          <button onClick={() => { localStorage.removeItem('claimcup_user'); setCurrentUser(null); }} className="text-red-500 font-bold flex items-center gap-1 hover:underline">
-            <LogOut size={12} /> ออกจากระบบ
-          </button>
-        </div>
-      </aside>
-
-      {/* ═══ MAIN CONTENT AREA ═══ */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto">
-        
-        <header className="print:hidden bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-3">
-            <Activity className="text-[#022c22]" size={26} />
             <div>
-              <div className="text-2xl font-black text-[#022c22] tracking-tight">Health Claim Analytics</div>
-              <div className="text-[11px] font-extrabold text-[#8da2b5] tracking-wider uppercase flex items-center gap-2 mt-0.5">
-                <span>CUP SANKHONG DASHBOARD</span> • <span className="bg-[#cbfbe4] text-[#064e3b] px-2 py-0.5 rounded text-[10px]">{currentYear}</span> • <span className="text-[#b91c1c] font-black">{selectedHospName.toUpperCase()}</span>
-              </div>
+              <div className="text-[17px] font-black text-[#022c22] leading-tight">CLAIMCUP</div>
+              <div className="text-[10px] text-[#059669] font-extrabold tracking-wider">SANKHONG PORTAL</div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="bg-[#064e3b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
-              <CheckCircle2 size={14} className="text-[#34d399]" /> PUBLIC HEALTH APPROVED
-            </div>
-            <div className="text-xs font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
-              <Clock size={14} /> {clockTime}
-            </div>
-          </div>
-        </header>
 
-        {/* OVERVIEW VIEW */}
-        {currentView === 'overview' && (
-          <div className="p-8 max-w-[1560px] mx-auto w-full space-y-6">
-            <div className="bg-gradient-to-br from-[#022c22] to-[#064e3b] rounded-3xl p-8 text-white shadow-xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <div className="text-xs font-extrabold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> CUMULATIVE HEALTH DISBURSEMENT
-                </div>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-3xl font-bold text-[#34d399]">฿</span>
-                  <span className="text-5xl font-black tracking-tight">{fmt(processedData.totalAmt)}</span>
-                </div>
-                <div className="text-sm font-semibold text-[#d1fae5] mb-2">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
-                <div className="text-xs font-bold text-red-400">หน่วยบริการ: {selectedHospName}</div>
-                <button onClick={() => setCurrentView('detail')} className="mt-4 bg-white/15 hover:bg-white/25 border border-white/25 px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2">
-                  ดูรายละเอียดเจาะลึก 4 หมวด
-                </button>
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div>
+              <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
+                <Calendar size={15} className="text-[#10b981]" /> ปีงบประมาณ
               </div>
-              <div className="bg-white text-slate-900 rounded-2xl p-5 flex items-center justify-around shadow-md">
-                <div className="relative w-32 h-32">
-                  <canvas ref={donutCanvasRef}></canvas>
-                </div>
-                <div className="text-left space-y-1 text-xs font-semibold">
-                  {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => (
-                    <div key={code} className="flex items-center gap-2 cursor-pointer hover:text-emerald-700" onClick={() => setCurrentHosp(code)}>
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#a855f7'][idx] }}></span>
-                      <span>{name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {processedData.groupCards.length > 0 ? processedData.groupCards.slice(0, 4).map((card, idx) => {
-                const borderColors = ['#0284c7', '#8b5cf6', '#f59e0b', '#10b981'];
-                const textColors = ['#0369a1', '#7c3aed', '#d97706', '#059669'];
-                return (
-                  <div key={card.group} onClick={() => { if (isPhysicalGroup(card.group)) { setCurrentView('physical'); } else { setActiveDetailTab(card.group); setCurrentView('detail'); } }} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4" style={{ borderLeftColor: borderColors[idx % 4] }}>
-                    <div className="text-xs font-bold text-[#475569] mb-1">{card.group} ปี {currentYear.slice(2)}</div>
-                    <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(card.total)}</div>
-                    <div className="text-[11px] font-semibold" style={{ color: textColors[idx % 4] }}>สูงสุด: {card.topItem} (฿{fmt(card.topAmt)})</div>
-                  </div>
-                );
-              }) : (
-                <div className="col-span-4 bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm text-center text-slate-400 font-bold">
-                  ไม่มีข้อมูลสำหรับปีงบประมาณ {currentYear}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <div className="font-black text-base text-[#0f172a] flex items-center gap-2">
-                  <Trophy size={18} className="text-amber-500" /> การจัดลำดับ 1-5 ภายในเครือข่าย CUP สันโค้ง
-                </div>
-                <span className="text-[11px] font-bold bg-[#fef3c7] text-[#b45309] px-3 py-1 rounded-full border border-[#fde68a]">Top 5 Internal Ranking — ปี {currentYear}</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                {processedData.rankingList.map((item, idx) => (
-                  <div key={item.hcode} onClick={() => setCurrentHosp(item.hcode)} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-emerald-500 cursor-pointer transition-all">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">อันดับ {idx + 1}</span>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{fmt(item.items)} รายการ</span>
-                    </div>
-                    <div className="font-bold text-sm text-slate-800">{item.name}</div>
-                    <div className="text-[10px] text-slate-400 mb-3">{item.hcode}</div>
-                    <div className="pt-2 border-t border-slate-200">
-                      <div className="text-[10px] text-slate-400">ยอดชดเชย</div>
-                      <div className="text-base font-black text-emerald-900">฿{fmt(item.amount)}</div>
-                    </div>
-                  </div>
+              <div className="flex bg-[#f1f5f9] p-1 rounded-full border border-[#e2e8f0]">
+                {['2568', '2569', '2570'].map(yr => (
+                  <button
+                    key={yr}
+                    onClick={() => setCurrentYear(yr)}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      currentYear === yr ? 'bg-[#064e3b] text-white shadow-sm' : 'text-[#64748b] hover:text-[#0f172a]'
+                    }`}
+                  >
+                    {yr}
+                  </button>
                 ))}
-                {processedData.rankingList.length === 0 && (
-                  <div className="col-span-5 text-center text-slate-400 font-bold py-4">ไม่มีข้อมูล</div>
-                )}
               </div>
+            </div>
+
+            <div>
+              <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
+                <Building2 size={15} className="text-[#10b981]" /> หน่วยบริการในเครือข่าย
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => setCurrentHosp('all')}
+                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-[12.5px] font-semibold transition-all cursor-pointer ${
+                    currentHosp === 'all'
+                      ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold'
+                      : 'text-[#475569] hover:bg-[#f8fafc]'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0"></span>
+                  <span>All Cup (ภาพรวม)</span>
+                </button>
+                {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => {
+                  const cleanName = name.replace(/^[0-9]+\s*[-–]?\s*/, '');
+                  const isAct = currentHosp === code;
+                  return (
+                    <button
+                      key={code}
+                      onClick={() => setCurrentHosp(code)}
+                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-[12.5px] font-semibold transition-all cursor-pointer ${
+                        isAct
+                          ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold'
+                          : 'text-[#475569] hover:bg-[#f8fafc]'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: HOSP_PALETTE[idx % HOSP_PALETTE.length] }}></span>
+                      <span className="truncate">{cleanName}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#e2e8f0]">
+              <div className="text-[11.5px] font-bold text-[#64748b] mb-3 flex items-center gap-2">
+                <FileText size={15} className="text-[#10b981]" /> รายงานการเงิน & เอกสาร
+              </div>
+              <button
+                onClick={() => setCurrentView('expenses')}
+                className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#064e3b] text-white font-bold text-[13px] shadow-[0_4px_12px_rgba(6,78,59,0.2)] mb-2.5 hover:bg-[#022c22] transition-all cursor-pointer"
+              >
+                <Wallet size={16} /> สรุปค่าใช้จ่าย Cup
+              </button>
+              <button
+                onClick={() => setCurrentView('payable')}
+                className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#065f46] text-white font-bold text-[13px] shadow-[0_4px_12px_rgba(6,95,70,0.2)] hover:bg-[#044734] transition-all cursor-pointer"
+              >
+                <Database size={16} /> รายงานพึ่งจ่าย
+              </button>
             </div>
           </div>
-        )}
 
-        {/* EXPENSES VIEW */}
-        {currentView === 'expenses' && (
-          <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
-            <div className="print:hidden flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900">รายการสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</h2>
-                <p className="text-sm text-slate-500">สรุปค่าใช้จ่ายดำเนินงานประจำปีงบประมาณ {currentYear}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => window.print()} className="px-5 py-2 bg-sky-700 text-white rounded-full text-xs font-bold flex items-center gap-2 hover:bg-sky-800 transition-all">
-                  <Printer size={16} /> พิมพ์รายงาน
-                </button>
-                <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
-                  <ArrowLeft size={16} /> กลับหน้าหลัก
-                </button>
-              </div>
-            </div>
-
-            {/* หัวเรื่องสำหรับตอนพิมพ์เท่านั้น */}
-            <div className="hidden print:block mb-4">
-              <h2 className="text-xl font-black text-slate-900">รายการสรุปค่าใช้จ่าย Cup บ้านสันโค้ง — ปีงบประมาณ {currentYear}</h2>
-            </div>
-
-            {/* KPI การ์ด 4 ใบ */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#0284c7' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">ยอดค่าใช้จ่ายรวมทั้งหมด</div>
-                <div className="text-2xl font-black text-slate-900">฿{fmtD(expenseStats.total)}</div>
-                <div className="text-[11px] font-semibold text-slate-400 mt-1">{fmt(expenseStats.count)} รายการ</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#8b5cf6' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">หมวดค่าใช้จ่ายสูงสุด</div>
-                <div className="text-lg font-black text-slate-900 truncate" title={expenseStats.topCategory.name}>{expenseStats.topCategory.name}</div>
-                <div className="text-[11px] font-semibold text-violet-600 mt-1">฿{fmt(expenseStats.topCategory.amount)}</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#f59e0b' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">เดือนที่ค่าใช้จ่ายสูงสุด</div>
-                <div className="text-lg font-black text-slate-900">{expenseStats.topMonth.month}</div>
-                <div className="text-[11px] font-semibold text-amber-600 mt-1">฿{fmt(expenseStats.topMonth.amount)}</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#10b981' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">เฉลี่ยค่าใช้จ่ายต่อเดือน</div>
-                <div className="text-2xl font-black text-slate-900">฿{fmt(expenseStats.avgPerMonth)}</div>
-              </div>
-            </div>
-
-            {/* กราฟแนวโน้มรายเดือน */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm print:shadow-none print:border-slate-300">
-              <h3 className="font-bold text-slate-800 mb-4">แนวโน้มค่าใช้จ่ายรายเดือน</h3>
-              <div className="relative h-[280px] w-full">
-                <canvas ref={expenseCanvasRef}></canvas>
-              </div>
-            </div>
-
-            {/* ตารางสรุปแยกตามหมวดค่าใช้จ่าย */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm print:shadow-none print:border-slate-300">
-              <div className="px-6 py-4 border-b border-slate-200">
-                <h3 className="font-bold text-slate-800">ตารางสรุปแยกตามหมวดค่าใช้จ่าย</h3>
-              </div>
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th className="p-3">#</th>
-                    <th className="p-3">หมวดค่าใช้จ่าย</th>
-                    <th className="p-3 text-right">ยอดรวม (บาท)</th>
-                    <th className="p-3 text-left w-[220px]">สัดส่วน</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {expenseStats.categories.length > 0 ? expenseStats.categories.map((c, idx) => {
-                    const pct = expenseStats.total > 0 ? (c.amount / expenseStats.total * 100) : 0;
-                    return (
-                      <tr key={c.name} className="hover:bg-slate-50">
-                        <td className="p-3 text-slate-400 font-mono">{idx + 1}</td>
-                        <td className="p-3 font-semibold text-slate-800">{c.name}</td>
-                        <td className="p-3 text-right font-black text-slate-900">{fmtD(c.amount)}</td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden print:hidden">
-                              <div className="h-full bg-sky-600" style={{ width: `${pct}%` }}></div>
-                            </div>
-                            <span className="text-[11px] font-bold text-sky-700 min-w-[38px]">{pct.toFixed(1)}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }) : (
-                    <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูลค่าใช้จ่ายสำหรับปีงบประมาณ {currentYear}</td></tr>
-                  )}
-                </tbody>
-                {expenseStats.categories.length > 0 && (
-                  <tfoot>
-                    <tr className="bg-slate-100 font-black">
-                      <td className="p-3" colSpan={2}>รวมทั้งหมด</td>
-                      <td className="p-3 text-right">{fmtD(expenseStats.total)}</td>
-                      <td className="p-3 text-slate-400 font-semibold text-[11px]">100%</td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
+          <div className="p-4 border-t border-[#e2e8f0] flex items-center justify-between text-[11px] text-[#94a3b8]">
+            <span>CLAIMCUP Portal</span>
+            <button onClick={() => { localStorage.removeItem('claimcup_user'); setCurrentUser(null); }} className="text-red-500 font-bold flex items-center gap-1 hover:underline cursor-pointer">
+              <LogOut size={12} /> ออกจากระบบ
+            </button>
           </div>
-        )}
+        </aside>
+      )}
 
-        {/* PAYABLE VIEW */}
-        {currentView === 'payable' && (
-          <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
-            <div className="print:hidden flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900">รายงานพึ่งจ่าย (งบกองทุนและชดเชย)</h2>
-                <p className="text-sm text-slate-500">สรุปยอดจัดสรรเงิน การจ่ายเงิน และที่มาของ Statement ประจำปีงบประมาณ 2568-2569</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => window.print()} className="px-5 py-2 bg-white text-slate-700 border border-slate-300 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-slate-100 transition-all">
-                  <Printer size={16} /> พิมพ์รายงาน
-                </button>
-                <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
-                  <ArrowLeft size={16} /> กลับหน้าหลัก
-                </button>
-              </div>
-            </div>
-
-            <div className="hidden print:block mb-4">
-              <h2 className="text-xl font-black text-slate-900">รายงานพึ่งจ่าย (งบกองทุนและชดเชย) — {PAYABLE_HOSP_OPTIONS.find(h => h.code === payableHosp)?.label}</h2>
-            </div>
-
-            {/* Filter Bar */}
-            <div className="print:hidden bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex items-center justify-between gap-4 flex-wrap">
+      {/* ═══════════════ MAIN CONTENT SHELL ═══════════════ */}
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        
+        {/* ════════ VIEW 1: OVERVIEW DASHBOARD ════════ */}
+        {currentView === 'overview' && (
+          <div>
+            <header className="print:hidden bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="flex items-center gap-3">
-                <span className="font-bold text-sm text-slate-700">เลือกหน่วยบริการ:</span>
-                <select value={payableHosp} onChange={(e) => setPayableHosp(e.target.value)} className="px-4 py-2 rounded-lg border-[1.5px] border-slate-300 bg-slate-50 text-sm font-bold text-slate-800 min-w-[300px] outline-none cursor-pointer">
-                  {PAYABLE_HOSP_OPTIONS.map(h => (
-                    <option key={h.code} value={h.code}>{h.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="text-xs text-slate-500 font-semibold">ปรับยอดและตารางอัตโนมัติตามหน่วยบริการที่เลือก</div>
-            </div>
-
-            {/* KPI การ์ด 4 ใบ */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#10B981' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">ยอดเงินรวม ปีงบ 2568</div>
-                <div className="text-[11px] text-slate-400 mb-2">Statement ปีงบ 2568</div>
-                <div className="text-xl font-black" style={{ color: '#065F46' }}>฿{fmtD(payableStats.sum68)}</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#2563EB' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">ยอดเงินรวม ปีงบ 2569</div>
-                <div className="text-[11px] text-slate-400 mb-2">Statement ปีงบ 2569</div>
-                <div className="text-xl font-black" style={{ color: '#1E40AF' }}>฿{fmtD(payableStats.sum69)}</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#F59E0B' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">ยอดรับเงินรวม (ครั้งที่ 1 + 2)</div>
-                <div className="text-[11px] text-slate-400 mb-2">งวด 1: ฿{fmt(payableStats.p1)} | งวด 2: ฿{fmt(payableStats.p2)}</div>
-                <div className="text-xl font-black" style={{ color: '#B45309' }}>฿{fmtD(payableStats.totalReceived)}</div>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm border-l-4" style={{ borderLeftColor: '#0F172A' }}>
-                <div className="text-xs font-bold text-slate-500 mb-1">ยอดเงินคงเหลือสุทธิ</div>
-                <div className="text-[11px] text-slate-400 mb-2">(รับเงิน 1+2) - หักเงิน</div>
-                <div className="text-xl font-black text-slate-900">฿{fmtD(payableStats.netRemain)}</div>
-              </div>
-            </div>
-
-            {/* Section 1: ตารางสรุปการจ่ายเงินและยอดหักชดเชย */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm print:shadow-none print:border-slate-300">
-              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                <h3 className="font-bold text-slate-800">ตารางสรุปการจ่ายเงินและยอดหักชดเชย (แยกตามหน่วยบริการ)</h3>
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">ยอดจัดสรรจริง</span>
-              </div>
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th className="p-3">หน่วยบริการ</th>
-                    <th className="p-3 text-right">รับเงินครั้งที่ 1 (บาท)</th>
-                    <th className="p-3 text-right">รับเงินครั้งที่ 2 (บาท)</th>
-                    <th className="p-3 text-right text-red-600">หักเงิน (บาท)</th>
-                    <th className="p-3 text-right font-black text-emerald-800 bg-emerald-50">ยอดสุทธิ (บาท)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {payableStats.filteredPayData.map(r => (
-                    <tr key={r.code} className="hover:bg-slate-50">
-                      <td className="p-3 font-bold text-slate-800">{r['หน่วยบริการ']}</td>
-                      <td className="p-3 text-right text-slate-600">{r['รับเงินครั้งที่1'] > 0 ? fmtD(r['รับเงินครั้งที่1']) : '—'}</td>
-                      <td className="p-3 text-right text-slate-600">{r['รับเงินครั้งที่2'] > 0 ? fmtD(r['รับเงินครั้งที่2']) : '—'}</td>
-                      <td className={`p-3 text-right ${r['หักเงิน'] > 0 ? 'text-red-600 font-bold' : 'text-slate-400'}`}>{r['หักเงิน'] > 0 ? fmtD(r['หักเงิน']) : '—'}</td>
-                      <td className="p-3 text-right font-black text-emerald-800 bg-emerald-50/50">{r['ยอดสุทธิ'] > 0 ? fmtD(r['ยอดสุทธิ']) : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-slate-100 font-black">
-                    <td className="p-3 text-slate-900">รวมทั้งหมด ({payableStats.filteredPayData.length} หน่วยบริการ)</td>
-                    <td className="p-3 text-right text-slate-900">{fmtD(payableStats.p1)}</td>
-                    <td className="p-3 text-right text-slate-900">{fmtD(payableStats.p2)}</td>
-                    <td className="p-3 text-right text-red-600">{fmtD(payableStats.ded)}</td>
-                    <td className="p-3 text-right text-emerald-800 bg-emerald-50">{fmtD(payableStats.netRemain)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            {/* Section 2: Statement Matrix รายเดือนตามหมวด */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm print:shadow-none print:border-slate-300">
-              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-3">
+                <Leaf className="text-[#022c22]" size={26} strokeWidth={2.3} />
                 <div>
-                  <h3 className="font-bold text-slate-800">สรุปที่มาของเงินรายเดือนแยกตามหมวด (Statement Matrix)</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">แสดงข้อมูล: {PAYABLE_HOSP_OPTIONS.find(h => h.code === payableHosp)?.label}</p>
-                </div>
-                <div className="print:hidden flex gap-2">
-                  <button onClick={() => setPayableYear('69')} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${payableYear === '69' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-300'}`}>📅 ปีงบประมาณ 2569</button>
-                  <button onClick={() => setPayableYear('68')} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${payableYear === '68' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-300'}`}>📅 ปีงบประมาณ 2568</button>
+                  <div className="text-2xl font-black text-[#022c22] tracking-tight">Health Claim Analytics</div>
+                  <div className="text-[11px] font-extrabold text-[#64748b] tracking-wider uppercase flex items-center gap-2 mt-0.5">
+                    <span>CUP SANKHONG DASHBOARD</span> • 
+                    <span className="bg-[#cbfbe4] text-[#064e3b] px-2 py-0.5 rounded text-[11px] font-extrabold">{currentYear}</span> • 
+                    <span className="text-[#b91c1c] font-black">{selectedHospName.toUpperCase()}</span>
+                  </div>
                 </div>
               </div>
-              <div className="overflow-x-auto">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#064e3b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <CheckCircle2 size={14} className="text-[#34d399]" /> PUBLIC HEALTH APPROVED
+                </div>
+                <div className="text-xs font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <Clock size={14} /> {clockTime}
+                </div>
+              </div>
+            </header>
+
+            <div className="p-6 md:p-8 max-w-[1560px] mx-auto w-full space-y-6">
+              
+              {/* 🌲 Hero Banner (Forest Gradient) */}
+              <div className="bg-gradient-to-br from-[#022c22] to-[#064e3b] rounded-3xl p-7 md:p-9 text-white shadow-[0_10px_30px_rgba(2,44,34,0.15)] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 items-center">
+                <div>
+                  <div className="text-[11.5px] font-extrabold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> CUMULATIVE HEALTH DISBURSEMENT
+                  </div>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-3xl font-extrabold text-[#34d399]">฿</span>
+                    <span className="text-5xl font-black tracking-tight">{fmt(processedData.totalAmt)}</span>
+                  </div>
+                  <div className="text-[13.5px] font-semibold text-[#d1fae5] mb-1">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
+                  <div className="text-[12.5px] font-extrabold text-[#fca5a5]">หน่วยบริการ: {selectedHospName}</div>
+                  <button
+                    onClick={() => { setActiveDetailTab('PP-FS'); setCurrentView('detail'); }}
+                    className="mt-4 bg-white/15 hover:bg-white/25 border border-white/25 px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles size={14} className="text-[#34d399]" /> ดูรายละเอียดเจาะลึก 4 หมวด
+                  </button>
+                </div>
+
+                {/* Donut Card */}
+                <div className="bg-white text-slate-900 rounded-2xl p-5 flex items-center gap-6 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+                  <div className="relative w-[130px] h-[130px] shrink-0">
+                    <canvas ref={donutCanvasRef}></canvas>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                      <div className="text-[9px] font-extrabold text-[#94a3b8] uppercase">
+                        {currentHosp === 'all' ? 'CUP SHARE' : 'สัดส่วน'}
+                      </div>
+                      <div className="text-[17px] font-black text-[#0f172a]">
+                        {currentHosp === 'all' ? `${Object.keys(hospitalMap).length - 1} แห่ง` : `${currentHospPct}%`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 grid grid-cols-1 gap-1.5 text-xs">
+                    {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => {
+                      const clean = name.replace(/^[0-9]+\s*[-–]?\s*/, '').replace('รพ.สต.', '');
+                      const amt = processedData.hospTotals[code] || 0;
+                      const isSelected = currentHosp === code;
+                      return (
+                        <div
+                          key={code}
+                          onClick={() => setCurrentHosp(code)}
+                          className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer transition-all ${
+                            isSelected ? 'bg-emerald-50 text-emerald-950 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: HOSP_PALETTE[idx % HOSP_PALETTE.length] }}></span>
+                            <span className="truncate">{clean}</span>
+                          </div>
+                          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-100 text-slate-800 shrink-0">
+                            ฿{fmt(amt)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 KPI Metric Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. กายภาพบำบัด */}
+                <div
+                  onClick={() => setCurrentView('physical')}
+                  className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#0284c7] flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start mb-2.5">
+                    <div className="text-xs font-bold text-[#475569]">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
+                    <div className="w-9 h-9 rounded-xl bg-[#f0f9ff] text-[#0284c7] flex items-center justify-center shrink-0">
+                      <HeartPulse size={18} />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(physicalStats.total)}</div>
+                  <div className="text-[11.5px] font-semibold text-[#0369a1] truncate">
+                    สูงสุด: {physicalStats.serviceBreakdown[0]?.name || 'บริการกายภาพบำบัด'} (฿{fmt(physicalStats.serviceBreakdown[0]?.amount || 0)})
+                  </div>
+                </div>
+
+                {/* 2. PP-FS */}
+                {(() => {
+                  const ppfsCard = processedData.groupCards.find(g => g.group.toLowerCase().includes('pp')) || processedData.groupCards[0] || { group: 'PP-FS', total: 0, topItem: '-', topAmt: 0 };
+                  return (
+                    <div
+                      onClick={() => { setActiveDetailTab(ppfsCard.group); setCurrentView('detail'); }}
+                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#8b5cf6] flex flex-col justify-between"
+                    >
+                      <div className="flex justify-between items-start mb-2.5">
+                        <div className="text-xs font-bold text-[#475569]">รายได้งบ {ppfsCard.group} ปี {currentYear.slice(2)}</div>
+                        <div className="w-9 h-9 rounded-xl bg-[#f5f3ff] text-[#8b5cf6] flex items-center justify-center shrink-0">
+                          <DollarSign size={18} />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(ppfsCard.total)}</div>
+                      <div className="text-[11.5px] font-semibold text-[#7c3aed] truncate">
+                        สูงสุด: {ppfsCard.topItem} (฿{fmt(ppfsCard.topAmt)})
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. Thai Medicine */}
+                {(() => {
+                  const thaiCard = processedData.groupCards.find(g => g.group.toLowerCase().includes('thai') || g.group.includes('ไทย')) || processedData.groupCards[1] || { group: 'แพทย์แผนไทย', total: 0, topItem: '-', topAmt: 0 };
+                  return (
+                    <div
+                      onClick={() => { setActiveDetailTab(thaiCard.group); setCurrentView('detail'); }}
+                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#f59e0b] flex flex-col justify-between"
+                    >
+                      <div className="flex justify-between items-start mb-2.5">
+                        <div className="text-xs font-bold text-[#475569]">ชดเชย {thaiCard.group} ปี {currentYear.slice(2)}</div>
+                        <div className="w-9 h-9 rounded-xl bg-[#fffbeb] text-[#f59e0b] flex items-center justify-center shrink-0">
+                          <Leaf size={18} />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(thaiCard.total)}</div>
+                      <div className="text-[11.5px] font-semibold text-[#d97706] truncate">
+                        สูงสุด: {thaiCard.topItem} (฿{fmt(thaiCard.topAmt)})
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 4. Herbal / Dentistry / Other */}
+                {(() => {
+                  const otherCard = processedData.groupCards.find(g => g.group.toLowerCase().includes('dent') || g.group.includes('สมุนไพร') || g.group.includes('ฟัน')) || processedData.groupCards[2] || { group: 'ทันตกรรม/สมุนไพร', total: 0, topItem: '-', topAmt: 0 };
+                  return (
+                    <div
+                      onClick={() => { setActiveDetailTab(otherCard.group); setCurrentView('detail'); }}
+                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#10b981] flex flex-col justify-between"
+                    >
+                      <div className="flex justify-between items-start mb-2.5">
+                        <div className="text-xs font-bold text-[#475569]">ชดเชย {otherCard.group} ปี {currentYear.slice(2)}</div>
+                        <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] text-[#10b981] flex items-center justify-center shrink-0">
+                          <Pill size={18} />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(otherCard.total)}</div>
+                      <div className="text-[11.5px] font-semibold text-[#059669] truncate">
+                        สูงสุด: {otherCard.topItem} (฿{fmt(otherCard.topAmt)})
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* 🏆 Top 5 Internal Ranking (5-Column Grid) */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <div className="font-black text-base text-[#0f172a] flex items-center gap-2">
+                      <Trophy size={18} className="text-amber-500" /> การจัดลำดับ 1-5 ภายในเครือข่าย CUP สันโค้ง
+                    </div>
+                    <div className="text-xs text-[#64748b] mt-0.5">เปรียบเทียบผลงานและยอดชดเชยสะสม ประจำปีงบประมาณ {currentYear}</div>
+                  </div>
+                  <span className="text-[11px] font-extrabold bg-[#fef3c7] text-[#b45309] px-3 py-1 rounded-full border border-[#fde68a]">
+                    Top 5 Internal Ranking
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3.5">
+                  {processedData.rankingList.map((item, idx) => {
+                    const badgeBgs = ['bg-[#fef3c7] text-[#b45309]', 'bg-[#f1f5f9] text-[#475569]', 'bg-[#ffedd5] text-[#c2410c]', 'bg-[#eff6ff] text-[#1d4ed8]', 'bg-[#fdf2f8] text-[#be185d]'];
+                    return (
+                      <div
+                        key={item.hcode}
+                        onClick={() => setCurrentHosp(item.hcode)}
+                        className="bg-white border border-[#e2e8f0] rounded-xl p-4 flex flex-col justify-between hover:border-[#10b981] hover:-translate-y-0.5 hover:shadow-md cursor-pointer transition-all"
+                      >
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className={`text-[10.5px] font-extrabold px-2 py-0.5 rounded ${badgeBgs[idx % badgeBgs.length]}`}>
+                              อันดับ {idx + 1}
+                            </span>
+                            <span className="text-[10px] font-extrabold text-[#064e3b] bg-[#ecfdf5] px-2 py-0.5 rounded">
+                              {fmt(item.items)} รายการ
+                            </span>
+                          </div>
+                          <div className="font-bold text-sm text-[#0f172a] leading-tight mb-1">{item.name}</div>
+                          <div className="text-[10.5px] text-[#64748b] mb-3">{item.hcode}</div>
+                        </div>
+                        <div className="pt-2 border-t border-slate-100">
+                          <div className="text-[10px] text-[#94a3b8] font-bold">ยอดเบิกชดเชย (ปี {currentYear.slice(2)})</div>
+                          <div className="text-base font-black text-[#064e3b]">฿{fmt(item.amount)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {processedData.rankingList.length === 0 && (
+                    <div className="col-span-5 text-center text-slate-400 font-bold py-6">ไม่มีข้อมูล</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Page Footer */}
+              <div className="text-center text-xs text-[#94a3b8] pt-4 pb-2 border-t border-[#e2e8f0]">
+                © 2026 CLAIMCUP Sankhong Portal • Health Claim Analytics
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════ VIEW 2: DETAIL VIEW (PPFS / THAI / HERBAL) ════════ */}
+        {currentView === 'detail' && (
+          <div className="w-full min-h-screen bg-[#f8fafc]">
+            {/* Detail Navbar */}
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#064e3b] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(6,78,59,0.25)]">
+                  <Stethoscope size={20} />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-0.5">
+                    องค์การบริหารส่วนจังหวัดเชียงใหม่ | ปีงบประมาณ {currentYear}
+                  </span>
+                  <div className="text-lg font-black text-[#0f172a] leading-tight">แดชบอร์ดผลงาน PP, PPFS & การแพทย์แผนไทย</div>
+                  <div className="text-[11.5px] text-[#64748b] font-semibold">แม่ข่าย: 05954 รพ.สต.บ้านสันโค้ง อ.สันกำแพง</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {processedData.groupCards.map(g => (
+                  <button
+                    key={g.group}
+                    onClick={() => setActiveDetailTab(g.group)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                      activeDetailTab.toLowerCase() === g.group.toLowerCase()
+                        ? 'bg-[#064e3b] text-white shadow-[0_4px_12px_rgba(6,78,59,0.25)]'
+                        : 'bg-[#f8fafc] border border-[#e2e8f0] text-[#475569] hover:bg-[#f1f5f9]'
+                    }`}
+                  >
+                    <span>{g.group}</span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-black/20 text-inherit">
+                      {g.itemCount}
+                    </span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentView('overview')}
+                  className="px-4 py-2 rounded-xl bg-[#f1f5f9] border border-[#cbd5e1] text-[#334155] text-xs font-bold flex items-center gap-1.5 hover:bg-[#e2e8f0] transition-all cursor-pointer ml-2"
+                >
+                  <ArrowLeft size={15} /> กลับหน้าหลัก
+                </button>
+              </div>
+            </nav>
+
+            <div className="p-6 md:p-8 max-w-[1600px] mx-auto w-full space-y-6">
+              
+              {/* Hero Dark Amber Card */}
+              <div className="bg-gradient-to-br from-[#1c1917] to-[#292524] rounded-2xl p-7 text-white shadow-[0_8px_24px_rgba(0,0,0,0.15)] flex justify-between items-center border border-amber-500/20 flex-wrap gap-4">
+                <div className="flex-1 min-w-[300px]">
+                  <div className="text-[11px] font-bold text-yellow-300 bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 mb-2.5">
+                    <Sparkles size={12} /> แหล่งข้อมูล: รวม {activeDetailTab} รพ.สต.สังกัด อบจ.เชียงใหม่
+                  </div>
+                  <div className="text-2xl font-black text-white mb-1">
+                    เจาะลึกรายได้ {activeDetailTab} รายหน่วยบริการ & รายกิจกรรม
+                  </div>
+                  <div className="text-xs text-slate-300 font-medium">
+                    ตรวจสอบยอดเบิกชดเชย จำแนกตามกิจกรรมและหน่วยบริการ 2 ปีงบประมาณ (2568 vs 2569)
+                  </div>
+                </div>
+                <div className="bg-slate-900/70 border border-white/10 rounded-2xl px-6 py-3.5 text-right min-w-[200px]">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase">ยอดเงินรวม ปี 69</div>
+                  <div className="text-2xl font-black text-amber-400">฿{fmtD(detailComparisonData.sumAmt69)}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">ปี 68: ฿{fmtD(detailComparisonData.sumAmt68)}</div>
+                </div>
+              </div>
+
+              {/* Filter Panel */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-4 shadow-sm flex justify-between items-center flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <label className="text-xs font-bold text-[#64748b]">หน่วยบริการ:</label>
+                  <select
+                    value={detailFilterHosp}
+                    onChange={(e) => setDetailFilterHosp(e.target.value)}
+                    className="px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 min-w-[220px] outline-none cursor-pointer"
+                  >
+                    <option value="all">ทั้งหมด (5 หน่วยบริการ)</option>
+                    {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name]) => (
+                      <option key={code} value={code}>{code} - {name.replace(/^[0-9]+\s*[-–]?\s*/, '')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-xs font-bold text-[#475569]">
+                  พบ <strong className="text-emerald-700">{detailComparisonData.rows.length}</strong> รายการ | ยอดรวมปี 69: <strong className="text-emerald-800">฿{fmtD(detailComparisonData.sumAmt69)}</strong> บาท
+                </div>
+              </div>
+
+              {/* Detailed Comparison Table */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <th className="p-3 text-center w-12">#</th>
+                        <th className="p-3 text-left w-36">กลุ่มบริการ</th>
+                        <th className="p-3 text-left">ชื่อรายการบริการ</th>
+                        <th className="p-3 text-right w-24">จำนวน 68</th>
+                        <th className="p-3 text-right w-32">เงิน 68 (บาท)</th>
+                        <th className="p-3 text-right w-24 font-bold text-emerald-800">จำนวน 69</th>
+                        <th className="p-3 text-right w-32 font-bold text-emerald-800">เงิน 69 (บาท)</th>
+                        <th className="p-3 text-right w-32 bg-sky-700 text-white font-bold">ผลต่าง (บาท)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {detailComparisonData.rows.map((r, i) => {
+                        const isPos = r.diffAmt >= 0;
+                        return (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="p-3 text-center text-slate-400 font-mono">{i + 1}</td>
+                            <td className="p-3 text-slate-600 font-semibold">{r.group}</td>
+                            <td className="p-3 font-bold text-slate-800">{r.service}</td>
+                            <td className="p-3 text-right text-slate-600">{fmt(r.qty68)}</td>
+                            <td className="p-3 text-right text-slate-600">{fmtD(r.amt68)}</td>
+                            <td className="p-3 text-right font-bold text-emerald-800">{fmt(r.qty69)}</td>
+                            <td className="p-3 text-right font-black text-emerald-800">{fmtD(r.amt69)}</td>
+                            <td className={`p-3 text-right font-extrabold ${isPos ? 'text-emerald-600' : 'text-red-600'}`}>
+                              {isPos ? '▲ +' : '▼ -'}{fmtD(Math.abs(r.diffAmt))}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {detailComparisonData.rows.length === 0 && (
+                        <tr><td colSpan={8} className="p-8 text-center text-slate-400 font-bold">ไม่มีข้อมูลในหมวดนี้</td></tr>
+                      )}
+                    </tbody>
+                    {detailComparisonData.rows.length > 0 && (
+                      <tfoot>
+                        <tr className="bg-[#ecfdf5] font-black text-emerald-950 border-t-2 border-[#a7f3d0]">
+                          <td colSpan={3} className="p-3.5 text-left">รวมทั้งหมด ({detailComparisonData.rows.length} รายการ)</td>
+                          <td className="p-3.5 text-right">{fmt(detailComparisonData.sumQty68)}</td>
+                          <td className="p-3.5 text-right">{fmtD(detailComparisonData.sumAmt68)}</td>
+                          <td className="p-3.5 text-right">{fmt(detailComparisonData.sumQty69)}</td>
+                          <td className="p-3.5 text-right text-[13px]">{fmtD(detailComparisonData.sumAmt69)}</td>
+                          <td className="p-3.5 text-right bg-sky-800 text-white">
+                            {detailComparisonData.totalDiffAmt >= 0 ? '+' : ''}{fmtD(detailComparisonData.totalDiffAmt)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+
+              {/* Detail Charts */}
+              <div className="grid grid-cols-1 gap-6">
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <Trophy size={18} className="text-amber-500" /> Top รายการบริการ {activeDetailTab} ที่สร้างรายได้สูงสุด (ปี 2569)
+                  </div>
+                  <div className="relative h-[300px] w-full">
+                    <canvas ref={detailBarCanvasRef}></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════ VIEW 3: PHYSICAL THERAPY VIEW ════════ */}
+        {currentView === 'physical' && (
+          <div className="w-full min-h-screen bg-[#f8fafc]">
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-white flex items-center justify-center shadow-md">
+                  <HeartPulse size={20} />
+                </div>
+                <div>
+                  <div className="text-lg font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</div>
+                  <div className="text-xs text-slate-500 font-semibold">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด ประจำปีงบประมาณ {currentYear}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('overview')}
+                className="px-4 py-2 rounded-xl bg-[#022c22] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer"
+              >
+                <ArrowLeft size={15} /> กลับสู่หน้าหลัก
+              </button>
+            </nav>
+
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+              {/* Cyan Top Banner */}
+              <div className="bg-gradient-to-r from-[#0284c7] to-[#0369a1] rounded-2xl p-7 text-white shadow-lg flex justify-between items-center flex-wrap gap-4">
+                <div>
+                  <div className="text-xs font-bold opacity-90 uppercase tracking-wider">ยอดเบิกรวมทั้ง CUP สันโค้ง — ปีงบ {currentYear}</div>
+                  <div className="text-3xl font-black mt-1">{fmtD(physicalStats.total)} บาท</div>
+                  <div className="text-xs opacity-80 mt-1">ให้บริการโดยทีมนักกายภาพบำบัดกลาง 3 คน ครอบคลุมทุกหน่วยบริการ</div>
+                </div>
+                <div className="flex gap-8 text-right font-bold">
+                  <div>
+                    <div className="text-xs opacity-80">จำนวนครั้งรวม</div>
+                    <div className="text-xl font-extrabold">{fmt(physicalStats.count)} ครั้ง</div>
+                  </div>
+                  <div>
+                    <div className="text-xs opacity-80">อัตราชดเชย</div>
+                    <div className="text-xl font-extrabold text-emerald-200">100% ✅</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Therapists Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {THERAPIST_SPLIT.map(t => {
+                  const amt = physicalStats.total * t.pct;
+                  const qty = Math.round(physicalStats.count * t.pct);
+                  return (
+                    <div
+                      key={t.id}
+                      onClick={() => setTherapistPopupId(t.id)}
+                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm" style={{ background: t.bg, color: t.color }}>
+                          {t.id}
+                        </div>
+                        <div>
+                          <div className="font-bold text-sm text-slate-900" style={{ color: t.color }}>{t.name}</div>
+                          <div className="text-[11px] text-slate-400">สัดส่วน {Math.round(t.pct * 100)}%</div>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between"><span className="text-slate-500">จำนวนครั้ง:</span><strong className="text-slate-800">{fmt(qty)} ครั้ง</strong></div>
+                        <div className="flex justify-between"><span className="text-slate-500">ยอดเบิก:</span><strong style={{ color: t.color }}>฿{fmtD(amt)}</strong></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Services Breakdown Table */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200">
+                  <h3 className="font-bold text-slate-800 text-sm">ตารางแยกตามประเภทการให้บริการ</h3>
+                </div>
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-600 font-bold border-b-2 border-slate-200">
-                      <th className="p-3">เดือน</th>
-                      <th className="p-3 text-right">KTB Claim</th>
-                      <th className="p-3 text-right">MOPH Claim</th>
-                      <th className="p-3 text-right">E-Claim (OP)</th>
-                      <th className="p-3 text-right">ค่าบริการ CXR</th>
-                      <th className="p-3 text-right">วัณโรค (TB)</th>
-                      <th className="p-3 text-right">แพทย์แผนไทย</th>
-                      <th className="p-3 text-right font-black bg-blue-50 text-blue-800">ยอดรวมรายเดือน (บาท)</th>
+                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                      <th className="p-3">ประเภทบริการ</th>
+                      <th className="p-3 text-right">จำนวนครั้ง</th>
+                      <th className="p-3 text-right">ยอดเบิก (บาท)</th>
+                      <th className="p-3 text-left w-[200px]">สัดส่วน</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {payableStats.matrixRows.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="p-3 font-semibold text-slate-700">{row.Month}</td>
-                        <td className="p-3 text-right text-slate-600">{row['KTB Claim'] > 0 ? fmtD(row['KTB Claim']) : '—'}</td>
-                        <td className="p-3 text-right text-slate-600">{row['MOPH Claim'] > 0 ? fmtD(row['MOPH Claim']) : '—'}</td>
-                        <td className="p-3 text-right text-slate-600">{row['E-Claim'] > 0 ? fmtD(row['E-Claim']) : '—'}</td>
-                        <td className="p-3 text-right text-slate-600">{row['ค่าบริการ CXR'] > 0 ? fmtD(row['ค่าบริการ CXR']) : '—'}</td>
-                        <td className="p-3 text-right text-slate-600">{row['วัณโรค (TB)'] > 0 ? fmtD(row['วัณโรค (TB)']) : '—'}</td>
-                        <td className="p-3 text-right text-slate-600">{row['แพทย์แผนไทย'] > 0 ? fmtD(row['แพทย์แผนไทย']) : '—'}</td>
-                        <td className="p-3 text-right font-black text-blue-900 bg-blue-50/50">{fmtD(row.Total)}</td>
-                      </tr>
-                    ))}
-                    {payableStats.matrixRows.length === 0 && (
-                      <tr><td colSpan={8} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูล</td></tr>
+                    {physicalStats.serviceBreakdown.map(s => {
+                      const pct = physicalStats.total > 0 ? (s.amount / physicalStats.total * 100) : 0;
+                      return (
+                        <tr key={s.name} className="hover:bg-slate-50">
+                          <td className="p-3 font-bold text-slate-800">{s.name}</td>
+                          <td className="p-3 text-right text-slate-600">{fmt(s.count)}</td>
+                          <td className="p-3 text-right font-black text-slate-900">{fmtD(s.amount)}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-sky-600" style={{ width: `${pct}%` }}></div>
+                              </div>
+                              <span className="text-[11px] font-bold text-sky-700 min-w-[36px]">{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {physicalStats.serviceBreakdown.length === 0 && (
+                      <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูล</td></tr>
                     )}
                   </tbody>
-                  {payableStats.matrixRows.length > 0 && (
+                </table>
+              </div>
+
+              {/* HCode View Table */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200">
+                  <h3 className="font-bold text-slate-800 text-sm">ตารางแสดงหน่วยบริการและรหัสสถานบริการ (Hcode View)</h3>
+                </div>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                      <th className="p-3">HCODE</th>
+                      <th className="p-3">ชื่อหน่วยบริการ</th>
+                      <th className="p-3 text-right">จำนวนครั้ง</th>
+                      <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {physicalStats.hcodeBreakdown.map(row => (
+                      <tr key={row.hcode} className="hover:bg-slate-50">
+                        <td className="p-3 font-mono font-bold text-sky-700">{row.hcode}</td>
+                        <td className="p-3 font-semibold text-slate-800">{row.name}</td>
+                        <td className="p-3 text-right text-slate-600">{fmt(row.count)}</td>
+                        <td className="p-3 text-right font-black text-slate-900">฿{fmtD(row.amount)}</td>
+                      </tr>
+                    ))}
+                    {physicalStats.hcodeBreakdown.length === 0 && (
+                      <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูล</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Therapist Modal */}
+              {therapistPopupId && (() => {
+                const t = THERAPIST_SPLIT.find(x => x.id === therapistPopupId);
+                const tAmt = physicalStats.total * t.pct;
+                const tQty = Math.round(physicalStats.count * t.pct);
+                return (
+                  <div className="fixed inset-0 bg-slate-900/50 z-[100] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setTherapistPopupId(null); }}>
+                    <div className="bg-white rounded-2xl w-[440px] max-w-full shadow-2xl overflow-hidden">
+                      <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm" style={{ background: t.bg, color: t.color }}>{t.id}</div>
+                          <div>
+                            <div className="font-bold text-sm text-slate-900">{t.name}</div>
+                            <div className="text-[11px] text-slate-400">รายละเอียดการให้บริการ · ปีงบ {currentYear}</div>
+                          </div>
+                        </div>
+                        <button onClick={() => setTherapistPopupId(null)} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer">✕</button>
+                      </div>
+                      <div className="p-6">
+                        <div className="grid grid-cols-2 gap-3 mb-5">
+                          <div className="bg-slate-50 rounded-xl p-3">
+                            <div className="text-[11px] text-slate-500 font-semibold">จำนวนครั้งรวม</div>
+                            <div className="text-lg font-black text-slate-900 mt-0.5">{fmt(tQty)} ครั้ง</div>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3">
+                            <div className="text-[11px] text-slate-500 font-semibold">ยอดเบิกรวม</div>
+                            <div className="text-lg font-black text-slate-900 mt-0.5">฿{fmt(tAmt)}</div>
+                          </div>
+                        </div>
+                        <div className="text-xs font-bold text-slate-700 mb-2">แยกตามประเภทบริการ</div>
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-100 text-slate-400">
+                              <th className="text-left py-1.5 font-bold">บริการ</th>
+                              <th className="text-right py-1.5 font-bold">ครั้ง</th>
+                              <th className="text-right py-1.5 font-bold">บาท</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {physicalStats.serviceBreakdown.map(s => (
+                              <tr key={s.name} className="border-b border-slate-50">
+                                <td className="py-2 font-semibold text-slate-700">{s.name}</td>
+                                <td className="py-2 text-right text-slate-500">{fmt(Math.round(s.count * t.pct))}</td>
+                                <td className="py-2 text-right font-bold text-slate-900">{fmtD(s.amount * t.pct)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ════════ VIEW 4: EXPENSES VIEW ════════ */}
+        {currentView === 'expenses' && (
+          <div className="w-full min-h-screen bg-[#f8fafc]">
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#1d9e75] text-white flex items-center justify-center shadow-md">
+                  <Wallet size={20} />
+                </div>
+                <div>
+                  <div className="text-lg font-black text-slate-900">รายการสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</div>
+                  <div className="text-xs text-slate-500 font-semibold">สรุปค่าใช้จ่ายดำเนินงานประจำปีงบประมาณ {currentYear}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => window.print()} className="px-4 py-2 bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-sky-800 transition-all cursor-pointer">
+                  <Printer size={15} /> พิมพ์รายงาน
+                </button>
+                <button onClick={() => setCurrentView('overview')} className="px-4 py-2 bg-[#022c22] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer">
+                  <ArrowLeft size={15} /> กลับสู่หน้าหลัก
+                </button>
+              </div>
+            </nav>
+
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+              {/* 4 KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#1d9e75]">
+                  <div className="text-xs font-bold text-slate-500">ยอดค่าใช้จ่ายรวมทั้งหมด</div>
+                  <div className="text-2xl font-black text-[#064e3b] mt-1.5">฿{fmtS(expenseStats.total)}</div>
+                  <div className="text-[11px] font-semibold text-slate-500 mt-1">฿{fmtD(expenseStats.total)} บาท</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#2563eb]">
+                  <div className="text-xs font-bold text-slate-500">หมวดค่าใช้จ่ายสูงสุด</div>
+                  <div className="text-lg font-black text-[#1e40af] mt-1.5 truncate" title={expenseStats.topCategory.name}>{expenseStats.topCategory.name}</div>
+                  <div className="text-[11px] font-semibold text-blue-700 mt-1">฿{fmtD(expenseStats.topCategory.amount)}</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#f59e0b]">
+                  <div className="text-xs font-bold text-slate-500">เดือนที่ค่าใช้จ่ายสูงสุด</div>
+                  <div className="text-lg font-black text-[#b45309] mt-1.5">{expenseStats.topMonth.month}</div>
+                  <div className="text-[11px] font-semibold text-amber-700 mt-1">฿{fmtD(expenseStats.topMonth.amount)} บาท</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#8b5cf6]">
+                  <div className="text-xs font-bold text-slate-500">เฉลี่ยต่อเดือน</div>
+                  <div className="text-2xl font-black text-[#6d28d9] mt-1.5">฿{fmtS(expenseStats.avgPerMonth)}</div>
+                  <div className="text-[11px] font-semibold text-purple-700 mt-1">฿{fmtD(expenseStats.avgPerMonth)} บาท</div>
+                </div>
+              </div>
+
+              {/* Charts Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="font-bold text-slate-800 mb-4">แนวโน้มค่าใช้จ่ายรายเดือน (ปี {currentYear})</div>
+                  <div className="relative h-[280px] w-full">
+                    <canvas ref={expenseCanvasRef}></canvas>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="font-bold text-slate-800 mb-4">สัดส่วนตามหมวดค่าใช้จ่าย</div>
+                  <div className="relative h-[280px] w-full">
+                    <canvas ref={expDonutCanvasRef}></canvas>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expenses Table */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200">
+                  <h3 className="font-bold text-slate-800">ตารางสรุปแยกตามหมวดค่าใช้จ่าย</h3>
+                </div>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                      <th className="p-3 w-12 text-center">#</th>
+                      <th className="p-3">หมวดค่าใช้จ่าย</th>
+                      <th className="p-3 text-right">ยอดรวม (บาท)</th>
+                      <th className="p-3 text-left w-[220px]">สัดส่วน</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {expenseStats.categories.map((c, idx) => {
+                      const pct = expenseStats.total > 0 ? (c.amount / expenseStats.total * 100) : 0;
+                      return (
+                        <tr key={c.name} className="hover:bg-slate-50">
+                          <td className="p-3 text-center text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="p-3 font-semibold text-slate-800">{c.name}</td>
+                          <td className="p-3 text-right font-black text-slate-900">{fmtD(c.amount)}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-600" style={{ width: `${pct}%` }}></div>
+                              </div>
+                              <span className="text-[11px] font-bold text-emerald-800 min-w-[38px]">{pct.toFixed(1)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {expenseStats.categories.length > 0 && (
                     <tfoot>
-                      <tr className="bg-slate-100 font-black">
-                        <td className="p-3 text-slate-900">รวมทั้งหมด</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['KTB Claim'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['MOPH Claim'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['E-Claim'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['ค่าบริการ CXR'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['วัณโรค (TB)'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['แพทย์แผนไทย'])}</td>
-                        <td className="p-3 text-right text-blue-900 bg-blue-50">{fmtD(payableStats.matrixTotal['Total'])}</td>
+                      <tr className="bg-slate-100 font-black text-slate-900">
+                        <td colSpan={2} className="p-3">รวมทั้งหมด</td>
+                        <td className="p-3 text-right">{fmtD(expenseStats.total)}</td>
+                        <td className="p-3 text-slate-400 font-semibold text-[11px]">100%</td>
                       </tr>
                     </tfoot>
                   )}
@@ -1009,256 +1510,161 @@ export default function App() {
           </div>
         )}
 
-        {/* PHYSICAL THERAPY VIEW (แสดง hcode รหัสหน่วยบริการครบถ้วนที่นี่) */}
-        {currentView === 'physical' && (
-          <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</h2>
-                <p className="text-sm text-slate-500">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด ปี {currentYear}</p>
+        {/* ════════ VIEW 5: PAYABLE VIEW ════════ */}
+        {currentView === 'payable' && (
+          <div className="w-full min-h-screen bg-[#f8fafc]">
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#2563eb] text-white flex items-center justify-center shadow-md">
+                  <Database size={20} />
+                </div>
+                <div>
+                  <div className="text-lg font-black text-slate-900">รายงานพึ่งจ่าย (งบกองทุนและชดเชย)</div>
+                  <div className="text-xs text-slate-500 font-semibold">สรุปยอดจัดสรรเงิน และการจ่ายเงิน ประจำปีงบประมาณ 2568 - 2569</div>
+                </div>
               </div>
-              <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
-                <ArrowLeft size={16} /> กลับหน้าหลัก
-              </button>
-            </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => window.print()} className="px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-slate-100 transition-all cursor-pointer">
+                  <Printer size={15} /> พิมพ์รายงาน
+                </button>
+                <button onClick={() => setCurrentView('overview')} className="px-4 py-2 bg-[#022c22] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer">
+                  <ArrowLeft size={15} /> กลับสู่หน้าหลัก
+                </button>
+              </div>
+            </nav>
 
-            <div className="bg-gradient-to-r from-sky-600 to-cyan-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center flex-wrap gap-4">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-sky-200">ยอดเบิกรวมทั้ง CUP สันโค้ง — ปีงบ {currentYear}</div>
-                <div className="text-3xl font-black mt-1">{fmtD(physicalStats.total)} บาท</div>
-                <div className="text-xs text-sky-100 mt-1">ให้บริการโดยนักกายภาพบำบัดกลาง 3 คน ครอบคลุมทุกหน่วยบริการ (ไม่แยกยอดตามหน่วยบริการ)</div>
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+              {/* Filter Dropdown */}
+              <div className="print:hidden bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-xs text-slate-700">เลือกหน่วยบริการ:</span>
+                  <select
+                    value={payableHosp}
+                    onChange={(e) => setPayableHosp(e.target.value)}
+                    className="px-4 py-2 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 min-w-[280px] outline-none cursor-pointer"
+                  >
+                    {PAYABLE_HOSP_OPTIONS.map(h => (
+                      <option key={h.code} value={h.code}>{h.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-xs text-slate-500 font-semibold">ปรับยอดและตารางอัตโนมัติตามหน่วยบริการที่เลือก</div>
               </div>
-              <div className="flex gap-6 text-right text-sm font-semibold">
-                <div><span>จำนวนครั้ง</span><div className="text-xl font-bold">{fmt(physicalStats.count)} ครั้ง</div></div>
-              </div>
-            </div>
 
-            {/* 3 การ์ดผลงานรายบุคคล */}
-            <div>
-              <div className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
-                <Activity size={16} className="text-sky-600" /> ผลงานรายบุคคล — นักกายภาพบำบัด (ปีงบ {currentYear})
+              {/* 4 KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#10b981]">
+                  <div className="text-xs font-bold text-slate-500">ยอดเงินรวม ปีงบ 2568</div>
+                  <div className="text-xl font-black text-[#065f46] mt-1">฿{fmtD(payableStats.sum68)}</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#2563eb]">
+                  <div className="text-xs font-bold text-slate-500">ยอดเงินรวม ปีงบ 2569</div>
+                  <div className="text-xl font-black text-[#1e40af] mt-1">฿{fmtD(payableStats.sum69)}</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#f59e0b]">
+                  <div className="text-xs font-bold text-slate-500">ยอดรับเงินรวม (ครั้งที่ 1 + 2)</div>
+                  <div className="text-xl font-black text-[#b45309] mt-1">฿{fmtD(payableStats.totalReceived)}</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#0f172a]">
+                  <div className="text-xs font-bold text-slate-500">ยอดเงินคงเหลือสุทธิ</div>
+                  <div className="text-xl font-black text-slate-900 mt-1">฿{fmtD(payableStats.netRemain)}</div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {THERAPIST_SPLIT.map(t => {
-                  const amt = physicalStats.total * t.pct;
-                  const qty = Math.round(physicalStats.count * t.pct);
-                  return (
-                    <div key={t.id} onClick={() => setTherapistPopupId(t.id)} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all cursor-pointer">
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm" style={{ background: t.bg, color: t.color }}>{t.id}</div>
-                        <div>
-                          <div className="font-bold text-sm text-slate-900 hover:underline" style={{ color: t.color }}>{t.name}</div>
-                          <div className="text-[11px] text-slate-400">ชื่อ-สกุล (กรอกข้อมูลจริง)</div>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex justify-between"><span className="text-slate-500">จำนวนครั้ง</span><span className="font-bold text-slate-900">{fmt(qty)} ครั้ง</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">ยอดเบิก</span><span className="font-bold text-slate-900">฿{fmt(amt)}</span></div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                        <span className="text-slate-500 font-semibold">สัดส่วนของยอดรวม CUP</span>
-                        <span className="font-black" style={{ color: t.color }}>{Math.round(t.pct * 100)}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* ตารางแยกตามประเภทบริการ */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="px-6 py-4 border-b border-slate-200">
-                <h3 className="font-bold text-slate-800">ตารางแยกตามประเภทการให้บริการ</h3>
-              </div>
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th className="p-3">ประเภทบริการ</th>
-                    <th className="p-3 text-right">จำนวนครั้ง</th>
-                    <th className="p-3 text-right">ยอดเบิก (บาท)</th>
-                    <th className="p-3 text-left w-[200px]">สัดส่วน</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {physicalStats.serviceBreakdown.length > 0 ? physicalStats.serviceBreakdown.map(s => {
-                    const pct = physicalStats.total > 0 ? (s.amount / physicalStats.total * 100) : 0;
-                    return (
-                      <tr key={s.name} className="hover:bg-slate-50">
-                        <td className="p-3 font-bold text-slate-800">{s.name}</td>
-                        <td className="p-3 text-right text-slate-600">{fmt(s.count)}</td>
-                        <td className="p-3 text-right font-black text-slate-900">{fmtD(s.amount)}</td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-sky-600" style={{ width: `${pct}%` }}></div></div>
-                            <span className="text-[11px] font-bold text-sky-700 min-w-[36px]">{pct.toFixed(1)}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }) : (
-                    <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูลสำหรับปีงบประมาณ {currentYear}</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* ตารางแสดงรายละเอียดพร้อม hcode */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm p-6">
-              <h3 className="font-bold text-slate-800 mb-4">ตารางแสดงหน่วยบริการและรหัสสถานบริการ (Hcode View)</h3>
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th className="p-3">HCODE</th>
-                    <th className="p-3">ชื่อหน่วยบริการ</th>
-                    <th className="p-3 text-right">จำนวนครั้ง</th>
-                    <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {physicalStats.hcodeBreakdown.length > 0 ? physicalStats.hcodeBreakdown.map((row) => (
-                    <tr key={row.hcode} className="hover:bg-slate-50">
-                      <td className="p-3 font-mono font-bold text-sky-700">{row.hcode}</td>
-                      <td className="p-3 font-semibold text-slate-800">{row.name}</td>
-                      <td className="p-3 text-right text-slate-600">{fmt(row.count)}</td>
-                      <td className="p-3 text-right font-black text-slate-900">฿{fmtD(row.amount)}</td>
+              {/* Table 1: สรุปการจ่ายเงิน */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                  <h3 className="font-bold text-slate-800 text-sm">ตารางสรุปการจ่ายเงินและยอดหักชดเชย (แยกตามหน่วยบริการ)</h3>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">ยอดจัดสรรจริง</span>
+                </div>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                      <th className="p-3">หน่วยบริการ</th>
+                      <th className="p-3 text-right">รับเงินครั้งที่ 1 (บาท)</th>
+                      <th className="p-3 text-right">รับเงินครั้งที่ 2 (บาท)</th>
+                      <th className="p-3 text-right text-red-600">หักเงิน (บาท)</th>
+                      <th className="p-3 text-right font-black text-emerald-800 bg-emerald-50">ยอดสุทธิ (บาท)</th>
                     </tr>
-                  )) : (
-                    <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูลสำหรับปีงบประมาณ {currentYear}</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {payableStats.filteredPayData.map(r => (
+                      <tr key={r.code} className="hover:bg-slate-50">
+                        <td className="p-3 font-bold text-slate-800">{r['หน่วยบริการ']}</td>
+                        <td className="p-3 text-right text-slate-600">{r['รับเงินครั้งที่1'] > 0 ? fmtD(r['รับเงินครั้งที่1']) : '—'}</td>
+                        <td className="p-3 text-right text-slate-600">{r['รับเงินครั้งที่2'] > 0 ? fmtD(r['รับเงินครั้งที่2']) : '—'}</td>
+                        <td className={`p-3 text-right ${r['หักเงิน'] > 0 ? 'text-red-600 font-bold' : 'text-slate-400'}`}>{r['หักเงิน'] > 0 ? fmtD(r['หักเงิน']) : '—'}</td>
+                        <td className="p-3 text-right font-black text-emerald-800 bg-emerald-50/50">{r['ยอดสุทธิ'] > 0 ? fmtD(r['ยอดสุทธิ']) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-100 font-black text-slate-900">
+                      <td className="p-3">รวมทั้งหมด ({payableStats.filteredPayData.length} หน่วยบริการ)</td>
+                      <td className="p-3 text-right">{fmtD(payableStats.p1)}</td>
+                      <td className="p-3 text-right">{fmtD(payableStats.p2)}</td>
+                      <td className="p-3 text-right text-red-600">{fmtD(payableStats.ded)}</td>
+                      <td className="p-3 text-right text-emerald-900 bg-emerald-50">{fmtD(payableStats.netRemain)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
 
-            {/* Popup รายละเอียดนักกายภาพ */}
-            {therapistPopupId && (() => {
-              const t = THERAPIST_SPLIT.find(x => x.id === therapistPopupId);
-              const tAmt = physicalStats.total * t.pct;
-              const tQty = Math.round(physicalStats.count * t.pct);
-              return (
-                <div className="fixed inset-0 bg-slate-900/50 z-[100] flex items-center justify-center" onClick={(e) => { if (e.target === e.currentTarget) setTherapistPopupId(null); }}>
-                  <div className="bg-white rounded-2xl w-[420px] max-w-[92vw] max-h-[85vh] overflow-y-auto shadow-2xl">
-                    <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm" style={{ background: t.bg, color: t.color }}>{t.id}</div>
-                        <div>
-                          <div className="font-bold text-sm text-slate-900">{t.name}</div>
-                          <div className="text-[11px] text-slate-400">รายละเอียดการให้บริการ · ปีงบ {currentYear}</div>
-                        </div>
-                      </div>
-                      <button onClick={() => setTherapistPopupId(null)} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">✕</button>
-                    </div>
-                    <div className="p-5">
-                      <div className="grid grid-cols-2 gap-3 mb-5">
-                        <div className="bg-slate-50 rounded-xl p-3">
-                          <div className="text-[11px] text-slate-500 font-semibold">จำนวนครั้งรวม</div>
-                          <div className="text-lg font-black text-slate-900 mt-0.5">{fmt(tQty)} ครั้ง</div>
-                        </div>
-                        <div className="bg-slate-50 rounded-xl p-3">
-                          <div className="text-[11px] text-slate-500 font-semibold">ยอดเบิกรวม</div>
-                          <div className="text-lg font-black text-slate-900 mt-0.5">฿{fmt(tAmt)}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs font-bold text-slate-700 mb-2">แยกตามประเภทบริการ</div>
-                      <table className="w-full text-xs border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-100">
-                            <th className="text-left py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">บริการ</th>
-                            <th className="text-right py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">ครั้ง</th>
-                            <th className="text-right py-1.5 text-[10.5px] text-slate-400 font-bold uppercase">บาท</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {physicalStats.serviceBreakdown.map(s => (
-                            <tr key={s.name} className="border-b border-slate-50">
-                              <td className="py-2 font-semibold text-slate-700">{s.name}</td>
-                              <td className="py-2 text-right text-slate-500">{fmt(Math.round(s.count * t.pct))}</td>
-                              <td className="py-2 text-right font-bold text-slate-900">{fmtD(s.amount * t.pct)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="mt-4 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 flex gap-1.5">
-                        <span>⚠️</span>
-                        <span>ตัวเลขรายบุคคลเป็นตัวอย่างที่แบ่งตามสัดส่วน ยังไม่ใช่ข้อมูลจริงรายคน</span>
-                      </div>
-                    </div>
+              {/* Table 2: Statement Matrix */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-3">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm">สรุปที่มาของเงินรายเดือนแยกตามหมวด (Statement Matrix)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">แสดงข้อมูล: {PAYABLE_HOSP_OPTIONS.find(h => h.code === payableHosp)?.label}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setPayableYear('69')} className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${payableYear === '69' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-300'}`}>📅 ปีงบประมาณ 2569</button>
+                    <button onClick={() => setPayableYear('68')} className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${payableYear === '68' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-500 border-slate-300'}`}>📅 ปีงบประมาณ 2568</button>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* DETAIL VIEW */}
-        {currentView === 'detail' && (
-          <div className="p-8 max-w-[1500px] mx-auto w-full space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <button onClick={() => setCurrentView('overview')} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-100">
-                  <ArrowLeft size={20} />
-                </button>
-                <div>
-                  <h2 className="text-2xl font-black text-slate-900">เจาะลึกรายได้และรายการบริการ</h2>
-                  <p className="text-sm text-slate-500">ตรวจสอบรายละเอียดรายกิจกรรมและหน่วยบริการ</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-600 font-bold border-b-2 border-slate-200">
+                        <th className="p-3">เดือน</th>
+                        <th className="p-3 text-right">KTB Claim</th>
+                        <th className="p-3 text-right">MOPH Claim</th>
+                        <th className="p-3 text-right">E-Claim (OP)</th>
+                        <th className="p-3 text-right">ค่าบริการ CXR</th>
+                        <th className="p-3 text-right">วัณโรค (TB)</th>
+                        <th className="p-3 text-right">แพทย์แผนไทย</th>
+                        <th className="p-3 text-right font-black bg-blue-50 text-blue-800">ยอดรวมรายเดือน (บาท)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {payableStats.matrixRows.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="p-3 font-semibold text-slate-700">{row.Month}</td>
+                          <td className="p-3 text-right text-slate-600">{row['KTB Claim'] > 0 ? fmtD(row['KTB Claim']) : '—'}</td>
+                          <td className="p-3 text-right text-slate-600">{row['MOPH Claim'] > 0 ? fmtD(row['MOPH Claim']) : '—'}</td>
+                          <td className="p-3 text-right text-slate-600">{row['E-Claim'] > 0 ? fmtD(row['E-Claim']) : '—'}</td>
+                          <td className="p-3 text-right text-slate-600">{row['ค่าบริการ CXR'] > 0 ? fmtD(row['ค่าบริการ CXR']) : '—'}</td>
+                          <td className="p-3 text-right text-slate-600">{row['วัณโรค (TB)'] > 0 ? fmtD(row['วัณโรค (TB)']) : '—'}</td>
+                          <td className="p-3 text-right text-slate-600">{row['แพทย์แผนไทย'] > 0 ? fmtD(row['แพทย์แผนไทย']) : '—'}</td>
+                          <td className="p-3 text-right font-black text-blue-900 bg-blue-50/50">{fmtD(row.Total)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-slate-100 font-black text-slate-900">
+                        <td className="p-3">รวมทั้งหมด</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['KTB Claim'])}</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['MOPH Claim'])}</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['E-Claim'])}</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['ค่าบริการ CXR'])}</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['วัณโรค (TB)'])}</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['แพทย์แผนไทย'])}</td>
+                        <td className="p-3 text-right text-blue-900 bg-blue-50">{fmtD(payableStats.matrixTotal['Total'])}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
               </div>
-              <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200 flex-wrap">
-                {processedData.groupCards.map(card => (
-                  <button key={card.group} onClick={() => setActiveDetailTab(card.group)} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${activeDetailTab === card.group ? 'bg-emerald-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                    {card.group}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-[#16121b] border border-amber-500/20 rounded-2xl p-6 text-white flex justify-between items-center shadow-lg">
-              <div>
-                <span className="text-[11px] font-bold bg-amber-500/20 text-yellow-300 px-2.5 py-1 rounded border border-amber-500/30">แหล่งข้อมูลจริงจากระบบ</span>
-                <h3 className="text-xl font-black mt-2">หมวดหมู่: {activeDetailTab}</h3>
-                <p className="text-xs text-slate-300 mt-1">ข้อมูลเชิงลึกการเบิกจ่ายชดเชยของเครือข่าย CUP สันโค้ง — หน่วยบริการ: {selectedHospName}</p>
-              </div>
-              <div className="bg-slate-900/80 border border-white/10 rounded-xl p-4 text-right">
-                <div className="text-[11px] text-slate-400 font-bold uppercase">ยอดเงินรวม ปี {currentYear}</div>
-                <div className="text-2xl font-black text-amber-400 mt-0.5">฿{fmtD(processedData.groupCards.find(g => g.group === activeDetailTab)?.total || 0)}</div>
-              </div>
-            </div>
-
-            {/* แสดงรายการบริการทั้งหมดใน group ที่เลือก */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Layers size={18} className="text-emerald-600" /> รายการบริการในหมวด {activeDetailTab}
-              </h3>
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th className="p-3">#</th>
-                    <th className="p-3">รายการบริการ</th>
-                    <th className="p-3 text-right">จำนวน (Qty)</th>
-                    <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {claims
-                    .filter(c => {
-                      const yr = String(c.fiscal_year || '');
-                      const hcode = String(c.hcode || '');
-                      const group = String(c.group || 'อื่นๆ');
-                      return group === activeDetailTab
-                        && (currentYear === 'all' || yr === currentYear)
-                        && (currentHosp === 'all' || hcode === currentHosp);
-                    })
-                    .sort((a, b) => (parseFloat(String(b.amount || 0).replace(/,/g, '')) || 0) - (parseFloat(String(a.amount || 0).replace(/,/g, '')) || 0))
-                    .map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="p-3 text-slate-400 font-mono">{idx + 1}</td>
-                        <td className="p-3 font-semibold text-slate-800">{item.service_item || 'ไม่ระบุ'}</td>
-                        <td className="p-3 text-right text-slate-600">{fmt(item.quantity || 0)}</td>
-                        <td className="p-3 text-right font-black text-slate-900">฿{fmtD(parseFloat(String(item.amount || 0).replace(/,/g, '')) || 0)}</td>
-                      </tr>
-                    ))
-                  }
-                </tbody>
-              </table>
             </div>
           </div>
         )}
