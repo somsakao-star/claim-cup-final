@@ -441,8 +441,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
     </div>
   );
 };
-
-// 🌟 หน้า LoginScreen แบบเพิ่มประกายแสง เงากระจกฝ้า และข้อความบอกสถานะระบบ
+// 🌟 หน้า LoginScreen แบบภาษาอังกฤษ และเส้นขอบการ์ดเรืองแสงพรีเมียม
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -492,7 +491,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
         <div className="w-1.5 h-16 bg-slate-800"></div>
         <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
-          <div className="absolute top-10 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(true)}>
+          <div className="absolute top-0 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(true)}>
             <div className={`w-0.5 bg-slate-500 transition-all duration-500 origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
             <div className={`w-4 h-4 bg-slate-500 rounded-full transition-all duration-500 ${isPulled ? 'scale-75' : 'group-active:scale-110'}`}></div>
           </div>
@@ -505,20 +504,22 @@ const LoginScreen = ({ onLoginSuccess }) => {
         </div>
       )}
       
-      <div className={`bg-white/85 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] border border-white/85 w-full max-w-md relative z-20 mt-24 transition-all duration-1000 ease-out transform ring-1 ring-emerald-500/20 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
+      {/* กรอบการ์ดพร้อมเส้นขอบเรืองแสง (Glow Border) */}
+      <div className={`relative bg-white/90 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] w-full max-w-md z-20 mt-24 transition-all duration-1000 ease-out transform border-2 border-emerald-400/50 ring-4 ring-emerald-500/10 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
+        
         <div className="text-center mb-8 flex flex-col items-center">
           <img 
             src="/my-logo.png" 
             alt="โลโก้ รพ.สต." 
-            className="w-32 h-32 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100 animate-bounce-slow" 
+            className="w-32 h-32 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100" 
           />
           <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
           <p className="text-emerald-700 font-bold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
           
-          {/* ป้ายบอกสถานะระบบแบบพรีเมียม */}
-          <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200/60 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5">
+          {/* ป้ายข้อความภาษาอังกฤษ */}
+          <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5 tracking-wide">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            ระบบติดตามยอดรับเงินชดเชย (ผู้บริหารและเจ้าหน้าที่)
+            Reimbursement Tracking System
           </div>
         </div>
 
@@ -528,7 +529,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
             type="text" 
             value={username} 
             onChange={(e) => setUsername(e.target.value)} 
-            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-100/80 bg-white/80 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.15)] outline-none transition-all font-medium text-sm" 
+            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.2)] outline-none transition-all font-medium text-sm" 
             placeholder="Username" 
             required 
           />
@@ -536,7 +537,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
             type="password" 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
-            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-100/80 bg-white/80 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.15)] outline-none transition-all font-medium text-sm" 
+            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.2)] outline-none transition-all font-medium text-sm" 
             placeholder="Password" 
             required 
           />
