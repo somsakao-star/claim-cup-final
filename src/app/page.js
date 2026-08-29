@@ -129,6 +129,23 @@ const THERAPIST_SPLIT = [
 
 
 
+/* mapping รหัส category → ชื่อหมวดค่าใช้จ่าย ตามตาราง paymentcategory (code เป็น foreign key ใน expenses.category) */
+const PAYMENT_CATEGORY_MAP = {
+  '1': 'ค่ายาและเวชภัณฑ์',
+  '2': 'ค่าวัสดุ',
+  '3': 'ค่าตอบแทนทางการแพทย์',
+  '4': 'ค่าบริการทางการแพทย์',
+  '5': 'ค่าครุภัณฑ์ ที่ดินและสิ่งปลูกสร้าง',
+  '6': 'ค่าใช้สอย',
+  '7': 'ค่าสาธารณูปโภค',
+  '8': 'ค่าจ้างลูกจ้างชั่วคราว',
+  '9': 'ค่าตอบแทนการปฏิบัติงานนอกเวลาราชการ',
+  '10': 'ค่าใช้จ่ายในการเดินทางไปราชการ',
+  '11': 'ค่าใช้จ่ายอื่นที่จำเป็นที่เกี่ยวข้องกับการสาธารณสุข',
+  '12': 'จ่ายค่าสนับสนุนลูกข่าย',
+  '13': 'ภาษี',
+};
+
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -376,9 +393,9 @@ export default function App() {
     return { totalAmt, hospTotals, rankingList, groupCards };
   }, [claims, currentYear, currentHosp, hospitalMap]);
 
-  /* ⚠️ ข้อสมมติเรื่องชื่อฟิลด์: สมมติว่าแต่ละแถวใน `expenses` (จาก /api/expenses) มีรูปแบบ
-     { category (ชื่อหมวดค่าใช้จ่าย), amount (ยอดเงิน), month (ชื่อเดือนภาษาไทย เช่น "ตุลาคม"), fiscal_year }
-     คล้ายกับโครงสร้างของ claims — ถ้าฟิลด์จริงจาก API ชื่อไม่ตรง ปรับ mapping ตรงนี้ได้เลย */
+  /* ยืนยันโครงสร้างจริงของ `expenses` (จาก /api/expenses) แล้ว:
+     { id, month (ชื่อเดือนภาษาไทย เช่น "ตุลาคม"), category (รหัส FK → ตาราง paymentcategory), amount, fiscal_year }
+     category เป็นแค่รหัส ต้อง map ผ่าน PAYMENT_CATEGORY_MAP ถึงจะได้ชื่อหมวดที่อ่านได้ */
   const expenseStats = useMemo(() => {
     const filtered = expenses.filter(e => {
       const yr = String(e.fiscal_year || e.year || '');
@@ -394,7 +411,8 @@ export default function App() {
       const amt = parseFloat(String(e.amount || e.total || 0).replace(/,/g, '')) || 0;
       total += amt;
 
-      const cat = e.category || e.expense_type || e.name || 'ไม่ระบุหมวด';
+      const rawCode = String(e.category ?? '').trim();
+      const cat = PAYMENT_CATEGORY_MAP[rawCode] || e.expense_type || e.name || `หมวดไม่ทราบรหัส (${rawCode || 'ไม่ระบุ'})`;
       catMap[cat] = (catMap[cat] || 0) + amt;
 
       // month field may come as short Thai month ("ต.ค.") or full name ("ตุลาคม") — try to match either
