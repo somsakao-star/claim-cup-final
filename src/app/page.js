@@ -442,6 +442,7 @@ const PlatformDetailView = ({ platform, onBack, claims, filterYear, selectedHosp
   );
 };
 
+// 🌟 หน้า LoginScreen แบบเพิ่มประกายแสง เงากระจกฝ้า และข้อความบอกสถานะระบบ
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -476,12 +477,11 @@ const LoginScreen = ({ onLoginSuccess }) => {
   return (
     <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#050505]'}`}>
       
-      {/* 🌟 พระเอกของเรา เอฟเฟกต์ WebThreads จะเป็นพื้นหลังอยู่ตรงนี้ครับ */}
       <div className="absolute inset-0 z-0 opacity-80">
         <WebThreads 
-          color1="#059669" /* สีเขียวเข้ม Emerald */
-          color2="#34d399" /* สีเขียวอ่อน */
-          color3="#ffffff" /* แกนกลางสีขาวเรืองแสง */
+          color1="#059669"
+          color2="#34d399"
+          color3="#ffffff"
           speed={0.4} 
           threadCount={6} 
           opacity={0.8}
@@ -505,23 +505,46 @@ const LoginScreen = ({ onLoginSuccess }) => {
         </div>
       )}
       
-      {/* ฟอร์มล็อกอิน (อยู่เลเยอร์บนสุด) */}
-      <div className={`bg-white/90 backdrop-blur-md p-8 sm:p-10 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(5,150,105,0.3)] w-full max-w-md relative z-20 border border-white/50 mt-24 transition-all duration-1000 ease-out transform ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
+      <div className={`bg-white/85 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] border border-white/85 w-full max-w-md relative z-20 mt-24 transition-all duration-1000 ease-out transform ring-1 ring-emerald-500/20 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
         <div className="text-center mb-8 flex flex-col items-center">
           <img 
             src="/my-logo.png" 
             alt="โลโก้ รพ.สต." 
-            className="w-36 h-36 mb-5 rounded-full object-cover shadow-[0_8px_20px_rgb(0,0,0,0.1)] bg-white border-4 border-emerald-100" 
+            className="w-32 h-32 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100 animate-bounce-slow" 
           />
-          <h2 className="text-3xl font-black text-emerald-900 mb-2">ClaimCup</h2>
-          <p className="text-emerald-600 font-medium">Sankhong Portal</p>
+          <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
+          <p className="text-emerald-700 font-bold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
+          
+          {/* ป้ายบอกสถานะระบบแบบพรีเมียม */}
+          <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200/60 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            ระบบติดตามยอดรับเงินชดเชย (ผู้บริหารและเจ้าหน้าที่)
+          </div>
         </div>
 
         {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">{errorMsg}</div>}
-        <form onSubmit={handleLogin} className="space-y-5">
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-white focus:border-emerald-500 outline-none transition-colors" placeholder="Username" required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-white focus:border-emerald-500 outline-none transition-colors" placeholder="Password" required />
-          <button type="submit" disabled={isLoading} className="w-full text-white font-bold py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg shadow-emerald-600/30 active:scale-95">
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input 
+            type="text" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-100/80 bg-white/80 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.15)] outline-none transition-all font-medium text-sm" 
+            placeholder="Username" 
+            required 
+          />
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-100/80 bg-white/80 focus:bg-white focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(5,150,105,0.15)] outline-none transition-all font-medium text-sm" 
+            placeholder="Password" 
+            required 
+          />
+          <button 
+            type="submit" 
+            disabled={isLoading} 
+            className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] active:scale-95 tracking-wide text-sm"
+          >
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
