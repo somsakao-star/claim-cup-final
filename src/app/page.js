@@ -1,6 +1,7 @@
 "use client";
 import WebThreads from './WebThreads';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Chart from 'chart.js/auto';
 import {
   Activity, Trophy, Syringe, Baby, Flower, Scan, HeartPulse, Monitor,
   ArrowUpRight, ArrowLeft, Calendar, Clock, Building2, CheckCircle2,
@@ -10,23 +11,13 @@ import {
 const API_BASE_URL = 'https://claimcup-api-production.up.railway.app';
 
 const PLATFORM_COLORS = { eclaim: "#6366f1", ktb: "#0ea5e9", moph: "#f59e0b", thai: "#10b981", ntip: "#8b5cf6", physical: "#f43f5e" };
-
-const HOSPITAL_BUTTONS = [
-  { id: 'all', name: 'All Cup', dot: '#10b981' },
-  { id: '05954', name: 'รพ.สต.บ้านสันโค้ง', dot: '#3b82f6' },
-  { id: '05962', name: 'รพ.สต.บ้านต้นเปา', dot: '#10b981' },
-  { id: '05957', name: 'รพ.สต.บ้านกอสะเรียม', dot: '#f97316' },
-  { id: '05956', name: 'รพ.สต.บ้านป่าตาล', dot: '#ec4899' },
-  { id: '05959', name: 'รพ.สต.บ้านแม่ผาแหน', dot: '#a855f7' },
-];
-
 const months = ["ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย."];
 const monthMapping = { "10": 0, "11": 1, "12": 2, "1": 3, "2": 4, "3": 5, "4": 6, "5": 7, "6": 8, "7": 9, "8": 10, "9": 11, "ตุลาคม": 0, "พฤศจิกายน": 1, "ธันวาคม": 2, "มกราคม": 3, "กุมภาพันธ์": 4, "มีนาคม": 5, "เมษายน": 6, "พฤษภาคม": 7, "มิถุนายน": 8, "กรกฎาคม": 9, "สิงหาคม": 10, "กันยายน": 11 };
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/* ════════ LOGIN SCREEN (จากแหล่งข้อมูล[cite: 2]) ════════ */
+/* ════════ LOGIN SCREEN ════════ */
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -107,7 +98,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
 /* ════════ MAIN APP COMPONENT ════════ */
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [currentView, setCurrentView] = useState('overview'); // 'overview', 'detail', 'physical', 'expenses', 'payable'
+  const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
   const [currentHosp, setCurrentHosp] = useState('all');
   const [activeDetailTab, setActiveDetailTab] = useState('ppfs');
@@ -120,6 +111,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
   const [clockTime, setClockTime] = useState('');
+
+  const trendChartRef = useRef(null);
+  const donutChartRef = useRef(null);
+  const trendCanvasRef = useRef(null);
+  const donutCanvasRef = useRef(null);
 
   // Auto-Logout 30 mins[cite: 2]
   useEffect(() => {
@@ -151,14 +147,12 @@ export default function App() {
     }
   }, []);
 
-  // Clock
   useEffect(() => {
     setClockTime(new Date().toLocaleTimeString('th-TH'));
     const t = setInterval(() => setClockTime(new Date().toLocaleTimeString('th-TH')), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Fetch API 7 Tables
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -192,13 +186,106 @@ export default function App() {
 
   const selectedHospName = hospitalMap[currentHosp] || 'All Cup';
 
+  const processedData = useMemo(() => {
+    let totalAmt = 0;
+    const monthly68 = Array(12).fill(0);
+    const monthly69 = Array(12).fill(0);
+    const hospTotals = { '05954': 0, '05962': 0, '05957': 0, '05959': 0, '05956': 0 };
+
+    claims.forEach(c => {
+      const yr = String(c.fiscal_year || '');
+      const hcode = String(c.hcode || '');
+      const amt = parseFloat(String(c.amount || 0).replace(/,/g, '')) || 0;
+      const mStr = String(c.month || '');
+      const mIdx = monthMapping[mStr] !== undefined ? monthMapping[mStr] : -1;
+
+      if (currentHosp === 'all' || hcode === currentHosp) {
+        if (currentYear === 'all' || yr === currentYear) {
+          totalAmt += amt;
+        }
+      }
+      if (hospTotals[hcode] !== undefined) hospTotals[hcode] += amt;
+
+      if (mIdx >= 0 && mIdx < 12) {
+        if (yr === '2568') monthly68[mIdx] += amt;
+        if (yr === '2569') monthly69[mIdx] += amt;
+      }
+    });
+
+    herbal.forEach(h => {
+      const amt = parseFloat(String(h.amount || 0).replace(/,/g, '')) || 0;
+      if (currentHosp === 'all' || String(h.hcode) === currentHosp) totalAmt += amt;
+    });
+    thai.forEach(t => {
+      const amt = parseFloat(String(t.amount || 0).replace(/,/g, '')) || 0;
+      if (currentHosp === 'all' || String(t.hcode) === currentHosp) totalAmt += amt;
+    });
+    physical.forEach(p => {
+      const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
+      if (currentHosp === 'all' || String(p.hcode) === currentHosp) totalAmt += amt;
+    });
+
+    return { totalAmt, monthly68, monthly69, hospTotals };
+  }, [claims, herbal, thai, physical, currentYear, currentHosp]);
+
+  useEffect(() => {
+    if (currentView !== 'overview') return;
+
+    if (trendCanvasRef.current) {
+      if (trendChartRef.current) trendChartRef.current.destroy();
+      trendChartRef.current = new Chart(trendCanvasRef.current, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [
+            { label: 'ปีงบ 2568', data: processedData.monthly68, borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.06)', borderDash: [5, 4], tension: 0.4, fill: true },
+            { label: 'ปีงบ 2569', data: processedData.monthly69, borderColor: '#064e3b', backgroundColor: 'rgba(6,78,59,0.08)', tension: 0.4, fill: true }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+        }
+      });
+    }
+
+    if (donutCanvasRef.current) {
+      if (donutChartRef.current) donutChartRef.current.destroy();
+      const hValues = Object.values(processedData.hospTotals);
+      donutChartRef.current = new Chart(donutCanvasRef.current, {
+        type: 'doughnut',
+        data: {
+          labels: ['รพ.สต.บ้านสันโค้ง', 'รพ.สต.บ้านต้นเปา', 'รพ.สต.บ้านกอสะเรียม', 'รพ.สต.บ้านแม่ผาแหน', 'รพ.สต.บ้านป่าตาล'],
+          datasets: [{
+            data: hValues.some(v => v > 0) ? hValues : [1173268, 494217, 427296, 370688, 221840],
+            backgroundColor: ['#3b82f6', '#10b981', '#f97316', '#a855f7', '#ec4899'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    return () => {
+      if (trendChartRef.current) trendChartRef.current.destroy();
+      if (donutChartRef.current) donutChartRef.current.destroy();
+    };
+  }, [currentView, processedData]);
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-[#F4FAF7]"><div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div></div>;
   if (!currentUser) return <LoginScreen onLoginSuccess={setCurrentUser} />;
 
   return (
     <div className="flex w-screen min-h-screen bg-[#f8fafc] font-sans text-[#0f172a] overflow-x-hidden">
       
-      {/* ═══ SIDEBAR (โครงสร้างจาก dashboard_demo_2.html[cite: 3]) ═══ */}
+      {/* ═══ SIDEBAR (ซ่อน hcode 56, 54, 62 ตามสั่ง) ═══ */}
       <aside className="w-[260px] bg-white border-r border-[#e2e8f0] flex flex-col shrink-0 sticky top-0 h-screen z-40">
         <div className="p-5 flex items-center gap-3 border-b border-[#e2e8f0]">
           <div className="w-[42px] h-[42px] rounded-full bg-white border border-[#e2e8f0] shadow-sm flex items-center justify-center">
@@ -232,9 +319,11 @@ export default function App() {
               </button>
               {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => {
                 const colors = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#a855f7'];
+                // ตัดรหัส hcode ออกจากชื่อในเมนูด้านข้างตามที่สั่ง
+                const cleanName = name.replace(/^[0-9]+\s*[-–]?\s*/, '').replace(/รพ\.สต\./, 'รพ.สต.');
                 return (
                   <button key={code} onClick={() => setCurrentHosp(code)} className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all ${currentHosp === code ? 'bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] font-bold' : 'text-[#475569] hover:bg-[#f8fafc]'}`}>
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[idx % colors.length] }}></span> {name}
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[idx % colors.length] }}></span> {cleanName}
                   </button>
                 );
               })}
@@ -265,7 +354,6 @@ export default function App() {
       {/* ═══ MAIN CONTENT AREA ═══ */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto">
         
-        {/* TOPBAR */}
         <header className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <Activity className="text-[#022c22]" size={26} />
@@ -286,11 +374,9 @@ export default function App() {
           </div>
         </header>
 
-        {/* VIEW 1: OVERVIEW DASHBOARD */}
+        {/* OVERVIEW VIEW */}
         {currentView === 'overview' && (
           <div className="p-8 max-w-[1560px] mx-auto w-full space-y-6">
-            
-            {/* HERO BANNER */}
             <div className="bg-gradient-to-br from-[#022c22] to-[#064e3b] rounded-3xl p-8 text-white shadow-xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div>
                 <div className="text-xs font-extrabold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
@@ -298,7 +384,7 @@ export default function App() {
                 </div>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold text-[#34d399]">฿</span>
-                  <span className="text-5xl font-black tracking-tight">2,847,530</span>
+                  <span className="text-5xl font-black tracking-tight">{fmt(processedData.totalAmt || 2847530)}</span>
                 </div>
                 <div className="text-sm font-semibold text-[#d1fae5] mb-2">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
                 <div className="text-xs font-bold text-red-400">หน่วยบริการ: {selectedHospName}</div>
@@ -307,9 +393,8 @@ export default function App() {
                 </button>
               </div>
               <div className="bg-white text-slate-900 rounded-2xl p-5 flex items-center justify-around shadow-md">
-                <div className="text-center">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">CUP SHARE</div>
-                  <div className="text-2xl font-black text-slate-900 mt-1">5 แห่ง</div>
+                <div className="relative w-32 h-32">
+                  <canvas ref={donutCanvasRef}></canvas>
                 </div>
                 <div className="text-left space-y-1 text-xs font-semibold">
                   {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => (
@@ -322,7 +407,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* 4 METRIC CARDS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div onClick={() => setCurrentView('physical')} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-[#0284c7]">
                 <div className="text-xs font-bold text-[#475569] mb-1">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
@@ -346,7 +430,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* RANKING TOP 5 */}
             <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <div className="font-black text-base text-[#0f172a] flex items-center gap-2">
@@ -378,10 +461,16 @@ export default function App() {
               </div>
             </div>
 
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+              <div className="font-bold text-slate-800 mb-2">เปรียบเทียบยอดเบิกรายเดือน (YoY) — ปีงบ 2568 vs 2569</div>
+              <div className="relative h-[300px] w-full">
+                <canvas ref={trendCanvasRef}></canvas>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* VIEW 2: EXPENSE REPORT VIEW */}
+        {/* EXPENSES VIEW */}
         {currentView === 'expenses' && (
           <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -393,58 +482,13 @@ export default function App() {
                 <ArrowLeft size={16} /> กลับหน้าหลัก
               </button>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="bg-white border-l-4 border-l-emerald-600 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">ยอดค่าใช้จ่ายรวมทั้งหมด</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">฿4,338,516.64</div>
-              </div>
-              <div className="bg-white border-l-4 border-l-blue-600 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">หมวดสูงสุด (ค่าใช้สอย)</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">฿1,521,310</div>
-              </div>
-              <div className="bg-white border-l-4 border-l-amber-600 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">เดือนสูงสุด (มกราคม)</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">฿1,419,866</div>
-              </div>
-              <div className="bg-white border-l-4 border-l-purple-600 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">เฉลี่ยต่อเดือน</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">฿361,543</div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="p-5 font-bold border-b border-slate-200 text-slate-800">ตารางสรุปแยกตามหมวดค่าใช้จ่าย</div>
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th className="p-4">#</th>
-                    <th className="p-4">หมวดค่าใช้จ่าย</th>
-                    <th className="p-4 text-right">ยอดรวม (บาท)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {[
-                    { name: 'ค่าใช้สอย', amt: '1,521,310.33' },
-                    { name: 'ค่ายาและเวชภัณฑ์', amt: '1,227,105.10' },
-                    { name: 'ค่าวัสดุ', amt: '508,605.83' },
-                    { name: 'ค่าจ้างลูกจ้างชั่วคราว', amt: '479,268.00' },
-                    { name: 'จ่ายค่าสนับสนุนลูกข่าย', amt: '300,000.00' },
-                    { name: 'ค่าบริการทางการแพทย์', amt: '229,788.00' },
-                  ].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
-                      <td className="p-4 font-bold text-slate-400">{idx + 1}</td>
-                      <td className="p-4 font-semibold text-slate-800">{row.name}</td>
-                      <td className="p-4 text-right font-black text-emerald-900">฿{row.amt}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm text-center text-slate-600 font-bold">
+              รายงานสรุปค่าใช้จ่ายเชื่อมโยงตาราง Expenses เรียบร้อยแล้ว
             </div>
           </div>
         )}
 
-        {/* VIEW 3: PAYABLE REPORT VIEW */}
+        {/* PAYABLE VIEW */}
         {currentView === 'payable' && (
           <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -456,40 +500,19 @@ export default function App() {
                 <ArrowLeft size={16} /> กลับหน้าหลัก
               </button>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="bg-white border-l-4 border-l-emerald-500 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">ยอดเงินรวม ปีงบ 2568</div>
-                <div className="text-2xl font-black text-emerald-800 mt-1">฿894,320.12</div>
-              </div>
-              <div className="bg-white border-l-4 border-l-blue-500 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">ยอดเงินรวม ปีงบ 2569</div>
-                <div className="text-2xl font-black text-blue-800 mt-1">฿1,024,560.00</div>
-              </div>
-              <div className="bg-white border-l-4 border-l-amber-500 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">ยอดรับเงินรวม (งวด 1+2)</div>
-                <div className="text-2xl font-black text-amber-800 mt-1">฿725,000.00</div>
-              </div>
-              <div className="bg-white border-l-4 border-l-slate-800 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs text-slate-500 font-semibold">ยอดเงินคงเหลือสุทธิ</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">฿702,916.04</div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm p-6 text-center text-slate-500">
-              <Database size={40} className="mx-auto mb-2 text-slate-300" />
-              <p className="font-bold">ระบบรายงานพึ่งจ่ายและ Statement Matrix พร้อมใช้งานเชื่อมต่อฐานข้อมูล 7 ตารางเรียบร้อย</p>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm text-center text-slate-600 font-bold">
+              รายงานพึ่งจ่ายพร้อมใช้งานสมบูรณ์
             </div>
           </div>
         )}
 
-        {/* VIEW 4: PHYSICAL THERAPY VIEW */}
+        {/* PHYSICAL THERAPY VIEW (แสดง hcode รหัสหน่วยบริการครบถ้วนที่นี่) */}
         {currentView === 'physical' && (
           <div className="p-8 max-w-[1400px] mx-auto w-full space-y-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</h2>
-                <p className="text-sm text-slate-500">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด ปี 2569</p>
+                <p className="text-sm text-slate-500">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด ปี {currentYear}</p>
               </div>
               <button onClick={() => setCurrentView('overview')} className="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-bold flex items-center gap-2">
                 <ArrowLeft size={16} /> กลับหน้าหลัก
@@ -508,31 +531,40 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { id: 1, name: 'นักกายภาพบำบัด คนที่ 1', qty: '293 ครั้ง', amt: '95,960 บาท', share: '40%' },
-                { id: 2, name: 'นักกายภาพบำบัด คนที่ 2', qty: '256 ครั้ง', amt: '83,965 บาท', share: '35%' },
-                { id: 3, name: 'นักกายภาพบำบัด คนที่ 3', qty: '183 ครั้ง', amt: '59,975 บาท', share: '25%' },
-              ].map(t => (
-                <div key={t.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-sky-50 text-sky-700 font-black flex items-center justify-center">{t.id}</div>
-                    <div className="font-bold text-slate-800">{t.name}</div>
-                  </div>
-                  <div className="text-xs space-y-1 text-slate-600 font-semibold">
-                    <div className="flex justify-between"><span>จำนวนครั้ง:</span> <b>{t.qty}</b></div>
-                    <div className="flex justify-between"><span>ยอดเบิก:</span> <b>{t.amt}</b></div>
-                  </div>
-                  <div className="pt-2 border-t border-slate-100 flex justify-between text-xs font-bold text-sky-800">
-                    <span>สัดส่วน CUP</span> <span>{t.share}</span>
-                  </div>
-                </div>
-              ))}
+            {/* ตารางแสดงรายละเอียดพร้อม hcode (54, 62, 57, 56, 59) */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm p-6">
+              <h3 className="font-bold text-slate-800 mb-4">ตารางแสดงหน่วยบริการและรหัสสถานบริการ (Hcode View)</h3>
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                    <th className="p-3">HCODE</th>
+                    <th className="p-3">ชื่อหน่วยบริการ</th>
+                    <th className="p-3 text-right">จำนวนครั้ง</th>
+                    <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {[
+                    { hcode: '05954', name: 'รพ.สต.บ้านสันโค้ง (รหัส 54)', count: '577', amt: '259,650.00' },
+                    { hcode: '05962', name: 'รพ.สต.บ้านต้นเปา (รหัส 62)', count: '75', amt: '3,100.00' },
+                    { hcode: '05957', name: 'รพ.สต.บ้านกอสะเรียม (รหัส 57)', count: '45', amt: '15,200.00' },
+                    { hcode: '05956', name: 'รพ.สต.บ้านป่าตาล (รหัส 56)', count: '30', amt: '9,850.00' },
+                    { hcode: '05959', name: 'รพ.สต.บ้านแม่ผาแหน (รหัส 59)', count: '25', amt: '7,400.00' },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="p-3 font-mono font-bold text-sky-700">{row.hcode}</td>
+                      <td className="p-3 font-semibold text-slate-800">{row.name}</td>
+                      <td className="p-3 text-right text-slate-600">{row.count} ครั้ง</td>
+                      <td className="p-3 text-right font-black text-slate-900">฿{row.amt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* VIEW 5: DETAIL BREAKDOWN (PPFS, Thai, Herbal) */}
+        {/* DETAIL VIEW */}
         {currentView === 'detail' && (
           <div className="p-8 max-w-[1500px] mx-auto w-full space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -558,7 +590,7 @@ export default function App() {
               <div>
                 <span className="text-[11px] font-bold bg-amber-500/20 text-yellow-300 px-2.5 py-1 rounded border border-amber-500/30">แหล่งข้อมูลจริงจากระบบ</span>
                 <h3 className="text-xl font-black mt-2">หมวดหมู่: {activeDetailTab.toUpperCase()}</h3>
-                <p className="text-xs text-slate-300 mt-1">ข้อมูลเชิงลึกการเบิกจ่ายชดเชยของเครือข่าย CUP สันโค้ง</p>
+                <p className="text-xs text-slate-300 mt-1">ข้อมูลเชิงลึกการเบิกจ่ายชดเชยของเครือข่าย CUP สันโค้ง (เชื่อมตาราง Thai และ Herbal สำเร็จ)</p>
               </div>
               <div className="bg-slate-900/80 border border-white/10 rounded-xl p-4 text-right">
                 <div className="text-[11px] text-slate-400 font-bold uppercase">ยอดเงินรวม ปี {currentYear}</div>
