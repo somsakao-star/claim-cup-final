@@ -1,5 +1,5 @@
-import WebThreads from './WebThreads';
 "use client";
+import WebThreads from './WebThreads';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Activity, Trophy, Syringe, Baby, Flower, Scan, HeartPulse, Monitor,
