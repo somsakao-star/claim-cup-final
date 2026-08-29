@@ -1,3 +1,4 @@
+import WebThreads from './WebThreads';
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -447,7 +448,6 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPulled, setIsPulled] = useState(false);
-  const [isLightOn, setIsLightOn] = useState(true);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -474,7 +474,21 @@ const LoginScreen = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#0a0a0a]'}`}>
+    <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#050505]'}`}>
+      
+      {/* 🌟 พระเอกของเรา เอฟเฟกต์ WebThreads จะเป็นพื้นหลังอยู่ตรงนี้ครับ */}
+      <div className="absolute inset-0 z-0 opacity-80">
+        <WebThreads 
+          color1="#059669" /* สีเขียวเข้ม Emerald */
+          color2="#34d399" /* สีเขียวอ่อน */
+          color3="#ffffff" /* แกนกลางสีขาวเรืองแสง */
+          speed={0.4} 
+          threadCount={6} 
+          opacity={0.8}
+          brightness={0.8}
+        />
+      </div>
+
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
         <div className="w-1.5 h-16 bg-slate-800"></div>
         <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
@@ -482,17 +496,17 @@ const LoginScreen = ({ onLoginSuccess }) => {
             <div className={`w-0.5 bg-slate-500 transition-all duration-500 origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
             <div className={`w-4 h-4 bg-slate-500 rounded-full transition-all duration-500 ${isPulled ? 'scale-75' : 'group-active:scale-110'}`}></div>
           </div>
-          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled && isLightOn) ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' : 'bg-slate-800'}`}></div>
+          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled) ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' : 'bg-slate-800'}`}></div>
         </div>
       </div>
       {!isPulled && (
-        <div className="absolute top-52 text-slate-500 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2">
+        <div className="absolute top-52 text-slate-300 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2 drop-shadow-md">
           <span>👇</span><span>คลิกเพื่อเปิดระบบ</span>
         </div>
       )}
-      <div className={`bg-white/95 backdrop-blur-sm p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md relative z-20 border border-slate-100 mt-24 transition-all duration-1000 ease-out transform ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
-        
-      {/* 🌟 จุดที่เพิ่มโลโก้ครับ (อัปเกรดขนาดใหญ่ขึ้นเป็น w-36 h-36) */}
+      
+      {/* ฟอร์มล็อกอิน (อยู่เลเยอร์บนสุด) */}
+      <div className={`bg-white/90 backdrop-blur-md p-8 sm:p-10 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(5,150,105,0.3)] w-full max-w-md relative z-20 border border-white/50 mt-24 transition-all duration-1000 ease-out transform ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
         <div className="text-center mb-8 flex flex-col items-center">
           <img 
             src="/my-logo.png" 
@@ -505,9 +519,9 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
         {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">{errorMsg}</div>}
         <form onSubmit={handleLogin} className="space-y-5">
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50/50" placeholder="Username" required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-emerald-50/50" placeholder="Password" required />
-          <button type="submit" disabled={isLoading} className="w-full text-white font-bold py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 transition-all shadow-lg active:scale-95">
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-white focus:border-emerald-500 outline-none transition-colors" placeholder="Username" required />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3 rounded-xl border-2 border-emerald-100 bg-white focus:border-emerald-500 outline-none transition-colors" placeholder="Password" required />
+          <button type="submit" disabled={isLoading} className="w-full text-white font-bold py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg shadow-emerald-600/30 active:scale-95">
             {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
