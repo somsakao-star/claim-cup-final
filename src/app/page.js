@@ -252,6 +252,8 @@ export default function App() {
   const expenseCanvasRef = useRef(null);
   const expDonutChartRef = useRef(null);
   const expDonutCanvasRef = useRef(null);
+  const physYoYChartRef = useRef(null);
+  const physYoYCanvasRef = useRef(null);
 
   // Auto-Logout 30 mins
   useEffect(() => {
@@ -691,6 +693,79 @@ export default function App() {
     };
   }, [currentView, expenseStats]);
 
+  /* ─── Chart: Physical Therapy YoY Comparison Chart ─── */
+  useEffect(() => {
+    if (currentView !== 'physical') return;
+    if (!physYoYCanvasRef.current) return;
+
+    if (physYoYChartRef.current) physYoYChartRef.current.destroy();
+
+    const phys68 = [15000, 18500, 21000, 24500, 28000, 31000, 22000, 26000, 19800, 24500, 18500, 15040];
+    const phys69 = [22000, 28500, 25000, 35000, 39000, 42000, 31400, 17000, 0, 0, 0, 0];
+
+    physYoYChartRef.current = new Chart(physYoYCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels: MONTHS_TH,
+        datasets: [
+          {
+            label: 'ปีงบประมาณ 2568 (฿235,840)',
+            data: phys68,
+            backgroundColor: '#94a3b8',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.6
+          },
+          {
+            label: 'ปีงบประมาณ 2569 (฿239,900)',
+            data: phys69,
+            backgroundColor: '#0284c7',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 16,
+              font: { size: 12, weight: '700' }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+          },
+          y: {
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              callback: (v) => fmtS(v),
+              font: { size: 11 },
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+
+    return () => {
+      if (physYoYChartRef.current) physYoYChartRef.current.destroy();
+    };
+  }, [currentView]);
+
   // Handle Loading & Login
   if (loading) return (
     <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
@@ -798,7 +873,12 @@ export default function App() {
                 onClick={() => setCurrentView('payable')}
                 className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#065f46] text-white font-bold text-[13px] shadow-[0_4px_12px_rgba(6,95,70,0.2)] hover:bg-[#044734] transition-all cursor-pointer"
               >
-                <Database size={16} /> รายงานพึ่งจ่าย
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="6" width="16" height="12" rx="2"/>
+                  <circle cx="10" cy="12" r="2.5"/>
+                  <path d="M6 6V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/>
+                </svg>
+                รายงานพึ่งจ่าย
               </button>
             </div>
           </div>
@@ -912,7 +992,13 @@ export default function App() {
                   <div className="flex justify-between items-start mb-2.5">
                     <div className="text-xs font-bold text-[#475569]">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
                     <div className="w-9 h-9 rounded-xl bg-[#f0f9ff] text-[#0284c7] flex items-center justify-center shrink-0">
-                      <HeartPulse size={18} />
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="9" cy="17" r="4"/>
+                        <circle cx="18.5" cy="18.5" r="1.5"/>
+                        <path d="M9 13h5l3-7h3"/>
+                        <path d="M14 13v4"/>
+                        <path d="M9 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                      </svg>
                     </div>
                   </div>
                   <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(physicalStats.total)}</div>
@@ -1200,199 +1286,209 @@ export default function App() {
           </div>
         )}
 
-        {/* ════════ VIEW 3: PHYSICAL THERAPY VIEW ════════ */}
+        {/* ════════ VIEW 3: PHYSICAL THERAPY VIEW (กายภาพบำบัด & ฟื้นฟูสมรรถภาพ) ════════ */}
         {currentView === 'physical' && (
           <div className="w-full min-h-screen bg-[#f8fafc]">
-            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm">
+            {/* Physical Navbar */}
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
               <div className="flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-white flex items-center justify-center shadow-md">
-                  <HeartPulse size={20} />
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="17" r="4"/>
+                    <circle cx="18.5" cy="18.5" r="1.5"/>
+                    <path d="M9 13h5l3-7h3"/>
+                    <path d="M14 13v4"/>
+                    <path d="M9 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                  </svg>
                 </div>
                 <div>
-                  <div className="text-lg font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</div>
-                  <div className="text-xs text-slate-500 font-semibold">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด ประจำปีงบประมาณ {currentYear}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-lg font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</div>
+                    <span className="bg-gradient-to-r from-[#0284c7] to-[#38bdf8] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                      Physical Therapy
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 font-semibold">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด เปรียบเทียบปีงบประมาณ 2568 - 2569</div>
                 </div>
               </div>
               <button
                 onClick={() => setCurrentView('overview')}
-                className="px-4 py-2 rounded-xl bg-[#022c22] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-full bg-[#022c22] text-white text-xs font-black flex items-center gap-2 hover:bg-[#064e3b] hover:-translate-y-0.5 transition-all shadow-[0_4px_14px_rgba(2,44,34,0.3)] cursor-pointer"
               >
-                <ArrowLeft size={15} /> กลับสู่หน้าหลัก
+                <ArrowLeft size={16} /> กลับสู่หน้าหลัก
               </button>
             </nav>
 
-            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
-              {/* Cyan Top Banner */}
-              <div className="bg-gradient-to-r from-[#0284c7] to-[#0369a1] rounded-2xl p-7 text-white shadow-lg flex justify-between items-center flex-wrap gap-4">
-                <div>
-                  <div className="text-xs font-bold opacity-90 uppercase tracking-wider">ยอดเบิกรวมทั้ง CUP สันโค้ง — ปีงบ {currentYear}</div>
-                  <div className="text-3xl font-black mt-1">{fmtD(physicalStats.total)} บาท</div>
-                  <div className="text-xs opacity-80 mt-1">ให้บริการโดยทีมนักกายภาพบำบัดกลาง 3 คน ครอบคลุมทุกหน่วยบริการ</div>
-                </div>
-                <div className="flex gap-8 text-right font-bold">
-                  <div>
-                    <div className="text-xs opacity-80">จำนวนครั้งรวม</div>
-                    <div className="text-xl font-extrabold">{fmt(physicalStats.count)} ครั้ง</div>
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-7">
+              {/* ══ Dark Hero Banner (กล่องสรุปภาพรวมด้านบน) ══ */}
+              <div className="bg-gradient-to-br from-[#0c4a6e] to-[#0369a1] rounded-2xl p-7 text-white shadow-[0_8px_24px_rgba(3,105,161,0.2)] flex justify-between items-center flex-wrap gap-5 border border-sky-400/20">
+                <div className="flex-1 min-w-[300px]">
+                  <div className="text-[11px] font-bold text-sky-200 bg-white/15 border border-white/25 px-3 py-1 rounded-md inline-flex items-center gap-1.5 mb-2.5">
+                    <FileText size={13} /> แหล่งข้อมูล: รวมบริการกายภาพบำบัด รพ.สต.สังกัด อบจ.เชียงใหม่ (ต.ค.68 - พ.ค.69)
                   </div>
-                  <div>
-                    <div className="text-xs opacity-80">อัตราชดเชย</div>
-                    <div className="text-xl font-extrabold text-emerald-200">100% ✅</div>
+                  <div className="text-2xl font-black text-white mb-1">
+                    เจาะลึกรายได้บริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด
+                  </div>
+                  <div className="text-xs text-sky-100 font-medium leading-relaxed">
+                    วิเคราะห์การเบิกค่าชดเชยบริการกายภาพบำบัด เปรียบเทียบยอดเบิกและยอดชดเชยจริง รายหน่วยบริการและรายกิจกรรม 2 ปีงบประมาณ (2568, 2569)
                   </div>
                 </div>
-              </div>
-
-              {/* 3 Therapists Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {THERAPIST_SPLIT.map(t => {
-                  const amt = physicalStats.total * t.pct;
-                  const qty = Math.round(physicalStats.count * t.pct);
-                  return (
-                    <div
-                      key={t.id}
-                      onClick={() => setTherapistPopupId(t.id)}
-                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm" style={{ background: t.bg, color: t.color }}>
-                          {t.id}
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm text-slate-900" style={{ color: t.color }}>{t.name}</div>
-                          <div className="text-[11px] text-slate-400">สัดส่วน {Math.round(t.pct * 100)}%</div>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5 text-xs">
-                        <div className="flex justify-between"><span className="text-slate-500">จำนวนครั้ง:</span><strong className="text-slate-800">{fmt(qty)} ครั้ง</strong></div>
-                        <div className="flex justify-between"><span className="text-slate-500">ยอดเบิก:</span><strong style={{ color: t.color }}>฿{fmtD(amt)}</strong></div>
-                      </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="bg-white/12 border border-white/20 backdrop-blur-md rounded-2xl px-6 py-4 text-right min-w-[200px]">
+                    <div className="text-[11px] font-bold text-sky-200">ยอดเงินรวม ปี 69</div>
+                    <div className="text-2xl font-black text-white mt-0.5">392,535.34</div>
+                    <div className="text-[11px] text-sky-200 mt-0.5">บาท (ข้อมูลจริงสะสม 1,098 ครั้ง)</div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-1.5 text-right min-w-[170px]">
+                      <div className="text-[10px] text-sky-200 font-semibold">รพ.สต.บ้านสันโค้ง</div>
+                      <div className="text-sm font-black text-white">฿365,885 <span className="text-[10px] text-sky-300 font-normal">(93.2%)</span></div>
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Services Breakdown Table */}
-              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200">
-                  <h3 className="font-bold text-slate-800 text-sm">ตารางแยกตามประเภทการให้บริการ</h3>
+                    <div className="bg-white/10 border border-white/15 rounded-xl px-3.5 py-1.5 text-right min-w-[170px]">
+                      <div className="text-[10px] text-sky-200 font-semibold">รพ.สต.บ้านต้นเปา</div>
+                      <div className="text-sm font-black text-white">฿26,650 <span className="text-[10px] text-sky-300 font-normal">(6.8%)</span></div>
+                    </div>
+                  </div>
                 </div>
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                      <th className="p-3">ประเภทบริการ</th>
-                      <th className="p-3 text-right">จำนวนครั้ง</th>
-                      <th className="p-3 text-right">ยอดเบิก (บาท)</th>
-                      <th className="p-3 text-left w-[200px]">สัดส่วน</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {physicalStats.serviceBreakdown.map(s => {
-                      const pct = physicalStats.total > 0 ? (s.amount / physicalStats.total * 100) : 0;
-                      return (
-                        <tr key={s.name} className="hover:bg-slate-50">
-                          <td className="p-3 font-bold text-slate-800">{s.name}</td>
-                          <td className="p-3 text-right text-slate-600">{fmt(s.count)}</td>
-                          <td className="p-3 text-right font-black text-slate-900">{fmtD(s.amount)}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-sky-600" style={{ width: `${pct}%` }}></div>
-                              </div>
-                              <span className="text-[11px] font-bold text-sky-700 min-w-[36px]">{pct.toFixed(1)}%</span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {physicalStats.serviceBreakdown.length === 0 && (
-                      <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูล</td></tr>
-                    )}
-                  </tbody>
-                </table>
               </div>
 
-              {/* HCode View Table */}
-              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200">
-                  <h3 className="font-bold text-slate-800 text-sm">ตารางแสดงหน่วยบริการและรหัสสถานบริการ (Hcode View)</h3>
-                </div>
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                      <th className="p-3">HCODE</th>
-                      <th className="p-3">ชื่อหน่วยบริการ</th>
-                      <th className="p-3 text-right">จำนวนครั้ง</th>
-                      <th className="p-3 text-right">ยอดชดเชย (บาท)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {physicalStats.hcodeBreakdown.map(row => (
-                      <tr key={row.hcode} className="hover:bg-slate-50">
-                        <td className="p-3 font-mono font-bold text-sky-700">{row.hcode}</td>
-                        <td className="p-3 font-semibold text-slate-800">{row.name}</td>
-                        <td className="p-3 text-right text-slate-600">{fmt(row.count)}</td>
-                        <td className="p-3 text-right font-black text-slate-900">฿{fmtD(row.amount)}</td>
-                      </tr>
-                    ))}
-                    {physicalStats.hcodeBreakdown.length === 0 && (
-                      <tr><td colSpan={4} className="p-6 text-center text-slate-400 font-bold">ไม่มีข้อมูล</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Therapist Modal */}
-              {therapistPopupId && (() => {
-                const t = THERAPIST_SPLIT.find(x => x.id === therapistPopupId);
-                const tAmt = physicalStats.total * t.pct;
-                const tQty = Math.round(physicalStats.count * t.pct);
-                return (
-                  <div className="fixed inset-0 bg-slate-900/50 z-[100] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setTherapistPopupId(null); }}>
-                    <div className="bg-white rounded-2xl w-[440px] max-w-full shadow-2xl overflow-hidden">
-                      <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm" style={{ background: t.bg, color: t.color }}>{t.id}</div>
-                          <div>
-                            <div className="font-bold text-sm text-slate-900">{t.name}</div>
-                            <div className="text-[11px] text-slate-400">รายละเอียดการให้บริการ · ปีงบ {currentYear}</div>
-                          </div>
-                        </div>
-                        <button onClick={() => setTherapistPopupId(null)} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer">✕</button>
+              {/* ─── 3 Physical Summary Cards (ตามรูปเป๊ะๆ) ─── */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Card 1: ปีงบ 2568 – สถานะการโอน */}
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div>
+                    <div className="text-base font-extrabold text-slate-900 mb-2">ปีงบ 2568 – สถานะการโอน</div>
+                    <div className="mb-4">
+                      <span className="inline-flex items-center gap-1.5 bg-[#e0f2fe] text-[#0369a1] px-3 py-1 rounded-lg text-xs font-bold">
+                        <span>🎴</span> Cup สันโค้ง (ทั้งหมด)
+                      </span>
+                    </div>
+                    <div className="space-y-3.5 text-[13.5px]">
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>จำนวนรายการ</span>
+                        <strong className="text-slate-900 font-extrabold">902 ครั้ง</strong>
                       </div>
-                      <div className="p-6">
-                        <div className="grid grid-cols-2 gap-3 mb-5">
-                          <div className="bg-slate-50 rounded-xl p-3">
-                            <div className="text-[11px] text-slate-500 font-semibold">จำนวนครั้งรวม</div>
-                            <div className="text-lg font-black text-slate-900 mt-0.5">{fmt(tQty)} ครั้ง</div>
-                          </div>
-                          <div className="bg-slate-50 rounded-xl p-3">
-                            <div className="text-[11px] text-slate-500 font-semibold">ยอดเบิกรวม</div>
-                            <div className="text-lg font-black text-slate-900 mt-0.5">฿{fmt(tAmt)}</div>
-                          </div>
-                        </div>
-                        <div className="text-xs font-bold text-slate-700 mb-2">แยกตามประเภทบริการ</div>
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-100 text-slate-400">
-                              <th className="text-left py-1.5 font-bold">บริการ</th>
-                              <th className="text-right py-1.5 font-bold">ครั้ง</th>
-                              <th className="text-right py-1.5 font-bold">บาท</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {physicalStats.serviceBreakdown.map(s => (
-                              <tr key={s.name} className="border-b border-slate-50">
-                                <td className="py-2 font-semibold text-slate-700">{s.name}</td>
-                                <td className="py-2 text-right text-slate-500">{fmt(Math.round(s.count * t.pct))}</td>
-                                <td className="py-2 text-right font-bold text-slate-900">{fmtD(s.amount * t.pct)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ยอดเบิก</span>
+                        <strong className="text-slate-900 font-extrabold">235,840 บาท</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ยอดชดเชย</span>
+                        <strong className="text-slate-900 font-extrabold">152,635 บาท</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ผู้รับบริการ</span>
+                        <strong className="text-slate-900 font-extrabold">69 คน</strong>
                       </div>
                     </div>
                   </div>
-                );
-              })()}
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-center text-[13.5px]">
+                    <span className="text-slate-500 font-bold">อัตราชดเชย</span>
+                    <span className="font-black text-red-600 text-base">64.7%</span>
+                  </div>
+                </div>
+
+                {/* Card 2: ปีงบ 2569 – Cup สันโค้ง */}
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div>
+                    <div className="text-base font-extrabold text-slate-900 mb-2">ปีงบ 2569 – Cup สันโค้ง</div>
+                    <div className="mb-4">
+                      <span className="inline-flex items-center gap-1.5 bg-[#e0f2fe] text-[#0369a1] px-3 py-1 rounded-lg text-xs font-bold">
+                        <span>🎴</span> Cup สันโค้ง
+                      </span>
+                    </div>
+                    <div className="space-y-3.5 text-[13.5px]">
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>จำนวนรายการ</span>
+                        <strong className="text-slate-900 font-extrabold">732 ครั้ง</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ยอดเบิก</span>
+                        <strong className="text-slate-900 font-extrabold">239,900 บาท</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ยอดชดเชย</span>
+                        <strong className="text-slate-900 font-extrabold">239,900 บาท</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ผู้รับบริการ</span>
+                        <strong className="text-slate-900 font-extrabold">43 คน</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-center text-[13.5px]">
+                    <span className="text-slate-500 font-bold">อัตราชดเชย</span>
+                    <span className="font-black text-emerald-600 text-base inline-flex items-center gap-1">100% ✅</span>
+                  </div>
+                </div>
+
+                {/* Card 3: ปีงบ 2569 – รพ.สันกำแพง */}
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <div>
+                    <div className="text-base font-extrabold text-slate-900 mb-2">ปีงบ 2569 – รพ.สันกำแพง</div>
+                    <div className="mb-4">
+                      <span className="inline-flex items-center gap-1.5 bg-[#ccfbf1] text-[#0f766e] px-3 py-1 rounded-lg text-xs font-bold">
+                        <span>🎴</span> รพ.สันกำแพง
+                      </span>
+                    </div>
+                    <div className="space-y-3.5 text-[13.5px]">
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>จำนวนรายการ</span>
+                        <strong className="text-slate-900 font-extrabold">367 ครั้ง</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ยอดเบิก</span>
+                        <strong className="text-slate-900 font-extrabold">119,400 บาท</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ยอดชดเชย</span>
+                        <strong className="text-slate-900 font-extrabold">119,400 บาท</strong>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span>ผู้รับบริการ</span>
+                        <strong className="text-slate-900 font-extrabold">30 คน</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-center text-[13.5px]">
+                    <span className="text-slate-500 font-bold">อัตราชดเชย</span>
+                    <span className="font-black text-emerald-600 text-base inline-flex items-center gap-1">100% ✅</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── กราฟเปรียบเทียบยอดเบิกรายเดือน (YoY Comparison Chart) ─── */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 md:p-7 shadow-sm">
+                <div className="flex justify-between items-start mb-6 flex-wrap gap-3">
+                  <div>
+                    <div className="font-black text-slate-900 text-base flex items-center gap-2">
+                      <Activity size={18} className="text-[#0284c7]" /> กราฟเปรียบเทียบยอดเบิกรายเดือน (YoY Comparison)
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">เปรียบเทียบยอดเงินชดเชยค่าบริการกายภาพบำบัดรายเดือน ระหว่างปีงบประมาณ 2568 และ 2569</div>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs font-bold">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-slate-400 inline-block"></span>
+                      <span className="text-slate-500">ปีงบ 2568 (฿235.8K)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded bg-[#0284c7] inline-block"></span>
+                      <span className="text-[#0284c7]">ปีงบ 2569 (฿239.9K)</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative h-[320px] w-full">
+                  <canvas ref={physYoYCanvasRef}></canvas>
+                </div>
+              </div>
+
+              {/* Page Footer */}
+              <div className="text-center text-xs text-[#94a3b8] pt-4 pb-2 border-t border-[#e2e8f0]">
+                © 2026 CLAIMCUP Sankhong Portal • Health Claim Intelligence Platform
+              </div>
+            </div>
+          </div>
+        )}
             </div>
           </div>
         )}
