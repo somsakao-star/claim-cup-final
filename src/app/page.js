@@ -942,37 +942,50 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Donut Card */}
-                <div className="bg-white text-slate-900 rounded-2xl p-5 flex items-center gap-6 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+                {/* Donut Card (2-column Legend matching dashboard_demo.html) */}
+                <div className="bg-white text-slate-900 rounded-[20px] p-5 md:p-6 flex items-center gap-6 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
                   <div className="relative w-[130px] h-[130px] shrink-0">
                     <canvas ref={donutCanvasRef}></canvas>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                      <div className="text-[9px] font-extrabold text-[#94a3b8] uppercase">
+                      <div className="text-[9px] font-extrabold text-[#94a3b8] uppercase tracking-wider">
                         {currentHosp === 'all' ? 'CUP SHARE' : 'สัดส่วน'}
                       </div>
-                      <div className="text-[17px] font-black text-[#0f172a]">
-                        {currentHosp === 'all' ? `${Object.keys(hospitalMap).length - 1} แห่ง` : `${currentHospPct}%`}
+                      <div className="text-[18px] font-black text-[#0f172a]">
+                        {currentHosp === 'all' ? `${Object.keys(hospitalMap).filter(k => k !== 'all').length} แห่ง` : `${currentHospPct}%`}
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 grid grid-cols-1 gap-1.5 text-xs">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5">
                     {Object.entries(hospitalMap).filter(([k]) => k !== 'all').map(([code, name], idx) => {
                       const clean = name.replace(/^[0-9]+\s*[-–]?\s*/, '').replace('รพ.สต.', '');
                       const amt = processedData.hospTotals[code] || 0;
                       const isSelected = currentHosp === code;
+                      
+                      const styleMap = {
+                        '05954': { dot: '#3b82f6', text: '#1d4ed8', bg: '#eff6ff' },
+                        '05962': { dot: '#10b981', text: '#059669', bg: '#ecfdf5' },
+                        '05957': { dot: '#f97316', text: '#c2410c', bg: '#fff7ed' },
+                        '05959': { dot: '#a855f7', text: '#7e22ce', bg: '#faf5ff' },
+                        '05956': { dot: '#ec4899', text: '#be185d', bg: '#fdf2f8' },
+                      };
+                      const s = styleMap[code] || { dot: HOSP_PALETTE[idx % HOSP_PALETTE.length], text: '#065f46', bg: '#ecfdf5' };
+
                       return (
                         <div
                           key={code}
                           onClick={() => setCurrentHosp(code)}
-                          className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer transition-all ${
-                            isSelected ? 'bg-emerald-50 text-emerald-950 font-bold' : 'hover:bg-slate-100 text-slate-700'
+                          className={`flex items-center justify-between gap-1.5 p-1 rounded-lg cursor-pointer transition-all hover:bg-slate-50 ${
+                            isSelected ? 'ring-1.5 ring-emerald-500 bg-emerald-50/50' : ''
                           }`}
                         >
-                          <div className="flex items-center gap-2 truncate">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: HOSP_PALETTE[idx % HOSP_PALETTE.length] }}></span>
-                            <span className="truncate">{clean}</span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="w-[7px] h-[7px] rounded-full shrink-0" style={{ backgroundColor: s.dot }}></div>
+                            <span className="truncate text-[11.5px] font-semibold text-slate-700">รพ.สต.{clean}</span>
                           </div>
-                          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-slate-100 text-slate-800 shrink-0">
+                          <span
+                            className="text-[11px] font-extrabold px-2 py-0.5 rounded shrink-0"
+                            style={{ color: s.text, backgroundColor: s.bg }}
+                          >
                             ฿{fmt(amt)}
                           </span>
                         </div>
