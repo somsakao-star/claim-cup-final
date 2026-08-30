@@ -137,6 +137,22 @@ const PAYMENT_CATEGORY_MAP = {
   '13': 'ภาษี',
 };
 
+const REAL_EXPENSES_TABLE = [
+  { category: "1", name: "ค่ายาและเวชภัณฑ์", m: [391098.39, 36214.36, 0, 454872.61, 28413.89, 261468.08, 55037.77, 0, 0, 0, 0, 0] },
+  { category: "2", name: "ค่าวัสดุ", m: [0, 0, 0, 452906.3, 0, 55699.53, 0, 0, 0, 0, 0, 0] },
+  { category: "3", name: "ค่าตอบแทนทางการแพทย์", m: [0, 0, 0, 0, 11600, 0, 0, 0, 0, 0, 0, 0] },
+  { category: "4", name: "ค่าบริการทางการแพทย์", m: [0, 0, 0, 229788, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { category: "5", name: "ค่าครุภัณฑ์ ที่ดินและสิ่งปลูกสร้าง", m: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { category: "6", name: "ค่าใช้สอย", m: [196973.6, 137645, 129308.35, 185139.67, 125730, 384778, 361735.71, 0, 0, 0, 0, 0] },
+  { category: "7", name: "ค่าสาธารณูปโภค", m: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { category: "8", name: "ค่าจ้างลูกจ้างชั่วคราว", m: [0, 123556, 104428, 87628, 76028, 87628, 0, 0, 0, 0, 0, 0] },
+  { category: "9", name: "ค่าตอบแทนการปฏิบัติงานนอกเวลาราชการ", m: [0, 0, 0, 0, 1625, 1950, 0, 0, 0, 0, 0, 0] },
+  { category: "10", name: "ค่าใช้จ่ายในการเดินทางไปราชการ", m: [0, 0, 0, 0, 0, 2000, 0, 0, 0, 0, 0, 0] },
+  { category: "11", name: "ค่าใช้จ่ายอื่นที่จำเป็นที่เกี่ยวข้องกับการสาธารณสุข", m: [3123.05, 1757, 1406.75, 9531.55, 14162.83, 8004, 8004, 0, 0, 0, 0, 0] },
+  { category: "12", name: "จ่ายค่าสนับสนุนลูกข่าย", m: [0, 300000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { category: "13", name: "ภาษี", m: [0, 0, 0, 0, 0, 1972.71, 7302.49, 0, 0, 0, 0, 0] }
+];
+
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtS = (n) => {
@@ -237,6 +253,7 @@ export default function App() {
   const [payableHosp, setPayableHosp] = useState('ALL');
   const [payableYear, setPayableYear] = useState('69');
   const [therapistPopupId, setTherapistPopupId] = useState(null);
+  const [showExpPrintModal, setShowExpPrintModal] = useState(false);
 
   const [claims, setClaims] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -449,44 +466,35 @@ export default function App() {
     return { rows, sumQty68, sumAmt68, sumQty69, sumAmt69, totalDiffAmt };
   }, [claims, activeDetailTab, detailFilterHosp]);
 
-  /* ─── Expenses Stats ─── */
+  /* ─── Expenses Stats (Using 13 Categories x 12 Months Database) ─── */
   const expenseStats = useMemo(() => {
-    const filtered = expenses.filter(e => {
-      const yr = String(e.fiscal_year || e.year || '');
-      return currentYear === 'all' || yr === currentYear;
+    const table = REAL_EXPENSES_TABLE.map(row => {
+      const rowSum = row.m.reduce((a, b) => a + b, 0);
+      const sumH1 = row.m.slice(0, 6).reduce((a, b) => a + b, 0); // Oct - Mar
+      const sumH2 = row.m.slice(6, 12).reduce((a, b) => a + b, 0); // Apr - Sep
+      return { ...row, total: rowSum, sumH1, sumH2 };
     });
 
-    let total = 0;
-    const catMap = {};
-    const monthMap = {};
-    MONTHS_TH.forEach(m => { monthMap[m] = 0; });
-
-    filtered.forEach(e => {
-      const amt = parseFloat(String(e.amount || e.total || 0).replace(/,/g, '')) || 0;
-      total += amt;
-
-      const rawCode = String(e.category ?? '').trim();
-      const cat = PAYMENT_CATEGORY_MAP[rawCode] || e.expense_type || e.name || `หมวดไม่ทราบรหัส (${rawCode || 'ไม่ระบุ'})`;
-      catMap[cat] = (catMap[cat] || 0) + amt;
-
-      const mRaw = String(e.month || '').trim();
-      const shortMonth = MONTHS_TH.find(m => m === mRaw) ||
-        MONTHS_TH[["ตุลาคม","พฤศจิกายน","ธันวาคม","มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน"].indexOf(mRaw)];
-      if (shortMonth) monthMap[shortMonth] += amt;
+    const monthTotals = Array(12).fill(0);
+    table.forEach(r => {
+      r.m.forEach((val, idx) => {
+        monthTotals[idx] += val;
+      });
     });
 
-    const categories = Object.entries(catMap)
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount);
+    const total = monthTotals.reduce((a, b) => a + b, 0);
+    const sumAllH1 = monthTotals.slice(0, 6).reduce((a, b) => a + b, 0);
+    const sumAllH2 = monthTotals.slice(6, 12).reduce((a, b) => a + b, 0);
 
-    const topCategory = categories[0] || { name: '-', amount: 0 };
-    const monthlyEntries = MONTHS_TH.map(m => ({ month: m, amount: monthMap[m] }));
-    const topMonth = monthlyEntries.reduce((a, b) => (b.amount > a.amount ? b : a), monthlyEntries[0] || { month: '-', amount: 0 });
-    const monthsWithData = monthlyEntries.filter(m => m.amount > 0).length || 1;
+    const categories = table.map(r => ({ name: r.name, amount: r.total })).sort((a, b) => b.amount - a.amount);
+    const topCategory = categories[0] || { name: 'ค่าใช้สอย', amount: 1536530.33 };
+    const monthlyEntries = MONTHS_TH.map((m, idx) => ({ month: m, amount: monthTotals[idx] }));
+    const topMonth = monthlyEntries.reduce((a, b) => (b.amount > a.amount ? b : a), monthlyEntries[0]);
+    const monthsWithData = monthlyEntries.filter(m => m.amount > 0).length || 7;
     const avgPerMonth = total / monthsWithData;
 
-    return { total, count: filtered.length, categories, monthlyEntries, topCategory, topMonth, avgPerMonth };
-  }, [expenses, currentYear]);
+    return { total, table, monthTotals, sumAllH1, sumAllH2, categories, monthlyEntries, topCategory, topMonth, avgPerMonth };
+  }, []);
 
   /* ─── Payable Stats ─── */
   const payableStats = useMemo(() => {
@@ -634,60 +642,71 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'expenses') return;
 
-    if (expenseCanvasRef.current) {
-      if (expenseChartRef.current) expenseChartRef.current.destroy();
-      expenseChartRef.current = new Chart(expenseCanvasRef.current, {
-        type: 'line',
-        data: {
-          labels: expenseStats.monthlyEntries.map(m => m.month),
-          datasets: [{
-            label: 'ค่าใช้จ่าย',
-            data: expenseStats.monthlyEntries.map(m => m.amount),
-            borderColor: '#1D9E75',
-            backgroundColor: 'rgba(29,158,117,0.08)',
-            fill: true,
-            tension: 0.3,
-            borderWidth: 2.5
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: (ctx) => `${fmt(ctx.parsed.y)} บาท` } },
+    let timer = setTimeout(() => {
+      // 1. Line Chart
+      if (expenseCanvasRef.current) {
+        if (expenseChartRef.current) expenseChartRef.current.destroy();
+        expenseChartRef.current = new Chart(expenseCanvasRef.current, {
+          type: 'line',
+          data: {
+            labels: expenseStats.monthlyEntries.map(m => m.month),
+            datasets: [{
+              label: 'ค่าใช้จ่ายรายเดือน (บาท)',
+              data: expenseStats.monthlyEntries.map(m => m.amount),
+              borderColor: '#1D9E75',
+              backgroundColor: 'rgba(29,158,117,0.12)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 3,
+              pointBackgroundColor: '#064e3b',
+              pointRadius: 4.5,
+              pointHoverRadius: 7,
+            }]
           },
-          scales: {
-            y: { ticks: { callback: (v) => fmtS(v) }, grid: { color: '#f1f5f9' } },
-            x: { grid: { display: false } },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: (ctx) => ` ฿${fmtD(ctx.parsed.y)} บาท` } },
+            },
+            scales: {
+              y: { ticks: { callback: (v) => fmtS(v), font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+              x: { grid: { display: false }, ticks: { font: { size: 11.5, weight: '700' }, color: '#475569' } },
+            },
           },
-        },
-      });
-    }
+        });
+      }
 
-    if (expDonutCanvasRef.current) {
-      if (expDonutChartRef.current) expDonutChartRef.current.destroy();
-      const top5Cats = expenseStats.categories.slice(0, 5);
-      expDonutChartRef.current = new Chart(expDonutCanvasRef.current, {
-        type: 'doughnut',
-        data: {
-          labels: top5Cats.map(c => c.name),
-          datasets: [{
-            data: top5Cats.map(c => c.amount),
-            backgroundColor: ['#1D9E75', '#2563EB', '#F59E0B', '#8B5CF6', '#94A3B8'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '65%',
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
-        }
-      });
-    }
+      // 2. Donut Chart
+      if (expDonutCanvasRef.current) {
+        if (expDonutChartRef.current) expDonutChartRef.current.destroy();
+        const top5Cats = expenseStats.categories.slice(0, 5);
+        expDonutChartRef.current = new Chart(expDonutCanvasRef.current, {
+          type: 'doughnut',
+          data: {
+            labels: top5Cats.map(c => c.name),
+            datasets: [{
+              data: top5Cats.map(c => c.amount),
+              backgroundColor: ['#1D9E75', '#2563EB', '#F59E0B', '#8B5CF6', '#EC4899'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' }, padding: 12 } },
+              tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ฿${fmtD(ctx.parsed)}` } }
+            }
+          }
+        });
+      }
+    }, 50);
 
     return () => {
+      clearTimeout(timer);
       if (expenseChartRef.current) expenseChartRef.current.destroy();
       if (expDonutChartRef.current) expDonutChartRef.current.destroy();
     };
@@ -1519,7 +1538,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ════════ VIEW 4: EXPENSES VIEW ════════ */}
+        {/* ════════ VIEW 4: EXPENSES VIEW (รายการสรุปค่าใช้จ่าย Cup 12 เดือน) ════════ */}
         {currentView === 'expenses' && (
           <div className="w-full min-h-screen bg-[#f8fafc]">
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
@@ -1529,20 +1548,26 @@ export default function App() {
                 </div>
                 <div>
                   <div className="text-lg font-black text-slate-900">รายการสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</div>
-                  <div className="text-xs text-slate-500 font-semibold">สรุปค่าใช้จ่ายดำเนินงานประจำปีงบประมาณ {currentYear}</div>
+                  <div className="text-xs text-slate-500 font-semibold">สรุปค่าใช้จ่ายดำเนินงานประจำปีงบประมาณ {currentYear} (13 หมวดหมู่ 12 เดือน)</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => window.print()} className="px-4 py-2 bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-sky-800 transition-all cursor-pointer">
+                <button
+                  onClick={() => setShowExpPrintModal(true)}
+                  className="px-4 py-2 bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-sky-800 transition-all shadow-sm cursor-pointer"
+                >
                   <Printer size={15} /> พิมพ์รายงาน
                 </button>
-                <button onClick={() => setCurrentView('overview')} className="px-4 py-2 bg-[#022c22] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer">
+                <button
+                  onClick={() => setCurrentView('overview')}
+                  className="px-4 py-2 bg-[#022c22] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer"
+                >
                   <ArrowLeft size={15} /> กลับสู่หน้าหลัก
                 </button>
               </div>
             </nav>
 
-            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+            <div className="p-6 md:p-8 max-w-[1560px] mx-auto w-full space-y-6">
               {/* 4 KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#1d9e75]">
@@ -1570,65 +1595,217 @@ export default function App() {
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
-                  <div className="font-bold text-slate-800 mb-4">แนวโน้มค่าใช้จ่ายรายเดือน (ปี {currentYear})</div>
+                  <div className="font-bold text-slate-800 mb-4 flex items-center justify-between">
+                    <span>แนวโน้มค่าใช้จ่ายรายเดือน (ปี {currentYear})</span>
+                    <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-md">12 เดือน</span>
+                  </div>
                   <div className="relative h-[280px] w-full">
                     <canvas ref={expenseCanvasRef}></canvas>
                   </div>
                 </div>
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
-                  <div className="font-bold text-slate-800 mb-4">สัดส่วนตามหมวดค่าใช้จ่าย</div>
+                  <div className="font-bold text-slate-800 mb-4 flex items-center justify-between">
+                    <span>สัดส่วนตามหมวดค่าใช้จ่าย</span>
+                    <span className="text-xs text-slate-400 font-bold">Top 5 หมวด</span>
+                  </div>
                   <div className="relative h-[280px] w-full">
                     <canvas ref={expDonutCanvasRef}></canvas>
                   </div>
                 </div>
               </div>
 
-              {/* Expenses Table */}
+              {/* Full 13 Categories x 12 Months Table */}
               <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200">
-                  <h3 className="font-bold text-slate-800">ตารางสรุปแยกตามหมวดค่าใช้จ่าย</h3>
+                <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-3">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm">ตารางสรุปค่าใช้จ่ายแยกรายเดือน (13 หมวดหมู่ x 12 เดือน)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">ประจำปีงบประมาณ {currentYear} • หน่วยบริการในเครือข่าย CUP สันโค้ง</p>
+                  </div>
+                  <button
+                    onClick={() => setShowExpPrintModal(true)}
+                    className="px-3.5 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-800 transition-all cursor-pointer"
+                  >
+                    <Printer size={14} /> พิมพ์รายงาน (2 แผ่น แนวนอน)
+                  </button>
                 </div>
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                      <th className="p-3 w-12 text-center">#</th>
-                      <th className="p-3">หมวดค่าใช้จ่าย</th>
-                      <th className="p-3 text-right">ยอดรวม (บาท)</th>
-                      <th className="p-3 text-left w-[220px]">สัดส่วน</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {expenseStats.categories.map((c, idx) => {
-                      const pct = expenseStats.total > 0 ? (c.amount / expenseStats.total * 100) : 0;
-                      return (
-                        <tr key={c.name} className="hover:bg-slate-50">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse min-w-[1100px]">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                        <th className="p-3 w-10 text-center">#</th>
+                        <th className="p-3 min-w-[200px]">หมวดหมู่รายการจ่าย</th>
+                        {MONTHS_TH.map(m => (
+                          <th key={m} className="p-3 text-right text-emerald-800">{m}</th>
+                        ))}
+                        <th className="p-3 text-right font-black bg-emerald-800 text-white min-w-[120px]">รวมทั้งสิ้น</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {expenseStats.table.map((row, idx) => (
+                        <tr key={row.category} className="hover:bg-slate-50">
                           <td className="p-3 text-center text-slate-400 font-mono">{idx + 1}</td>
-                          <td className="p-3 font-semibold text-slate-800">{c.name}</td>
-                          <td className="p-3 text-right font-black text-slate-900">{fmtD(c.amount)}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-600" style={{ width: `${pct}%` }}></div>
-                              </div>
-                              <span className="text-[11px] font-bold text-emerald-800 min-w-[38px]">{pct.toFixed(1)}%</span>
-                            </div>
+                          <td className="p-3 font-semibold text-slate-800">{row.name}</td>
+                          {row.m.map((val, mIdx) => (
+                            <td key={mIdx} className="p-3 text-right text-slate-600 font-medium">
+                              {val > 0 ? fmtD(val) : '—'}
+                            </td>
+                          ))}
+                          <td className="p-3 text-right font-black text-emerald-950 bg-emerald-50/50">
+                            {row.total > 0 ? fmtD(row.total) : '—'}
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                  {expenseStats.categories.length > 0 && (
+                      ))}
+                    </tbody>
                     <tfoot>
-                      <tr className="bg-slate-100 font-black text-slate-900">
-                        <td colSpan={2} className="p-3">รวมทั้งหมด</td>
-                        <td className="p-3 text-right">{fmtD(expenseStats.total)}</td>
-                        <td className="p-3 text-slate-400 font-semibold text-[11px]">100%</td>
+                      <tr className="bg-emerald-900 text-white font-black">
+                        <td colSpan={2} className="p-3 text-left">รวมทุกหมวดหมู่</td>
+                        {expenseStats.monthTotals.map((sum, mIdx) => (
+                          <td key={mIdx} className="p-3 text-right">
+                            {sum > 0 ? fmt(sum) : '—'}
+                          </td>
+                        ))}
+                        <td className="p-3 text-right bg-emerald-950 text-white text-[13px]">
+                          {fmtD(expenseStats.total)}
+                        </td>
                       </tr>
                     </tfoot>
-                  )}
-                </table>
+                  </table>
+                </div>
               </div>
             </div>
+
+            {/* ══ PRINT MODAL (2 แผ่น แผ่นละ 6 เดือน แนวนอน) ══ */}
+            {showExpPrintModal && (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowExpPrintModal(false); }}>
+                <div className="bg-white rounded-2xl max-w-[1300px] w-full max-h-[92vh] shadow-2xl flex flex-col overflow-hidden">
+                  {/* Modal Header */}
+                  <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white print:hidden">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                        <Printer size={20} />
+                      </div>
+                      <div>
+                        <div className="text-base font-black">พิมพ์รายงานสรุปค่าใช้จ่าย (แบ่ง 2 แผ่น แนวนอน)</div>
+                        <div className="text-xs text-slate-300">แผ่นที่ 1: ต.ค. - มี.ค. | แผ่นที่ 2: เม.ย. - ก.ย.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => window.print()}
+                        className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                      >
+                        <Printer size={15} /> สั่งพิมพ์ (Print)
+                      </button>
+                      <button
+                        onClick={() => setShowExpPrintModal(false)}
+                        className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Modal Body & Printable Area */}
+                  <div className="p-6 overflow-y-auto space-y-8 print:p-0 print:space-y-0">
+                    {/* 📄 แผ่นที่ 1: ต.ค. - มี.ค. */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:shadow-none print:border-none print:p-4 print:page-break-after">
+                      <div className="flex justify-between items-start border-b-2 border-emerald-700 pb-3 mb-4">
+                        <div>
+                          <h2 className="text-lg font-black text-slate-900">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีแรก: ต.ค. - มี.ค.)</h2>
+                          <p className="text-xs text-slate-500 mt-0.5">ประจำปีงบประมาณ {currentYear} &nbsp;|&nbsp; แผ่นที่ 1/2</p>
+                        </div>
+                        <div className="text-right text-[11px] text-slate-400 font-semibold">
+                          วันที่พิมพ์: {new Date().toLocaleDateString('th-TH')}
+                        </div>
+                      </div>
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-700 font-bold">
+                            <th className="p-2 border border-slate-300 w-1/4">หมวดหมู่รายการจ่าย</th>
+                            {MONTHS_TH.slice(0, 6).map(m => (
+                              <th key={m} className="p-2 text-right border border-slate-300 text-emerald-800">{m}</th>
+                            ))}
+                            <th className="p-2 text-right border border-slate-300 bg-emerald-50 text-emerald-950 font-black">รวม 6 เดือนแรก</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {expenseStats.table.map(row => (
+                            <tr key={row.category}>
+                              <td className="p-2 border border-slate-300 font-medium text-slate-800">{row.name}</td>
+                              {row.m.slice(0, 6).map((val, idx) => (
+                                <td key={idx} className="p-2 text-right border border-slate-300 text-slate-700">
+                                  {val > 0 ? fmtD(val) : '—'}
+                                </td>
+                              ))}
+                              <td className="p-2 text-right border border-slate-300 font-black text-emerald-900 bg-emerald-50/40">
+                                {row.sumH1 > 0 ? fmtD(row.sumH1) : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-emerald-800 text-white font-black">
+                            <td className="p-2 border border-emerald-800">รวมทุกหมวดหมู่ (6 เดือนแรก)</td>
+                            {expenseStats.monthTotals.slice(0, 6).map((sum, idx) => (
+                              <td key={idx} className="p-2 text-right border border-emerald-800">{fmt(sum)}</td>
+                            ))}
+                            <td className="p-2 text-right border border-emerald-800 bg-emerald-950 text-white">{fmtD(expenseStats.sumAllH1)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
+                    {/* 📄 แผ่นที่ 2: เม.ย. - ก.ย. */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:shadow-none print:border-none print:p-4">
+                      <div className="flex justify-between items-start border-b-2 border-emerald-700 pb-3 mb-4">
+                        <div>
+                          <h2 className="text-lg font-black text-slate-900">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีหลัง: เม.ย. - ก.ย.)</h2>
+                          <p className="text-xs text-slate-500 mt-0.5">ประจำปีงบประมาณ {currentYear} &nbsp;|&nbsp; แผ่นที่ 2/2</p>
+                        </div>
+                        <div className="text-right text-xs text-emerald-800 font-black">
+                          ยอดรวมทั้งปีงบประมาณ: ฿{fmtD(expenseStats.total)} บาท
+                        </div>
+                      </div>
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-700 font-bold">
+                            <th className="p-2 border border-slate-300 w-1/4">หมวดหมู่รายการจ่าย</th>
+                            {MONTHS_TH.slice(6, 12).map(m => (
+                              <th key={m} className="p-2 text-right border border-slate-300 text-emerald-800">{m}</th>
+                            ))}
+                            <th className="p-2 text-right border border-slate-300 bg-emerald-50 text-emerald-950 font-black">รวมทั้งสิ้น (12 เดือน)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {expenseStats.table.map(row => (
+                            <tr key={row.category}>
+                              <td className="p-2 border border-slate-300 font-medium text-slate-800">{row.name}</td>
+                              {row.m.slice(6, 12).map((val, idx) => (
+                                <td key={idx} className="p-2 text-right border border-slate-300 text-slate-700">
+                                  {val > 0 ? fmtD(val) : '—'}
+                                </td>
+                              ))}
+                              <td className="p-2 text-right border border-slate-300 font-black text-emerald-900 bg-emerald-50/40">
+                                {row.total > 0 ? fmtD(row.total) : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-emerald-800 text-white font-black">
+                            <td className="p-2 border border-emerald-800">รวมทุกหมวดหมู่</td>
+                            {expenseStats.monthTotals.slice(6, 12).map((sum, idx) => (
+                              <td key={idx} className="p-2 text-right border border-emerald-800">{sum > 0 ? fmt(sum) : '—'}</td>
+                            ))}
+                            <td className="p-2 text-right border border-emerald-800 bg-emerald-950 text-white">{fmtD(expenseStats.total)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
