@@ -1967,80 +1967,142 @@ export default function App() {
             </nav>
 
             <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
-              {/* Filter Dropdown */}
-              <div className="print:hidden bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-xs text-slate-700">เลือกหน่วยบริการ:</span>
-                  <select
-                    value={payableHosp}
-                    onChange={(e) => setPayableHosp(e.target.value)}
-                    className="px-4 py-2 rounded-xl border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 min-w-[280px] outline-none cursor-pointer"
-                  >
-                    {PAYABLE_HOSP_OPTIONS.map(h => (
-                      <option key={h.code} value={h.code}>{h.label}</option>
-                    ))}
-                  </select>
+              {/* 🌟 Filter Banner: เลือกหน่วยบริการเด่นชัด */}
+              <div className="print:hidden bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#064e3b] rounded-3xl p-5 md:p-6 shadow-xl border border-slate-700/60 flex items-center justify-between gap-6 flex-wrap">
+                <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shadow-inner shrink-0">
+                    <Building2 size={24} />
+                  </div>
+                  <div className="space-y-1 w-full max-w-[480px]">
+                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      เลือกหน่วยบริการที่ต้องการดูข้อมูล
+                    </div>
+                    <select
+                      value={payableHosp}
+                      onChange={(e) => setPayableHosp(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border-2 border-emerald-500/40 bg-slate-900/90 text-sm font-black text-white outline-none cursor-pointer hover:border-emerald-400 transition-all shadow-md focus:ring-2 focus:ring-emerald-500/30"
+                    >
+                      {PAYABLE_HOSP_OPTIONS.map(h => (
+                        <option key={h.code} value={h.code} className="bg-slate-900 text-white py-1">
+                          {h.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500 font-semibold">ปรับยอดและตารางอัตโนมัติตามหน่วยบริการที่เลือก</div>
-              </div>
 
-              {/* 4 KPI Cards (รูปแบบเดิม) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#10b981]">
-                  <div className="text-xs font-bold text-slate-500">ยอดเงินรวม ปีงบ 2568</div>
-                  <div className="text-xl font-black text-[#065f46] mt-1">฿{fmtD(payableStats.sum68)}</div>
-                </div>
-                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#2563eb]">
-                  <div className="text-xs font-bold text-slate-500">ยอดเงินรวม ปีงบ 2569</div>
-                  <div className="text-xl font-black text-[#1e40af] mt-1">฿{fmtD(payableStats.sum69)}</div>
-                </div>
-                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#f59e0b]">
-                  <div className="text-xs font-bold text-slate-500">ยอดรับเงินรวม (ครั้งที่ 1 + 2)</div>
-                  <div className="text-xl font-black text-[#b45309] mt-1">฿{fmtD(payableStats.totalReceived)}</div>
-                </div>
-                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#0f172a]">
-                  <div className="text-xs font-bold text-slate-500">ยอดเงินคงเหลือสุทธิ</div>
-                  <div className="text-xl font-black text-slate-900 mt-1">฿{fmtD(payableStats.netRemain)}</div>
+                <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/15 text-right shrink-0">
+                  <div className="text-[11px] font-bold text-slate-300">กำลังแสดงข้อมูลของ:</div>
+                  <div className="text-sm font-black text-emerald-300">
+                    {PAYABLE_HOSP_OPTIONS.find(h => h.code === payableHosp)?.label}
+                  </div>
                 </div>
               </div>
 
-              {/* Table 1: สรุปการจ่ายเงิน (รูปแบบเดิม) */}
-              <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                  <h3 className="font-bold text-slate-800 text-sm">ตารางสรุปการจ่ายเงินและยอดหักชดเชย (แยกตามหน่วยบริการ)</h3>
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">ยอดจัดสรรจริง</span>
+              {/* 🌟 4 KPI Cards: เด่นชัด ตัวเลขใหญ่ มีสีกรอบและ Gradient มิติสวยงาม */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+                {/* Card 1: ยอดเงินรวม ปีงบ 2568 */}
+                <div className="bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/30 rounded-3xl border-2 border-emerald-200/80 p-5 shadow-lg shadow-emerald-950/5 relative overflow-hidden transition-all hover:scale-[1.02] hover:shadow-emerald-500/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200">ปีงบ 2568</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black text-xs">68</div>
+                  </div>
+                  <div className="text-xs font-bold text-slate-600 mt-3">ยอดเงินรวม ปีงบ 2568</div>
+                  <div className="text-2xl md:text-3xl font-black text-emerald-800 mt-1 tracking-tight">
+                    ฿{fmtD(payableStats.sum68)}
+                  </div>
+                  <div className="text-[11px] font-semibold text-emerald-600 mt-1">ยอดจัดสรรทั้งปี 2568</div>
                 </div>
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                      <th className="p-3">หน่วยบริการ</th>
-                      <th className="p-3 text-right">รับเงินครั้งที่ 1 (บาท)</th>
-                      <th className="p-3 text-right">รับเงินครั้งที่ 2 (บาท)</th>
-                      <th className="p-3 text-right text-red-600">หักเงิน (บาท)</th>
-                      <th className="p-3 text-right font-black text-emerald-800 bg-emerald-50">ยอดสุทธิ (บาท)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {payableStats.filteredPayData.map(r => (
-                      <tr key={r.code} className="hover:bg-slate-50">
-                        <td className="p-3 font-bold text-slate-800">{r['หน่วยบริการ']}</td>
-                        <td className="p-3 text-right text-slate-600">{r['รับเงินครั้งที่1'] > 0 ? fmtD(r['รับเงินครั้งที่1']) : '—'}</td>
-                        <td className="p-3 text-right text-slate-600">{r['รับเงินครั้งที่2'] > 0 ? fmtD(r['รับเงินครั้งที่2']) : '—'}</td>
-                        <td className={`p-3 text-right ${r['หักเงิน'] > 0 ? 'text-red-600 font-bold' : 'text-slate-400'}`}>{r['หักเงิน'] > 0 ? fmtD(r['หักเงิน']) : '—'}</td>
-                        <td className="p-3 text-right font-black text-emerald-800 bg-emerald-50/50">{r['ยอดสุทธิ'] > 0 ? fmtD(r['ยอดสุทธิ']) : '—'}</td>
+
+                {/* Card 2: ยอดเงินรวม ปีงบ 2569 */}
+                <div className="bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30 rounded-3xl border-2 border-blue-200/80 p-5 shadow-lg shadow-blue-950/5 relative overflow-hidden transition-all hover:scale-[1.02] hover:shadow-blue-500/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-800 bg-blue-100/80 px-2.5 py-1 rounded-lg border border-blue-200">ปีงบ 2569</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-black text-xs">69</div>
+                  </div>
+                  <div className="text-xs font-bold text-slate-600 mt-3">ยอดเงินรวม ปีงบ 2569</div>
+                  <div className="text-2xl md:text-3xl font-black text-blue-800 mt-1 tracking-tight">
+                    ฿{fmtD(payableStats.sum69)}
+                  </div>
+                  <div className="text-[11px] font-semibold text-blue-600 mt-1">ยอดจัดสรรทั้งปี 2569</div>
+                </div>
+
+                {/* Card 3: ยอดรับเงินรวม (ครั้งที่ 1 + 2) */}
+                <div className="bg-gradient-to-br from-amber-50/80 via-white to-amber-50/30 rounded-3xl border-2 border-amber-200/80 p-5 shadow-lg shadow-amber-950/5 relative overflow-hidden transition-all hover:scale-[1.02] hover:shadow-amber-500/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded-lg border border-amber-200">รับแล้ว</span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black text-xs">1+2</div>
+                  </div>
+                  <div className="text-xs font-bold text-slate-600 mt-3">ยอดรับเงินรวม (ครั้งที่ 1 + 2)</div>
+                  <div className="text-2xl md:text-3xl font-black text-amber-700 mt-1 tracking-tight">
+                    ฿{fmtD(payableStats.totalReceived)}
+                  </div>
+                  <div className="text-[11px] font-semibold text-amber-600 mt-1">ยอดเงินที่ได้รับโอนแล้ว</div>
+                </div>
+
+                {/* Card 4: ยอดเงินคงเหลือสุทธิ (👑 HERO HIGHLIGHT CARD) */}
+                <div className="bg-gradient-to-br from-[#064e3b] via-[#022c22] to-[#0f172a] rounded-3xl border-2 border-emerald-400/50 p-5 shadow-xl shadow-emerald-950/30 text-white relative overflow-hidden transition-all hover:scale-[1.02]">
+                  <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none"></div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-300 bg-emerald-950/80 border border-emerald-400/40 px-2.5 py-1 rounded-lg shadow-sm">
+                      ✨ ยอดคงเหลือสุทธิ
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center font-black text-xs">สุทธิ</div>
+                  </div>
+                  <div className="text-xs font-bold text-emerald-200/80 mt-3">ยอดเงินคงเหลือสุทธิ</div>
+                  <div className="text-2xl md:text-3xl font-black text-emerald-300 mt-1 tracking-tight drop-shadow-md">
+                    ฿{fmtD(payableStats.netRemain)}
+                  </div>
+                  <div className="text-[11px] font-semibold text-emerald-400 mt-1 flex items-center gap-1">
+                    <CheckCircle2 size={12} className="text-emerald-400" />
+                    <span>คำนวณสุทธิหลังหักเงิน</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table 1: สรุปการจ่ายเงิน (รูปแบบเดิม ตกแต่งให้คมชัด) */}
+              <div className="bg-white rounded-3xl border-2 border-slate-200/80 overflow-hidden shadow-md">
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-black text-slate-800 text-sm">ตารางสรุปการจ่ายเงินและยอดหักชดเชย (แยกตามหน่วยบริการ)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">ยอดรับเงินครั้งที่ 1, 2 และยอดหักชดเชยสุทธิ</p>
+                  </div>
+                  <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full shadow-sm">ยอดจัดสรรจริง</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100/80 text-slate-700 font-black border-b-2 border-slate-200">
+                        <th className="p-3.5">หน่วยบริการ</th>
+                        <th className="p-3.5 text-right">รับเงินครั้งที่ 1 (บาท)</th>
+                        <th className="p-3.5 text-right">รับเงินครั้งที่ 2 (บาท)</th>
+                        <th className="p-3.5 text-right text-red-600">หักเงิน (บาท)</th>
+                        <th className="p-3.5 text-right font-black text-emerald-900 bg-emerald-50/80">ยอดสุทธิ (บาท)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-slate-100 font-black text-slate-900">
-                      <td className="p-3">รวมทั้งหมด ({payableStats.filteredPayData.length} หน่วยบริการ)</td>
-                      <td className="p-3 text-right">{fmtD(payableStats.p1)}</td>
-                      <td className="p-3 text-right">{fmtD(payableStats.p2)}</td>
-                      <td className="p-3 text-right text-red-600">{fmtD(payableStats.ded)}</td>
-                      <td className="p-3 text-right text-emerald-900 bg-emerald-50">{fmtD(payableStats.netRemain)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {payableStats.filteredPayData.map(r => (
+                        <tr key={r.code} className="hover:bg-emerald-50/30 transition-colors">
+                          <td className="p-3.5 font-bold text-slate-800">{r['หน่วยบริการ']}</td>
+                          <td className="p-3.5 text-right font-semibold text-slate-700">{r['รับเงินครั้งที่1'] > 0 ? fmtD(r['รับเงินครั้งที่1']) : '—'}</td>
+                          <td className="p-3.5 text-right font-semibold text-slate-700">{r['รับเงินครั้งที่2'] > 0 ? fmtD(r['รับเงินครั้งที่2']) : '—'}</td>
+                          <td className={`p-3.5 text-right font-bold ${r['หักเงิน'] > 0 ? 'text-red-600' : 'text-slate-400'}`}>{r['หักเงิน'] > 0 ? fmtD(r['หักเงิน']) : '—'}</td>
+                          <td className="p-3.5 text-right font-black text-emerald-800 bg-emerald-50/50 text-sm">{r['ยอดสุทธิ'] > 0 ? fmtD(r['ยอดสุทธิ']) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-slate-900 text-white font-black">
+                        <td className="p-3.5">รวมทั้งหมด ({payableStats.filteredPayData.length} หน่วยบริการ)</td>
+                        <td className="p-3.5 text-right text-emerald-300">{fmtD(payableStats.p1)}</td>
+                        <td className="p-3.5 text-right text-emerald-300">{fmtD(payableStats.p2)}</td>
+                        <td className="p-3.5 text-right text-red-400">{fmtD(payableStats.ded)}</td>
+                        <td className="p-3.5 text-right text-emerald-400 bg-emerald-950 font-black text-sm">{fmtD(payableStats.netRemain)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
 
               {/* Table 2: Statement Matrix */}
