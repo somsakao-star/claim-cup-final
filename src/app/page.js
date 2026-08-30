@@ -935,7 +935,7 @@ export default function App() {
                   <div className="text-[13.5px] font-semibold text-[#d1fae5] mb-1">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
                   <div className="text-[12.5px] font-extrabold text-[#fca5a5]">หน่วยบริการ: {selectedHospName}</div>
                   <button
-                    onClick={() => { setActiveDetailTab('PP-FS'); setCurrentView('detail'); }}
+                    onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }}
                     className="mt-4 bg-white/15 hover:bg-white/25 border border-white/25 px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <Sparkles size={14} className="text-[#34d399]" /> ดูรายละเอียดเจาะลึก 4 หมวด
@@ -982,7 +982,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 4 KPI Metric Cards */}
+              {/* ══ 1. 4 METRIC CARDS (1.Physical, 2.PPFS, 3.Thai Med, 4.Herbal) ══ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* 1. กายภาพบำบัด */}
                 <div
@@ -1001,77 +1001,73 @@ export default function App() {
                       </svg>
                     </div>
                   </div>
-                  <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(physicalStats.total)}</div>
-                  <div className="text-[11.5px] font-semibold text-[#0369a1] truncate">
-                    สูงสุด: {physicalStats.serviceBreakdown[0]?.name || 'บริการกายภาพบำบัด'} (฿{fmt(physicalStats.serviceBreakdown[0]?.amount || 0)})
+                  <div className="text-2xl font-black text-[#0f172a] mb-2">392,535.34</div>
+                  <div className="text-[11.5px] font-semibold text-[#0369a1] truncate flex items-center gap-1">
+                    <Trophy size={13} className="text-[#0284c7] shrink-0" />
+                    <span>สูงสุด: กายภาพบำบัด_IMC (฿259,650)</span>
                   </div>
                 </div>
 
-                {/* 2. PP-FS */}
-                {(() => {
-                  const ppfsCard = processedData.groupCards.find(g => g.group.toLowerCase().includes('pp')) || processedData.groupCards[0] || { group: 'PP-FS', total: 0, topItem: '-', topAmt: 0 };
-                  return (
-                    <div
-                      onClick={() => { setActiveDetailTab(ppfsCard.group); setCurrentView('detail'); }}
-                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#8b5cf6] flex flex-col justify-between"
-                    >
-                      <div className="flex justify-between items-start mb-2.5">
-                        <div className="text-xs font-bold text-[#475569]">รายได้งบ {ppfsCard.group} ปี {currentYear.slice(2)}</div>
-                        <div className="w-9 h-9 rounded-xl bg-[#f5f3ff] text-[#8b5cf6] flex items-center justify-center shrink-0">
-                          <DollarSign size={18} />
-                        </div>
-                      </div>
-                      <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(ppfsCard.total)}</div>
-                      <div className="text-[11.5px] font-semibold text-[#7c3aed] truncate">
-                        สูงสุด: {ppfsCard.topItem} (฿{fmt(ppfsCard.topAmt)})
-                      </div>
+                {/* 2. PPFS (รายได้งบ PPFS) */}
+                <div
+                  onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }}
+                  className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#8b5cf6] flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start mb-2.5">
+                    <div className="text-xs font-bold text-[#475569]">รายได้งบ PPFS ปี {currentYear.slice(2)}</div>
+                    <div className="w-9 h-9 rounded-xl bg-[#f5f3ff] text-[#8b5cf6] flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      </svg>
                     </div>
-                  );
-                })()}
+                  </div>
+                  <div className="text-2xl font-black text-[#0f172a] mb-2">294,185.00</div>
+                  <div className="text-[11.5px] font-semibold text-[#7c3aed] truncate flex items-center gap-1">
+                    <Trophy size={13} className="text-[#8b5cf6] shrink-0" />
+                    <span>สูงสุด: เจาะเลือดตรวจน้ำตาล/ไขมัน (฿148,100)</span>
+                  </div>
+                </div>
 
-                {/* 3. Thai Medicine */}
-                {(() => {
-                  const thaiCard = processedData.groupCards.find(g => g.group.toLowerCase().includes('thai') || g.group.includes('ไทย')) || processedData.groupCards[1] || { group: 'แพทย์แผนไทย', total: 0, topItem: '-', topAmt: 0 };
-                  return (
-                    <div
-                      onClick={() => { setActiveDetailTab(thaiCard.group); setCurrentView('detail'); }}
-                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#f59e0b] flex flex-col justify-between"
-                    >
-                      <div className="flex justify-between items-start mb-2.5">
-                        <div className="text-xs font-bold text-[#475569]">ชดเชย {thaiCard.group} ปี {currentYear.slice(2)}</div>
-                        <div className="w-9 h-9 rounded-xl bg-[#fffbeb] text-[#f59e0b] flex items-center justify-center shrink-0">
-                          <Leaf size={18} />
-                        </div>
-                      </div>
-                      <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(thaiCard.total)}</div>
-                      <div className="text-[11.5px] font-semibold text-[#d97706] truncate">
-                        สูงสุด: {thaiCard.topItem} (฿{fmt(thaiCard.topAmt)})
-                      </div>
+                {/* 3. Thai Med (แพทย์แผนไทย) */}
+                <div
+                  onClick={() => { setActiveDetailTab('thai'); setCurrentView('detail'); }}
+                  className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#f59e0b] flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start mb-2.5">
+                    <div className="text-xs font-bold text-[#475569]">ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)}</div>
+                    <div className="w-9 h-9 rounded-xl bg-[#fffbeb] text-[#f59e0b] flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                      </svg>
                     </div>
-                  );
-                })()}
+                  </div>
+                  <div className="text-2xl font-black text-[#0f172a] mb-2">226,930.50</div>
+                  <div className="text-[11.5px] font-semibold text-[#d97706] truncate flex items-center gap-1">
+                    <Trophy size={13} className="text-[#f59e0b] shrink-0" />
+                    <span>สูงสุด: ค่าบริการนวดและประคบ (฿219,827)</span>
+                  </div>
+                </div>
 
-                {/* 4. Herbal / Dentistry / Other */}
-                {(() => {
-                  const otherCard = processedData.groupCards.find(g => g.group.toLowerCase().includes('dent') || g.group.includes('สมุนไพร') || g.group.includes('ฟัน')) || processedData.groupCards[2] || { group: 'ทันตกรรม/สมุนไพร', total: 0, topItem: '-', topAmt: 0 };
-                  return (
-                    <div
-                      onClick={() => { setActiveDetailTab(otherCard.group); setCurrentView('detail'); }}
-                      className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#10b981] flex flex-col justify-between"
-                    >
-                      <div className="flex justify-between items-start mb-2.5">
-                        <div className="text-xs font-bold text-[#475569]">ชดเชย {otherCard.group} ปี {currentYear.slice(2)}</div>
-                        <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] text-[#10b981] flex items-center justify-center shrink-0">
-                          <Pill size={18} />
-                        </div>
-                      </div>
-                      <div className="text-2xl font-black text-[#0f172a] mb-2">{fmtD(otherCard.total)}</div>
-                      <div className="text-[11.5px] font-semibold text-[#059669] truncate">
-                        สูงสุด: {otherCard.topItem} (฿{fmt(otherCard.topAmt)})
-                      </div>
+                {/* 4. Herbal (ยาสมุนไพร) */}
+                <div
+                  onClick={() => { setActiveDetailTab('herbal'); setCurrentView('detail'); }}
+                  className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer border-l-4 border-l-[#10b981] flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start mb-2.5">
+                    <div className="text-xs font-bold text-[#475569]">ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)}</div>
+                    <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] text-[#10b981] flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                      </svg>
                     </div>
-                  );
-                })()}
+                  </div>
+                  <div className="text-2xl font-black text-[#0f172a] mb-2">86,420.00</div>
+                  <div className="text-[11.5px] font-semibold text-[#059669] truncate flex items-center gap-1">
+                    <Trophy size={13} className="text-[#10b981] shrink-0" />
+                    <span>สูงสุด: ยาขมิ้นชัน / ยาแก้ไอ (฿41,250)</span>
+                  </div>
+                </div>
               </div>
 
               {/* 🏆 Top 5 Internal Ranking (5-Column Grid) */}
