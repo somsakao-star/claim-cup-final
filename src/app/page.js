@@ -1485,9 +1485,6 @@ export default function App() {
             </div>
           </div>
         )}
-            </div>
-          </div>
-        )}
 
         {/* ════════ VIEW 4: EXPENSES VIEW ════════ */}
         {currentView === 'expenses' && (
