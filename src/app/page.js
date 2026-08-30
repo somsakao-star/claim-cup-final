@@ -2096,13 +2096,11 @@ export default function App() {
       {currentView === 'overview' && (
         <aside className="print:hidden w-[260px] bg-white border-r border-[#e2e8f0] flex flex-col shrink-0 sticky top-0 h-screen z-40">
           <div className="p-5 flex items-center gap-3 border-b border-[#e2e8f0]">
-            <div className="w-[42px] h-[42px] rounded-xl bg-[#022c22] shadow-[0_4px_10px_rgba(2,44,34,0.2)] flex items-center justify-center">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.3">
-                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                <polyline points="2 17 12 22 22 17"></polyline>
-                <polyline points="2 12 12 17 22 12"></polyline>
-              </svg>
-            </div>
+            <img
+              src="/my-logo.png"
+              alt="CLAIMCUP Logo"
+              className="w-[42px] h-[42px] rounded-xl object-contain shadow-[0_4px_10px_rgba(2,44,34,0.15)] bg-[#022c22] p-0.5 border border-emerald-500/20"
+            />
             <div>
               <div className="text-[17px] font-black text-[#022c22] leading-tight">CLAIMCUP</div>
               <div className="text-[10px] text-[#059669] font-extrabold tracking-wider">SANKHONG PORTAL</div>
