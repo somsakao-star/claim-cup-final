@@ -257,6 +257,7 @@ export default function App() {
 
   const [claims, setClaims] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
   const [clockTime, setClockTime] = useState('');
@@ -311,19 +312,20 @@ export default function App() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [resC, resE, resHos] = await Promise.allSettled([
+        const [resC, resE, resHos, resP] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/api/claims`).then(r => r.json()),
           fetch(`${API_BASE_URL}/api/expenses`).then(r => r.json()),
           fetch(`${API_BASE_URL}/api/hospitals`).then(r => r.json()),
+          fetch(`${API_BASE_URL}/api/payments`).then(r => r.json()).catch(() => fetch(`${API_BASE_URL}/api/payment`).then(r => r.json())),
         ]);
 
         if (resC.status === 'fulfilled' && Array.isArray(resC.value)) setClaims(resC.value);
         if (resE.status === 'fulfilled' && Array.isArray(resE.value)) setExpenses(resE.value);
+        if (resP.status === 'fulfilled' && Array.isArray(resP.value)) setPayments(resP.value);
         if (resHos.status === 'fulfilled' && Array.isArray(resHos.value)) {
           const hMap = { 'all': 'All Cup' };
           resHos.value.forEach(h => {
             const code = String(h.hcode);
-            // กรอง hcode 2 หลักออก (54, 56, 62) เอาเฉพาะ 5 หลัก
             if (code.length >= 5) {
               hMap[code] = h.name;
             }
@@ -466,9 +468,36 @@ export default function App() {
     return { rows, sumQty68, sumAmt68, sumQty69, sumAmt69, totalDiffAmt };
   }, [claims, activeDetailTab, detailFilterHosp]);
 
-  /* ─── Expenses Stats (Using 13 Categories x 12 Months Database) ─── */
+  /* ─── Expenses Stats (Live from Railway + Reliable Fallback) ─── */
   const expenseStats = useMemo(() => {
-    const table = REAL_EXPENSES_TABLE.map(row => {
+    let sourceTable = REAL_EXPENSES_TABLE;
+
+    if (expenses && expenses.length > 0) {
+      const catRows = {};
+      Object.entries(PAYMENT_CATEGORY_MAP).forEach(([catCode, catName]) => {
+        catRows[catCode] = { category: catCode, name: catName, m: Array(12).fill(0) };
+      });
+
+      expenses.forEach(e => {
+        const yr = String(e.fiscal_year || e.year || '');
+        if (currentYear === 'all' || yr === currentYear || yr === '2569') {
+          const catCode = String(e.category || '').trim();
+          const amt = parseFloat(String(e.amount || 0).replace(/,/g, '')) || 0;
+          let mNum = parseInt(String(e.month || 0), 10);
+          
+          let mIdx = -1;
+          if (mNum >= 10 && mNum <= 12) mIdx = mNum - 10;
+          else if (mNum >= 1 && mNum <= 9) mIdx = mNum + 2;
+
+          if (catRows[catCode] && mIdx >= 0 && mIdx < 12) {
+            catRows[catCode].m[mIdx] += amt;
+          }
+        }
+      });
+      sourceTable = Object.values(catRows);
+    }
+
+    const table = sourceTable.map(row => {
       const rowSum = row.m.reduce((a, b) => a + b, 0);
       const sumH1 = row.m.slice(0, 6).reduce((a, b) => a + b, 0); // Oct - Mar
       const sumH2 = row.m.slice(6, 12).reduce((a, b) => a + b, 0); // Apr - Sep
@@ -491,13 +520,122 @@ export default function App() {
     const monthlyEntries = MONTHS_TH.map((m, idx) => ({ month: m, amount: monthTotals[idx] }));
     const topMonth = monthlyEntries.reduce((a, b) => (b.amount > a.amount ? b : a), monthlyEntries[0]);
     const monthsWithData = monthlyEntries.filter(m => m.amount > 0).length || 7;
-    const avgPerMonth = total / monthsWithData;
+    const avgPerMonth = total / (monthsWithData || 1);
 
     return { total, table, monthTotals, sumAllH1, sumAllH2, categories, monthlyEntries, topCategory, topMonth, avgPerMonth };
-  }, []);
+  }, [expenses, currentYear]);
 
-  /* ─── Payable Stats ─── */
+  /* ─── Payable Stats (Using Payment table: rep, month, fiscal_year, platform, hcode, amount, receive) ─── */
   const payableStats = useMemo(() => {
+    if (payments && payments.length > 0) {
+      // 1. Calculate sum68 and sum69 for all or selected hospital
+      let sum68 = 0, sum69 = 0;
+      payments.forEach(p => {
+        const yr = String(p.fiscal_year || '');
+        const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
+        const matchHosp = payableHosp === 'ALL' || String(p.hcode) === payableHosp;
+        if (matchHosp) {
+          if (yr.includes('2568') || yr.endsWith('68')) sum68 += amt;
+          if (yr.includes('2569') || yr.endsWith('69')) sum69 += amt;
+        }
+      });
+
+      // 2. Table 1: สรุปแยกตามหน่วยบริการ (สำหรับปีที่เลือก หรือปีล่าสุด)
+      const currentYearFilter = payableYear === '69' ? '69' : '68';
+      const hospDataMap = {};
+      Object.entries(hospitalMap).filter(([k]) => k !== 'all').forEach(([code, name]) => {
+        hospDataMap[code] = {
+          'หน่วยบริการ': `${code} - ${name}`,
+          'code': code,
+          'รับเงินครั้งที่1': 0,
+          'รับเงินครั้งที่2': 0,
+          'หักเงิน': 0,
+          'ยอดสุทธิ': 0
+        };
+      });
+
+      let p1 = 0, p2 = 0, ded = 0;
+
+      payments.forEach(p => {
+        const yr = String(p.fiscal_year || '');
+        const matchYr = yr.includes(`25${currentYearFilter}`) || yr.endsWith(currentYearFilter);
+        const code = String(p.hcode || '').trim();
+        const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
+        const rep = parseInt(String(p.rep || 1), 10);
+        const isRec = String(p.receive || '').trim().toUpperCase() === 'Y';
+
+        if (matchYr && hospDataMap[code]) {
+          if (isRec) {
+            if (rep === 2) {
+              hospDataMap[code]['รับเงินครั้งที่2'] += amt;
+              p2 += amt;
+            } else {
+              hospDataMap[code]['รับเงินครั้งที่1'] += amt;
+              p1 += amt;
+            }
+          } else {
+            hospDataMap[code]['หักเงิน'] += amt;
+            ded += amt;
+          }
+        }
+      });
+
+      Object.values(hospDataMap).forEach(row => {
+        row['ยอดสุทธิ'] = (row['รับเงินครั้งที่1'] + row['รับเงินครั้งที่2']) - row['หักเงิน'];
+      });
+
+      const filteredPayData = Object.values(hospDataMap).filter(r => payableHosp === 'ALL' || r.code === payableHosp);
+      const totalReceived = p1 + p2;
+      const netRemain = totalReceived - ded;
+
+      // 3. Table 2: Statement Matrix รายเดือน x Platform
+      const monthMatrixMap = {};
+      payments.forEach(p => {
+        const yr = String(p.fiscal_year || '');
+        const matchYr = yr.includes(`25${currentYearFilter}`) || yr.endsWith(currentYearFilter);
+        const matchHosp = payableHosp === 'ALL' || String(p.hcode) === payableHosp;
+        if (matchYr && matchHosp) {
+          const m = String(p.month || '').trim();
+          const platform = String(p.platform || 'อื่นๆ').trim();
+          const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
+
+          if (!monthMatrixMap[m]) {
+            monthMatrixMap[m] = {
+              'Month': m,
+              'KTB Claim': 0,
+              'MOPH Claim': 0,
+              'E-Claim': 0,
+              'ค่าบริการ CXR': 0,
+              'วัณโรค (TB)': 0,
+              'แพทย์แผนไทย': 0,
+              'Total': 0
+            };
+          }
+          if (monthMatrixMap[m][platform] !== undefined) {
+            monthMatrixMap[m][platform] += amt;
+          } else {
+            monthMatrixMap[m][platform] = amt;
+          }
+          monthMatrixMap[m]['Total'] += amt;
+        }
+      });
+
+      let matrixRows = Object.values(monthMatrixMap);
+      if (matrixRows.length === 0) {
+        matrixRows = payableYear === '69' ? (PAY_MATRIX_69[payableHosp] || PAY_MATRIX_69['ALL'] || []) : (PAY_MATRIX_68[payableHosp] || PAY_MATRIX_68['ALL'] || []);
+      }
+
+      const matrixTotal = matrixRows.reduce((acc, row) => {
+        ['KTB Claim', 'MOPH Claim', 'E-Claim', 'ค่าบริการ CXR', 'วัณโรค (TB)', 'แพทย์แผนไทย', 'Total'].forEach(k => {
+          acc[k] = (acc[k] || 0) + (row[k] || 0);
+        });
+        return acc;
+      }, {});
+
+      return { filteredPayData, p1, p2, ded, totalReceived, netRemain, sum68, sum69, matrixRows, matrixTotal };
+    }
+
+    // Fallback if payments table is empty
     const filteredPayData = PAY_DATA.filter(r => payableHosp === 'ALL' || r.code === payableHosp);
     let p1 = 0, p2 = 0, ded = 0;
     filteredPayData.forEach(r => {
@@ -522,7 +660,7 @@ export default function App() {
     }, {});
 
     return { filteredPayData, p1, p2, ded, totalReceived, netRemain, sum68, sum69, matrixRows, matrixTotal };
-  }, [payableHosp, payableYear]);
+  }, [payments, payableHosp, payableYear, hospitalMap]);
 
   /* ─── Physical Therapy Stats ─── */
   const physicalStats = useMemo(() => {
@@ -1850,7 +1988,7 @@ export default function App() {
                 <div className="text-xs text-slate-500 font-semibold">ปรับยอดและตารางอัตโนมัติตามหน่วยบริการที่เลือก</div>
               </div>
 
-              {/* 4 KPI Cards */}
+              {/* 4 KPI Cards (รูปแบบเดิม) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#10b981]">
                   <div className="text-xs font-bold text-slate-500">ยอดเงินรวม ปีงบ 2568</div>
@@ -1870,7 +2008,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Table 1: สรุปการจ่ายเงิน */}
+              {/* Table 1: สรุปการจ่ายเงิน (รูปแบบเดิม) */}
               <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                   <h3 className="font-bold text-slate-800 text-sm">ตารางสรุปการจ่ายเงินและยอดหักชดเชย (แยกตามหน่วยบริการ)</h3>
