@@ -922,24 +922,44 @@ export default function App() {
 
             <div className="p-6 md:p-8 max-w-[1560px] mx-auto w-full space-y-6">
               
-              {/* 🌲 Hero Banner (Forest Gradient) */}
-              <div className="bg-gradient-to-br from-[#022c22] to-[#064e3b] rounded-3xl p-7 md:p-9 text-white shadow-[0_10px_30px_rgba(2,44,34,0.15)] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 items-center">
-                <div>
-                  <div className="text-[11.5px] font-extrabold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#34d399]"></span> CUMULATIVE HEALTH DISBURSEMENT
+              {/* 🌲 Hero Banner (Forest Gradient - Premium Balanced & Bold) */}
+              <div className="bg-gradient-to-br from-[#022c22] via-[#043e30] to-[#064e3b] rounded-3xl p-7 md:p-9 text-white shadow-[0_12px_35px_rgba(2,44,34,0.2)] flex flex-col lg:flex-row items-center justify-between gap-8 border border-emerald-500/20">
+                <div className="flex-1 min-w-[320px]">
+                  <div className="text-[12px] font-extrabold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] animate-pulse"></span>
+                    <span>CUMULATIVE HEALTH DISBURSEMENT</span>
                   </div>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-extrabold text-[#34d399]">฿</span>
-                    <span className="text-5xl font-black tracking-tight">{fmt(processedData.totalAmt)}</span>
+                  
+                  {/* Huge Number Typography */}
+                  <div className="flex items-baseline gap-2.5 my-1.5">
+                    <span className="text-4xl md:text-5xl font-black text-[#34d399] leading-none">฿</span>
+                    <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
+                      {fmt(processedData.totalAmt)}
+                    </span>
                   </div>
-                  <div className="text-[13.5px] font-semibold text-[#d1fae5] mb-1">ยอดเงินรวมเบิกชดเชยประจำปี {currentYear}</div>
-                  <div className="text-[12.5px] font-extrabold text-[#fca5a5]">หน่วยบริการ: {selectedHospName}</div>
-                  <button
-                    onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }}
-                    className="mt-4 bg-white/15 hover:bg-white/25 border border-white/25 px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-                  >
-                    <Sparkles size={14} className="text-[#34d399]" /> ดูรายละเอียดเจาะลึก 4 หมวด
-                  </button>
+                  
+                  <div className="flex items-center gap-3 mt-3 flex-wrap">
+                    <span className="text-[14px] font-bold text-[#d1fae5]">
+                      ยอดเงินรวมเบิกชดเชยประจำปี <strong className="text-[#34d399] underline underline-offset-4">{currentYear}</strong>
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 hidden sm:inline-block"></span>
+                    <span className="text-[13px] font-black text-[#fca5a5] bg-red-950/40 border border-red-500/30 px-3 py-0.5 rounded-full inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                      หน่วยบริการ: {selectedHospName}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex items-center gap-3 flex-wrap">
+                    <button
+                      onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }}
+                      className="bg-white/15 hover:bg-white/25 border border-white/30 px-5 py-2.5 rounded-full text-xs font-black transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                      <Sparkles size={15} className="text-[#34d399]" /> ดูรายละเอียดเจาะลึก 4 หมวด
+                    </button>
+                    <div className="bg-emerald-950/50 border border-emerald-400/20 px-4 py-2 rounded-full text-xs font-bold text-emerald-200 hidden sm:flex items-center gap-2">
+                      <CheckCircle2 size={14} className="text-[#34d399]" /> รพ.สต. ในเครือข่าย 5 แห่ง
+                    </div>
+                  </div>
                 </div>
 
                 {/* Donut Card (2-column Legend matching dashboard_demo.html) */}
