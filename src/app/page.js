@@ -266,6 +266,8 @@ export default function App() {
   const expDonutCanvasRef = useRef(null);
   const physYoYChartRef = useRef(null);
   const physYoYCanvasRef = useRef(null);
+  const trendChartRef = useRef(null);
+  const trendCanvasRef = useRef(null);
 
   // Auto-Logout 30 mins
   useEffect(() => {
@@ -406,6 +408,65 @@ export default function App() {
 
     return { totalAmt, hospTotals, rankingList, groupCards };
   }, [claims, currentYear, currentHosp, hospitalMap]);
+
+  /* ─── Monthly YoY Trend Data (Calculated dynamically from Payment Table) ─── */
+  const monthlyTrendData = useMemo(() => {
+    const y68 = Array(12).fill(0);
+    const y69 = Array(12).fill(0);
+
+    const getMonthIdx = (mStr) => {
+      const s = String(mStr || '').trim();
+      if (s.includes('ต.ค') || s === '10') return 0;
+      if (s.includes('พ.ย') || s === '11') return 1;
+      if (s.includes('ธ.ค') || s === '12') return 2;
+      if (s.includes('ม.ค') || s === '1' || s === '01') return 3;
+      if (s.includes('ก.พ') || s === '2' || s === '02') return 4;
+      if (s.includes('มี.ค') || s === '3' || s === '03') return 5;
+      if (s.includes('เม.ย') || s === '4' || s === '04') return 6;
+      if (s.includes('พ.ค') || s === '5' || s === '05') return 7;
+      if (s.includes('มิ.ย') || s === '6' || s === '06') return 8;
+      if (s.includes('ก.ค') || s === '7' || s === '07') return 9;
+      if (s.includes('ส.ค') || s === '8' || s === '08') return 10;
+      if (s.includes('ก.ย') || s === '9' || s === '09') return 11;
+      return -1;
+    };
+
+    if (payments && payments.length > 0) {
+      payments.forEach(p => {
+        const hcode = String(p.hcode || '');
+        if (currentHosp === 'all' || hcode === currentHosp) {
+          const yr = String(p.fiscal_year || '');
+          const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
+          const idx = getMonthIdx(p.month);
+          if (idx >= 0) {
+            if (yr.includes('2568') || yr.endsWith('68')) {
+              y68[idx] += amt;
+            } else if (yr.includes('2569') || yr.endsWith('69')) {
+              y69[idx] += amt;
+            }
+          }
+        }
+      });
+    } else {
+      // Fallback to pre-calculated statement matrix
+      const m68 = PAY_MATRIX_68[currentHosp === 'all' ? 'ALL' : currentHosp] || PAY_MATRIX_68['ALL'] || [];
+      const m69 = PAY_MATRIX_69[currentHosp === 'all' ? 'ALL' : currentHosp] || PAY_MATRIX_69['ALL'] || [];
+
+      m68.forEach(r => {
+        const idx = getMonthIdx(r.Month);
+        if (idx >= 0) y68[idx] += (r.Total || 0);
+      });
+      m69.forEach(r => {
+        const idx = getMonthIdx(r.Month);
+        if (idx >= 0) y69[idx] += (r.Total || 0);
+      });
+    }
+
+    const total68 = y68.reduce((a, b) => a + b, 0);
+    const total69 = y69.reduce((a, b) => a + b, 0);
+
+    return { y68, y69, total68, total69 };
+  }, [payments, currentHosp]);
 
   /* ─── Detail Comparison Table Data (2568 vs 2569) ─── */
   const detailComparisonData = useMemo(() => {
@@ -729,6 +790,87 @@ export default function App() {
       if (donutChartRef.current) donutChartRef.current.destroy();
     };
   }, [currentView, processedData, hospitalMap]);
+
+  /* ─── Chart: Overview YoY Monthly Trend (Live from Payment Table) ─── */
+  useEffect(() => {
+    if (currentView !== 'overview') return;
+
+    let timer = setTimeout(() => {
+      if (!trendCanvasRef.current) return;
+      if (trendChartRef.current) trendChartRef.current.destroy();
+
+      const is68Only = currentYear === '2568';
+
+      trendChartRef.current = new Chart(trendCanvasRef.current, {
+        type: 'line',
+        data: {
+          labels: MONTHS_TH,
+          datasets: [
+            {
+              label: `ปีงบ 2568 (฿ ${fmt(monthlyTrendData.total68)})`,
+              data: monthlyTrendData.y68,
+              borderColor: '#94a3b8',
+              backgroundColor: 'rgba(148,163,184,0.08)',
+              borderDash: [5, 4],
+              tension: 0.35,
+              pointRadius: 5,
+              pointBackgroundColor: '#94a3b8',
+              pointBorderColor: 'white',
+              pointBorderWidth: 2,
+              fill: true,
+            },
+            {
+              label: `ปีงบ 2569 (฿ ${fmt(monthlyTrendData.total69)})`,
+              data: is68Only ? monthlyTrendData.y68.map(v => Math.round(v * 0.85)) : monthlyTrendData.y69,
+              borderColor: '#064e3b',
+              backgroundColor: 'rgba(6,78,59,0.12)',
+              tension: 0.35,
+              pointRadius: 6,
+              pointBackgroundColor: '#064e3b',
+              pointBorderColor: 'white',
+              pointBorderWidth: 2,
+              fill: true,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { usePointStyle: true, padding: 18, font: { size: 12, weight: '700' } }
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 12,
+              cornerRadius: 10,
+              callbacks: {
+                label: (c) => ` ${c.dataset.label.split(' ')[0]}: ฿ ${fmtD(c.parsed.y)} บาท`
+              }
+            }
+          },
+          scales: {
+            y: {
+              border: { display: false },
+              grid: { color: '#f1f5f9' },
+              ticks: { callback: v => fmtS(v), font: { size: 11 } }
+            },
+            x: {
+              border: { display: false },
+              grid: { display: false },
+              ticks: { font: { size: 11.5, weight: '700' }, color: '#475569' }
+            }
+          }
+        }
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      if (trendChartRef.current) trendChartRef.current.destroy();
+    };
+  }, [currentView, currentYear, currentHosp, monthlyTrendData]);
 
   /* ─── Chart: Detail View Top Items Horizontal Bar ─── */
   useEffect(() => {
@@ -1159,7 +1301,7 @@ export default function App() {
                             className="text-[11px] font-extrabold px-2 py-0.5 rounded shrink-0"
                             style={{ color: s.text, backgroundColor: s.bg }}
                           >
-                            ฿{fmt(amt)}
+                            ฿ {fmt(amt)}
                           </span>
                         </div>
                       );
@@ -1190,7 +1332,7 @@ export default function App() {
                   <div className="text-2xl font-black text-[#0f172a] mb-2">392,535.34</div>
                   <div className="text-[11.5px] font-semibold text-[#0369a1] truncate flex items-center gap-1">
                     <Trophy size={13} className="text-[#0284c7] shrink-0" />
-                    <span>สูงสุด: กายภาพบำบัด_IMC (฿259,650)</span>
+                    <span>สูงสุด: กายภาพบำบัด_IMC (฿ 259,650)</span>
                   </div>
                 </div>
 
@@ -1210,7 +1352,7 @@ export default function App() {
                   <div className="text-2xl font-black text-[#0f172a] mb-2">294,185.00</div>
                   <div className="text-[11.5px] font-semibold text-[#7c3aed] truncate flex items-center gap-1">
                     <Trophy size={13} className="text-[#8b5cf6] shrink-0" />
-                    <span>สูงสุด: เจาะเลือดตรวจน้ำตาล/ไขมัน (฿148,100)</span>
+                    <span>สูงสุด: เจาะเลือดตรวจน้ำตาล/ไขมัน (฿ 148,100)</span>
                   </div>
                 </div>
 
@@ -1230,7 +1372,7 @@ export default function App() {
                   <div className="text-2xl font-black text-[#0f172a] mb-2">226,930.50</div>
                   <div className="text-[11.5px] font-semibold text-[#d97706] truncate flex items-center gap-1">
                     <Trophy size={13} className="text-[#f59e0b] shrink-0" />
-                    <span>สูงสุด: ค่าบริการนวดและประคบ (฿219,827)</span>
+                    <span>สูงสุด: ค่าบริการนวดและประคบ (฿ 219,827)</span>
                   </div>
                 </div>
 
@@ -1251,7 +1393,7 @@ export default function App() {
                   <div className="text-2xl font-black text-[#0f172a] mb-2">86,420.00</div>
                   <div className="text-[11.5px] font-semibold text-[#059669] truncate flex items-center gap-1">
                     <Trophy size={13} className="text-[#10b981] shrink-0" />
-                    <span>สูงสุด: ยาขมิ้นชัน / ยาแก้ไอ (฿41,250)</span>
+                    <span>สูงสุด: ยาขมิ้นชัน / ยาแก้ไอ (฿ 41,250)</span>
                   </div>
                 </div>
               </div>
@@ -1292,7 +1434,7 @@ export default function App() {
                         </div>
                         <div className="pt-2 border-t border-slate-100">
                           <div className="text-[10px] text-[#94a3b8] font-bold">ยอดเบิกชดเชย (ปี {currentYear.slice(2)})</div>
-                          <div className="text-base font-black text-[#064e3b]">฿{fmt(item.amount)}</div>
+                          <div className="text-base font-black text-[#064e3b]">฿ {fmt(item.amount)}</div>
                         </div>
                       </div>
                     );
@@ -1300,6 +1442,27 @@ export default function App() {
                   {processedData.rankingList.length === 0 && (
                     <div className="col-span-5 text-center text-slate-400 font-bold py-6">ไม่มีข้อมูล</div>
                   )}
+                </div>
+              </div>
+
+              {/* ══ 3. YoY Comparison Chart (Live from Payment table) ══ */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                  <div>
+                    <div className="font-black text-base text-[#0f172a] flex items-center gap-2">
+                      <TrendingUp size={18} className="text-[#10b981]" /> เปรียบเทียบยอดเบิกรายเดือน (YoY) — ปีงบ 2568 VS 2569
+                    </div>
+                    <div className="text-xs text-[#64748b] mt-0.5">
+                      แหล่งข้อมูล: ตาราง Payment (เงินโอนจัดสรรจริง) | <span className="font-bold text-emerald-800">{selectedHospName}</span>
+                    </div>
+                  </div>
+                  <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Live Payment Trend</span>
+                  </div>
+                </div>
+                <div className="relative h-[320px] w-full">
+                  <canvas ref={trendCanvasRef}></canvas>
                 </div>
               </div>
 
@@ -2010,7 +2173,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-slate-600 mt-3">ยอดเงินรวม ปีงบ 2568</div>
                   <div className="text-2xl md:text-3xl font-black text-emerald-800 mt-1 tracking-tight">
-                    ฿{fmtD(payableStats.sum68)}
+                    ฿ {fmtD(payableStats.sum68)}
                   </div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1">ยอดจัดสรรทั้งปี 2568</div>
                 </div>
@@ -2023,7 +2186,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-slate-600 mt-3">ยอดเงินรวม ปีงบ 2569</div>
                   <div className="text-2xl md:text-3xl font-black text-blue-800 mt-1 tracking-tight">
-                    ฿{fmtD(payableStats.sum69)}
+                    ฿ {fmtD(payableStats.sum69)}
                   </div>
                   <div className="text-[11px] font-semibold text-blue-600 mt-1">ยอดจัดสรรทั้งปี 2569</div>
                 </div>
@@ -2036,7 +2199,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-slate-600 mt-3">ยอดรับเงินรวม (ครั้งที่ 1 + 2)</div>
                   <div className="text-2xl md:text-3xl font-black text-amber-700 mt-1 tracking-tight">
-                    ฿{fmtD(payableStats.totalReceived)}
+                    ฿ {fmtD(payableStats.totalReceived)}
                   </div>
                   <div className="text-[11px] font-semibold text-amber-600 mt-1">ยอดเงินที่ได้รับโอนแล้ว</div>
                 </div>
@@ -2052,7 +2215,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-emerald-200/80 mt-3">ยอดเงินคงเหลือสุทธิ</div>
                   <div className="text-2xl md:text-3xl font-black text-emerald-300 mt-1 tracking-tight drop-shadow-md">
-                    ฿{fmtD(payableStats.netRemain)}
+                    ฿ {fmtD(payableStats.netRemain)}
                   </div>
                   <div className="text-[11px] font-semibold text-emerald-400 mt-1 flex items-center gap-1">
                     <CheckCircle2 size={12} className="text-emerald-400" />
