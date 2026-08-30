@@ -24,73 +24,73 @@ const PAY_DATA = [
 
 const PAY_MATRIX_69 = {
   "ALL": [
-    { "Month": "ต.ค. 68", "KTB Claim": 1950.0, "MOPH Claim": 0.0, "E-Claim": 27905.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 43280.0, "แพทย์แผนไทย": 0.0, "Total": 73135.0 },
-    { "Month": "พ.ย. 68", "KTB Claim": 7000.0, "MOPH Claim": 3270.0, "E-Claim": 21606.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 700.0, "แพทย์แผนไทย": 0.0, "Total": 32576.0 },
-    { "Month": "ธ.ค. 68", "KTB Claim": 40.0, "MOPH Claim": 12440.0, "E-Claim": 34256.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 46736.5 },
-    { "Month": "ม.ค. 69", "KTB Claim": 1470.0, "MOPH Claim": 5260.0, "E-Claim": 94014.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 100744.5 },
-    { "Month": "ก.พ. 69", "KTB Claim": 1550.0, "MOPH Claim": 81035.0, "E-Claim": 124385.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 206970.0 },
-    { "Month": "มี.ค. 69", "KTB Claim": 21900.0, "MOPH Claim": 0.0, "E-Claim": 75563.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 97463.0 },
-    { "Month": "เม.ย. 69", "KTB Claim": 3750.0, "MOPH Claim": 10730.0, "E-Claim": 114137.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 128617.5 },
-    { "Month": "พ.ค. 69", "KTB Claim": 50.0, "MOPH Claim": 3390.0, "E-Claim": 12250.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 15690.0 },
-    { "Month": "มิ.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 14910.0, "E-Claim": 0.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 14910.0 },
-    { "Month": "ก.ค. 69", "KTB Claim": 0.0, "MOPH Claim": 460.0, "E-Claim": 0.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 460.0 }
+    { "Month": "ต.ค. 68", "KTB Claim": 1950.0, "MOPH Claim": 0.0, "E-Claim": 27905.0, "NTIP": 43280.0, "แพทย์แผนไทย": 0.0, "Total": 73135.0 },
+    { "Month": "พ.ย. 68", "KTB Claim": 7000.0, "MOPH Claim": 3270.0, "E-Claim": 21606.0, "NTIP": 700.0, "แพทย์แผนไทย": 0.0, "Total": 32576.0 },
+    { "Month": "ธ.ค. 68", "KTB Claim": 40.0, "MOPH Claim": 12440.0, "E-Claim": 34256.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 46736.5 },
+    { "Month": "ม.ค. 69", "KTB Claim": 1470.0, "MOPH Claim": 5260.0, "E-Claim": 94014.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 100744.5 },
+    { "Month": "ก.พ. 69", "KTB Claim": 1550.0, "MOPH Claim": 81035.0, "E-Claim": 124385.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 206970.0 },
+    { "Month": "มี.ค. 69", "KTB Claim": 21900.0, "MOPH Claim": 0.0, "E-Claim": 75563.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 97463.0 },
+    { "Month": "เม.ย. 69", "KTB Claim": 3750.0, "MOPH Claim": 10730.0, "E-Claim": 114137.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 128617.5 },
+    { "Month": "พ.ค. 69", "KTB Claim": 50.0, "MOPH Claim": 3390.0, "E-Claim": 12250.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 15690.0 },
+    { "Month": "มิ.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 14910.0, "E-Claim": 0.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 14910.0 },
+    { "Month": "ก.ค. 69", "KTB Claim": 0.0, "MOPH Claim": 460.0, "E-Claim": 0.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 460.0 }
   ],
   "05954": [
-    { "Month": "ต.ค. 68", "KTB Claim": 1950.0, "MOPH Claim": 0.0, "E-Claim": 15893.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 11200.0, "แพทย์แผนไทย": 0.0, "Total": 29043.5 },
-    { "Month": "พ.ย. 68", "KTB Claim": 1260.0, "MOPH Claim": 360.0, "E-Claim": 6358.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 7978.0 },
-    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 10440.0, "E-Claim": 1489.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 11929.0 },
-    { "Month": "ม.ค. 69", "KTB Claim": 20.0, "MOPH Claim": 420.0, "E-Claim": 75189.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 75629.5 },
-    { "Month": "ก.พ. 69", "KTB Claim": 0.0, "MOPH Claim": 12900.0, "E-Claim": 16876.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 29776.5 },
-    { "Month": "มี.ค. 69", "KTB Claim": 7300.0, "MOPH Claim": 0.0, "E-Claim": 7340.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 14640.5 },
-    { "Month": "เม.ย. 69", "KTB Claim": 3200.0, "MOPH Claim": 0.0, "E-Claim": 35906.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 39106.0 },
-    { "Month": "พ.ค. 69", "KTB Claim": 0.0, "MOPH Claim": 160.0, "E-Claim": 11180.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 11340.0 }
+    { "Month": "ต.ค. 68", "KTB Claim": 1950.0, "MOPH Claim": 0.0, "E-Claim": 15893.5, "NTIP": 11200.0, "แพทย์แผนไทย": 0.0, "Total": 29043.5 },
+    { "Month": "พ.ย. 68", "KTB Claim": 1260.0, "MOPH Claim": 360.0, "E-Claim": 6358.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 7978.0 },
+    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 10440.0, "E-Claim": 1489.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 11929.0 },
+    { "Month": "ม.ค. 69", "KTB Claim": 20.0, "MOPH Claim": 420.0, "E-Claim": 75189.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 75629.5 },
+    { "Month": "ก.พ. 69", "KTB Claim": 0.0, "MOPH Claim": 12900.0, "E-Claim": 16876.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 29776.5 },
+    { "Month": "มี.ค. 69", "KTB Claim": 7300.0, "MOPH Claim": 0.0, "E-Claim": 7340.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 14640.5 },
+    { "Month": "เม.ย. 69", "KTB Claim": 3200.0, "MOPH Claim": 0.0, "E-Claim": 35906.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 39106.0 },
+    { "Month": "พ.ค. 69", "KTB Claim": 0.0, "MOPH Claim": 160.0, "E-Claim": 11180.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 11340.0 }
   ],
   "05957": [
-    { "Month": "ต.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 1202.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 1202.0 },
-    { "Month": "พ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 220.0, "E-Claim": 8067.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8287.5 },
-    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 240.0, "E-Claim": 8331.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8571.0 },
-    { "Month": "ม.ค. 69", "KTB Claim": 1450.0, "MOPH Claim": 40.0, "E-Claim": 10500.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 11990.0 },
-    { "Month": "ก.พ. 69", "KTB Claim": 0.0, "MOPH Claim": 16420.0, "E-Claim": 47283.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 63703.0 },
-    { "Month": "มี.ค. 69", "KTB Claim": 1550.0, "MOPH Claim": 0.0, "E-Claim": 23704.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 25254.5 },
-    { "Month": "เม.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 100.0, "E-Claim": 57913.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 58013.0 },
-    { "Month": "มิ.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 13950.0, "E-Claim": 0.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 13950.0 }
+    { "Month": "ต.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 1202.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 1202.0 },
+    { "Month": "พ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 220.0, "E-Claim": 8067.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8287.5 },
+    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 240.0, "E-Claim": 8331.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8571.0 },
+    { "Month": "ม.ค. 69", "KTB Claim": 1450.0, "MOPH Claim": 40.0, "E-Claim": 10500.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 11990.0 },
+    { "Month": "ก.พ. 69", "KTB Claim": 0.0, "MOPH Claim": 16420.0, "E-Claim": 47283.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 63703.0 },
+    { "Month": "มี.ค. 69", "KTB Claim": 1550.0, "MOPH Claim": 0.0, "E-Claim": 23704.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 25254.5 },
+    { "Month": "เม.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 100.0, "E-Claim": 57913.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 58013.0 },
+    { "Month": "มิ.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 13950.0, "E-Claim": 0.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 13950.0 }
   ],
   "05959": [
-    { "Month": "ต.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 4945.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 10000.0, "แพทย์แผนไทย": 0.0, "Total": 14945.0 },
-    { "Month": "พ.ย. 68", "KTB Claim": 600.0, "MOPH Claim": 320.0, "E-Claim": 1456.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2376.0 },
-    { "Month": "ธ.ค. 68", "KTB Claim": 40.0, "MOPH Claim": 580.0, "E-Claim": 1605.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2225.0 },
-    { "Month": "ก.พ. 69", "KTB Claim": 0.0, "MOPH Claim": 17150.0, "E-Claim": 14694.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 31844.5 },
-    { "Month": "มี.ค. 69", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 6174.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6174.0 },
-    { "Month": "เม.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 140.0, "E-Claim": 3867.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 4007.0 }
+    { "Month": "ต.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 4945.0, "NTIP": 10000.0, "แพทย์แผนไทย": 0.0, "Total": 14945.0 },
+    { "Month": "พ.ย. 68", "KTB Claim": 600.0, "MOPH Claim": 320.0, "E-Claim": 1456.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2376.0 },
+    { "Month": "ธ.ค. 68", "KTB Claim": 40.0, "MOPH Claim": 580.0, "E-Claim": 1605.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2225.0 },
+    { "Month": "ก.พ. 69", "KTB Claim": 0.0, "MOPH Claim": 17150.0, "E-Claim": 14694.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 31844.5 },
+    { "Month": "มี.ค. 69", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 6174.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6174.0 },
+    { "Month": "เม.ย. 69", "KTB Claim": 0.0, "MOPH Claim": 140.0, "E-Claim": 3867.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 4007.0 }
   ],
   "05962": [
-    { "Month": "ต.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 5864.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 22080.0, "แพทย์แผนไทย": 0.0, "Total": 27944.5 },
-    { "Month": "พ.ย. 68", "KTB Claim": 5140.0, "MOPH Claim": 2370.0, "E-Claim": 5674.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 13184.5 },
-    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 1180.0, "E-Claim": 22697.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 23877.5 },
-    { "Month": "ก.พ. 69", "KTB Claim": 1550.0, "MOPH Claim": 34565.0, "E-Claim": 45531.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 81646.0 },
-    { "Month": "มี.ค. 69", "KTB Claim": 13050.0, "MOPH Claim": 0.0, "E-Claim": 38344.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 51394.0 },
-    { "Month": "เม.ย. 69", "KTB Claim": 550.0, "MOPH Claim": 10490.0, "E-Claim": 16451.5, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 27491.5 }
+    { "Month": "ต.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 5864.5, "NTIP": 22080.0, "แพทย์แผนไทย": 0.0, "Total": 27944.5 },
+    { "Month": "พ.ย. 68", "KTB Claim": 5140.0, "MOPH Claim": 2370.0, "E-Claim": 5674.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 13184.5 },
+    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 1180.0, "E-Claim": 22697.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 23877.5 },
+    { "Month": "ก.พ. 69", "KTB Claim": 1550.0, "MOPH Claim": 34565.0, "E-Claim": 45531.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 81646.0 },
+    { "Month": "มี.ค. 69", "KTB Claim": 13050.0, "MOPH Claim": 0.0, "E-Claim": 38344.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 51394.0 },
+    { "Month": "เม.ย. 69", "KTB Claim": 550.0, "MOPH Claim": 10490.0, "E-Claim": 16451.5, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 27491.5 }
   ],
   "05956": [
-    { "Month": "พ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 50.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 50.0 },
-    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 134.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 134.0 }
+    { "Month": "พ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 50.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 50.0 },
+    { "Month": "ธ.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 134.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 134.0 }
   ]
 };
 
 const PAY_MATRIX_68 = {
   "ALL": [
-    { "Month": "ต.ค. 67", "KTB Claim": 50.0, "MOPH Claim": 2120.0, "E-Claim": 2964.68, "ค่าบริการ CXR": 60720.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 65854.68 },
-    { "Month": "พ.ย. 67", "KTB Claim": 0.0, "MOPH Claim": 2240.0, "E-Claim": 1870.47, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 4110.47 },
-    { "Month": "ธ.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 1140.0, "E-Claim": 2794.77, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 3934.77 },
-    { "Month": "ม.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 2200.0, "E-Claim": 3815.23, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6015.23 },
-    { "Month": "ก.พ. 68", "KTB Claim": 0.0, "MOPH Claim": 12605.0, "E-Claim": 3828.23, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 16433.23 },
-    { "Month": "มี.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 10220.0, "E-Claim": 33336.07, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 43556.07 },
-    { "Month": "เม.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 37050.0, "E-Claim": 3658.0, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 40708.0 },
-    { "Month": "พ.ค. 68", "KTB Claim": 98110.0, "MOPH Claim": 39365.0, "E-Claim": 37315.01, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 174790.01 },
-    { "Month": "มิ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 18790.0, "E-Claim": 53904.27, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 72694.27 },
-    { "Month": "ก.ค. 68", "KTB Claim": 8270.0, "MOPH Claim": 3780.0, "E-Claim": 51078.01, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 63128.01 },
-    { "Month": "ส.ค. 68", "KTB Claim": 13340.0, "MOPH Claim": 2280.0, "E-Claim": 23678.63, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 0.0, "Total": 39298.63 },
-    { "Month": "ก.ย. 68", "KTB Claim": 200.0, "MOPH Claim": 1210.0, "E-Claim": 10661.21, "ค่าบริการ CXR": 0.0, "วัณโรค (TB)": 0.0, "แพทย์แผนไทย": 310339.04, "Total": 322410.25 }
+    { "Month": "ต.ค. 67", "KTB Claim": 50.0, "MOPH Claim": 2120.0, "E-Claim": 2964.68, "NTIP": 60720.0, "แพทย์แผนไทย": 0.0, "Total": 65854.68 },
+    { "Month": "พ.ย. 67", "KTB Claim": 0.0, "MOPH Claim": 2240.0, "E-Claim": 1870.47, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 4110.47 },
+    { "Month": "ธ.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 1140.0, "E-Claim": 2794.77, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 3934.77 },
+    { "Month": "ม.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 2200.0, "E-Claim": 3815.23, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6015.23 },
+    { "Month": "ก.พ. 68", "KTB Claim": 0.0, "MOPH Claim": 12605.0, "E-Claim": 3828.23, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 16433.23 },
+    { "Month": "มี.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 10220.0, "E-Claim": 33336.07, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 43556.07 },
+    { "Month": "เม.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 37050.0, "E-Claim": 3658.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 40708.0 },
+    { "Month": "พ.ค. 68", "KTB Claim": 98110.0, "MOPH Claim": 39365.0, "E-Claim": 37315.01, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 174790.01 },
+    { "Month": "มิ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 18790.0, "E-Claim": 53904.27, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 72694.27 },
+    { "Month": "ก.ค. 68", "KTB Claim": 8270.0, "MOPH Claim": 3780.0, "E-Claim": 51078.01, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 63128.01 },
+    { "Month": "ส.ค. 68", "KTB Claim": 13340.0, "MOPH Claim": 2280.0, "E-Claim": 23678.63, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 39298.63 },
+    { "Month": "ก.ย. 68", "KTB Claim": 200.0, "MOPH Claim": 1210.0, "E-Claim": 10661.21, "NTIP": 0.0, "แพทย์แผนไทย": 310339.04, "Total": 322410.25 }
   ]
 };
 
@@ -590,7 +590,10 @@ export default function App() {
         const matchHosp = payableHosp === 'ALL' || String(p.hcode) === payableHosp;
         if (matchYr && matchHosp) {
           const m = String(p.month || '').trim();
-          const platform = String(p.platform || 'อื่นๆ').trim();
+          let platform = String(p.platform || 'อื่นๆ').trim();
+          if (/ntip|cxr|tb|วัณโรค/i.test(platform)) {
+            platform = 'NTIP';
+          }
           const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
 
           if (!monthMatrixMap[m]) {
@@ -599,8 +602,7 @@ export default function App() {
               'KTB Claim': 0,
               'MOPH Claim': 0,
               'E-Claim': 0,
-              'ค่าบริการ CXR': 0,
-              'วัณโรค (TB)': 0,
+              'NTIP': 0,
               'แพทย์แผนไทย': 0,
               'Total': 0
             };
@@ -620,7 +622,7 @@ export default function App() {
       }
 
       const matrixTotal = matrixRows.reduce((acc, row) => {
-        ['KTB Claim', 'MOPH Claim', 'E-Claim', 'ค่าบริการ CXR', 'วัณโรค (TB)', 'แพทย์แผนไทย', 'Total'].forEach(k => {
+        ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย', 'Total'].forEach(k => {
           acc[k] = (acc[k] || 0) + (row[k] || 0);
         });
         return acc;
@@ -647,7 +649,7 @@ export default function App() {
 
     const matrixRows = payableYear === '69' ? m69List : m68List;
     const matrixTotal = matrixRows.reduce((acc, row) => {
-      ['KTB Claim', 'MOPH Claim', 'E-Claim', 'ค่าบริการ CXR', 'วัณโรค (TB)', 'แพทย์แผนไทย', 'Total'].forEach(k => {
+      ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย', 'Total'].forEach(k => {
         acc[k] = (acc[k] || 0) + (row[k] || 0);
       });
       return acc;
@@ -2061,8 +2063,7 @@ export default function App() {
                         <th className="p-3 text-right">KTB Claim</th>
                         <th className="p-3 text-right">MOPH Claim</th>
                         <th className="p-3 text-right">E-Claim (OP)</th>
-                        <th className="p-3 text-right">ค่าบริการ CXR</th>
-                        <th className="p-3 text-right">วัณโรค (TB)</th>
+                        <th className="p-3 text-right">NTIP</th>
                         <th className="p-3 text-right">แพทย์แผนไทย</th>
                         <th className="p-3 text-right font-black bg-blue-50 text-blue-800">ยอดรวมรายเดือน (บาท)</th>
                       </tr>
@@ -2074,8 +2075,7 @@ export default function App() {
                           <td className="p-3 text-right text-slate-600">{row['KTB Claim'] > 0 ? fmtD(row['KTB Claim']) : '—'}</td>
                           <td className="p-3 text-right text-slate-600">{row['MOPH Claim'] > 0 ? fmtD(row['MOPH Claim']) : '—'}</td>
                           <td className="p-3 text-right text-slate-600">{row['E-Claim'] > 0 ? fmtD(row['E-Claim']) : '—'}</td>
-                          <td className="p-3 text-right text-slate-600">{row['ค่าบริการ CXR'] > 0 ? fmtD(row['ค่าบริการ CXR']) : '—'}</td>
-                          <td className="p-3 text-right text-slate-600">{row['วัณโรค (TB)'] > 0 ? fmtD(row['วัณโรค (TB)']) : '—'}</td>
+                          <td className="p-3 text-right text-slate-600">{row['NTIP'] > 0 ? fmtD(row['NTIP']) : '—'}</td>
                           <td className="p-3 text-right text-slate-600">{row['แพทย์แผนไทย'] > 0 ? fmtD(row['แพทย์แผนไทย']) : '—'}</td>
                           <td className="p-3 text-right font-black text-blue-900 bg-blue-50/50">{fmtD(row.Total)}</td>
                         </tr>
@@ -2087,8 +2087,7 @@ export default function App() {
                         <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['KTB Claim'])}</td>
                         <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['MOPH Claim'])}</td>
                         <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['E-Claim'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['ค่าบริการ CXR'])}</td>
-                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['วัณโรค (TB)'])}</td>
+                        <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['NTIP'])}</td>
                         <td className="p-3 text-right">{fmtD(payableStats.matrixTotal['แพทย์แผนไทย'])}</td>
                         <td className="p-3 text-right text-blue-900 bg-blue-50">{fmtD(payableStats.matrixTotal['Total'])}</td>
                       </tr>
