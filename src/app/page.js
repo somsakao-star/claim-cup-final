@@ -750,11 +750,12 @@ export default function App() {
     });
 
     // 3. Sum Thai Medicine
-    const tList = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
-    const hasYrInThai = tList.some(x => String(x.fiscal_year) === currentYear);
+    const tList = (thais && thais.length > 0 && thais.some(x => String(x.fiscal_year) === currentYear))
+      ? thais
+      : OFFLINE_THAI_DATA;
     tList.forEach(t => {
       const yr = String(t.fiscal_year || '');
-      if (currentYear === 'all' || yr === currentYear || (!hasYrInThai && yr === '2568')) {
+      if (currentYear === 'all' || yr === currentYear) {
         const amt = parseFloat(String(t.amount || 0).replace(/,/g, '')) || 0;
         const hc = String(t.hcode || '').trim();
         if (currentHosp === 'all' || hc === currentHosp) totalAmt += amt;
@@ -1128,14 +1129,24 @@ export default function App() {
 
   /* ─── Thai Traditional Medicine Data Processing (Live from Thai table) ─── */
   const thaiData = useMemo(() => {
-    const tList = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
+    const rawList = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
+    const selectedYr = String(currentYear || '2569');
+    const prevYr = String(Number(selectedYr) - 1);
 
-    const rows69 = tList.filter(r => String(r.fiscal_year || '') === '2569');
-    const rows68 = tList.filter(r => String(r.fiscal_year || '') === '2568');
+    let rowsSelected = rawList.filter(r => String(r.fiscal_year || '') === selectedYr);
+    let rowsPrev = rawList.filter(r => String(r.fiscal_year || '') === prevYr);
 
-    let totalAmt69 = 0;
-    let rep1Amt69 = 0;
-    let rep2Amt69 = 0;
+    // Fallback if live database lacks rows for selected fiscal year
+    if (rowsSelected.length === 0) {
+      rowsSelected = OFFLINE_THAI_DATA.filter(r => String(r.fiscal_year || '') === selectedYr);
+    }
+    if (rowsPrev.length === 0) {
+      rowsPrev = OFFLINE_THAI_DATA.filter(r => String(r.fiscal_year || '') === prevYr);
+    }
+
+    let totalAmt = 0;
+    let rep1Amt = 0;
+    let rep2Amt = 0;
     const hospStats = {};
     const serviceMap = {};
 
@@ -1152,15 +1163,15 @@ export default function App() {
       };
     });
 
-    rows69.forEach(r => {
+    rowsSelected.forEach(r => {
       const amt = parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0;
       const code = String(r.hcode || '05954').trim();
       const rep = String(r.rep || '1').trim();
       const sItem = r.service_item || 'บริการนวดและประคบสมุนไพรเพื่อการรักษา';
 
-      totalAmt69 += amt;
-      if (rep === '2') rep2Amt69 += amt;
-      else rep1Amt69 += amt;
+      totalAmt += amt;
+      if (rep === '2') rep2Amt += amt;
+      else rep1Amt += amt;
 
       if (!hospStats[code]) {
         hospStats[code] = {
@@ -1192,7 +1203,7 @@ export default function App() {
     });
 
     const hospList = Object.values(hospStats).map(h => {
-      const pctVal = totalAmt69 > 0 ? (h.totalAmt / totalAmt69) * 100 : 0;
+      const pctVal = totalAmt > 0 ? (h.totalAmt / totalAmt) * 100 : 0;
       const sSorted = Object.values(h.services).sort((a, b) => b.amt - a.amt);
       const topService = sSorted[0] ? sSorted[0].name : 'บริการนวดและประคบสมุนไพรเพื่อการรักษา';
       return {
@@ -1206,7 +1217,7 @@ export default function App() {
     }).sort((a, b) => b.totalAmt - a.totalAmt);
 
     const serviceList = Object.values(serviceMap).map(s => {
-      const pctVal = totalAmt69 > 0 ? (s.amt / totalAmt69) * 100 : 0;
+      const pctVal = totalAmt > 0 ? (s.amt / totalAmt) * 100 : 0;
       return {
         ...s,
         pct: pctVal.toFixed(1) + '%'
@@ -1214,26 +1225,26 @@ export default function App() {
     }).sort((a, b) => b.amt - a.amt);
 
     const mOrder = ['10', '11', '12', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const monthly68 = mOrder.map(mStr => {
-      return rows68.filter(r => String(r.month) === mStr || String(r.month) === `0${mStr}` || String(r.month) === mStr.padStart(2, '0'))
+    const monthlyPrev = mOrder.map(mStr => {
+      return rowsPrev.filter(r => String(r.month) === mStr || String(r.month) === `0${mStr}` || String(r.month) === mStr.padStart(2, '0'))
         .reduce((sum, r) => sum + (parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0), 0);
     });
-    const monthly69 = mOrder.map(mStr => {
-      return rows69.filter(r => String(r.month) === mStr || String(r.month) === `0${mStr}` || String(r.month) === mStr.padStart(2, '0'))
+    const monthlySelected = mOrder.map(mStr => {
+      return rowsSelected.filter(r => String(r.month) === mStr || String(r.month) === `0${mStr}` || String(r.month) === mStr.padStart(2, '0'))
         .reduce((sum, r) => sum + (parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0), 0);
     });
 
-    const sum68 = monthly68.reduce((a, b) => a + b, 0);
-    const sum69 = monthly69.reduce((a, b) => a + b, 0);
-    const totalQty69 = rows69.length || 412;
-    const avgPerService = totalQty69 > 0 ? Math.round((totalAmt69 || 226931) / totalQty69) : 550;
+    const sumPrev = monthlyPrev.reduce((a, b) => a + b, 0);
+    const sumSelected = monthlySelected.reduce((a, b) => a + b, 0);
+    const totalQty = rowsSelected.length || 412;
+    const avgPerService = totalQty > 0 ? Math.round((totalAmt || 252900) / totalQty) : 551;
 
     return {
-      totalAmt: currentYear === '2568' ? (sum68 > 0 ? sum68 : 310339) : (totalAmt69 > 0 ? totalAmt69 : 252900),
-      totalAmt69: totalAmt69 > 0 ? totalAmt69 : 252900,
-      totalQty69,
-      rep1Amt69,
-      rep2Amt69,
+      totalAmt: totalAmt > 0 ? totalAmt : (selectedYr === '2569' ? 252900 : 310339),
+      totalAmt69: totalAmt > 0 ? totalAmt : 252900,
+      totalQty69: totalQty,
+      rep1Amt69: rep1Amt > 0 ? rep1Amt : 142000,
+      rep2Amt69: rep2Amt > 0 ? rep2Amt : 84931,
       avgPerService,
       hospList,
       serviceList: serviceList.length > 0 ? serviceList : [
@@ -1242,10 +1253,10 @@ export default function App() {
         { name: 'บริการอบไอน้ำสมุนไพรเพื่อการรักษา', qty: 25, amt: 14500, pct: '6.4%' },
         { name: 'การฟื้นฟูสุขภาพมารดาหลังคลอด (ทับหม้อเกลือ)', qty: 12, amt: 8831, pct: '3.9%' }
       ],
-      monthly68: sum68 > 0 ? monthly68 : [18000, 21000, 24000, 26000, 22000, 20000, 19500, 18000, 16500, 19000, 17500, 15000],
-      monthly69: sum69 > 0 ? sum69 : [28500, 31200, 23250, 34000, 38000, 39000, 32981, 0, 0, 0, 0, 0],
-      sum68: sum68 > 0 ? sum68 : 310339,
-      sum69: sum69 > 0 ? sum69 : 252900
+      monthly68: sumPrev > 0 ? monthlyPrev : [18000, 21000, 24000, 26000, 22000, 20000, 19500, 18000, 16500, 19000, 17500, 15000],
+      monthly69: sumSelected > 0 ? sumSelected : [28500, 31200, 23250, 34000, 38000, 39000, 32981, 0, 0, 0, 0, 0],
+      sum68: sumPrev > 0 ? sumPrev : 310339,
+      sum69: sumSelected > 0 ? sumSelected : 252900
     };
   }, [thais, hospitalMap, currentYear]);
 
@@ -1255,8 +1266,15 @@ export default function App() {
     const selectedYr = String(currentYear || '2569');
     const prevYr = String(Number(selectedYr) - 1);
 
-    const rowsSelected = hList.filter(r => String(r.fiscal_year || '') === selectedYr);
-    const rowsPrev = hList.filter(r => String(r.fiscal_year || '') === prevYr);
+    let rowsSelected = hList.filter(r => String(r.fiscal_year || '') === selectedYr);
+    let rowsPrev = hList.filter(r => String(r.fiscal_year || '') === prevYr);
+
+    if (rowsSelected.length === 0) {
+      rowsSelected = OFFLINE_HERBAL_DATA.filter(r => String(r.fiscal_year || '') === selectedYr);
+    }
+    if (rowsPrev.length === 0) {
+      rowsPrev = OFFLINE_HERBAL_DATA.filter(r => String(r.fiscal_year || '') === prevYr);
+    }
 
     let totalAmt = 0;
     let totalCost = 0;
@@ -1389,10 +1407,20 @@ export default function App() {
     const selectedYr = String(currentYear || '2569');
     const prevYr = String(Number(selectedYr) - 1);
 
-    const rowsSelected = rawList.filter(r => String(r.fiscal_year || '') === selectedYr);
-    const rows67 = rawList.filter(r => String(r.fiscal_year || '') === '2567');
-    const rows68 = rawList.filter(r => String(r.fiscal_year || '') === '2568');
-    const rows69 = rawList.filter(r => String(r.fiscal_year || '') === '2569');
+    let rowsSelected = rawList.filter(r => String(r.fiscal_year || '') === selectedYr);
+    let rows67 = rawList.filter(r => String(r.fiscal_year || '') === '2567');
+    let rows68 = rawList.filter(r => String(r.fiscal_year || '') === '2568');
+    let rows69 = rawList.filter(r => String(r.fiscal_year || '') === '2569');
+
+    if (rowsSelected.length === 0) {
+      rowsSelected = OFFLINE_PPFS_DATA.filter(r => String(r.fiscal_year || '') === selectedYr);
+    }
+    if (rows68.length === 0) {
+      rows68 = OFFLINE_PPFS_DATA.filter(r => String(r.fiscal_year || '') === '2568');
+    }
+    if (rows69.length === 0) {
+      rows69 = OFFLINE_PPFS_DATA.filter(r => String(r.fiscal_year || '') === '2569');
+    }
 
     let totalAmt = 0;
     let totalPersons = 0;
