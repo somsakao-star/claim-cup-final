@@ -1783,195 +1783,248 @@ export default function App() {
   /* ─── Chart: Physical Therapy YoY Comparison Chart ─── */
   useEffect(() => {
     if (currentView !== 'physical') return;
-    if (!physYoYCanvasRef.current) return;
 
-    if (physYoYChartRef.current) physYoYChartRef.current.destroy();
+    let timer = setTimeout(() => {
+      if (!physYoYCanvasRef.current) return;
+      if (physYoYChartRef.current) {
+        physYoYChartRef.current.destroy();
+        physYoYChartRef.current = null;
+      }
 
-    physYoYChartRef.current = new Chart(physYoYCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels: MONTHS_TH,
-        datasets: [
-          {
-            label: `ปีงบประมาณ 2568 (฿ ${fmt(physicalData.sum68)})`,
-            data: physicalData.monthly68,
-            backgroundColor: '#94a3b8',
-            borderRadius: 6,
-            barPercentage: 0.7,
-            categoryPercentage: 0.6
-          },
-          {
-            label: `ปีงบประมาณ 2569 (฿ ${fmt(physicalData.sum69)})`,
-            data: physicalData.monthly69,
-            backgroundColor: '#0284c7',
-            borderRadius: 6,
-            barPercentage: 0.7,
-            categoryPercentage: 0.6
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+      const m68 = (physicalData.monthly68 || []).map(v => Number(v) || 0);
+      const m69 = (physicalData.monthly69 || []).map(v => Number(v) || 0);
+
+      physYoYChartRef.current = new Chart(physYoYCanvasRef.current, {
+        type: 'bar',
+        data: {
+          labels: MONTHS_TH,
+          datasets: [
+            {
+              label: `ปีงบประมาณ 2568 (฿ ${fmt(physicalData.sum68)})`,
+              data: m68,
+              backgroundColor: '#94a3b8',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.75
+            },
+            {
+              label: `ปีงบประมาณ 2569 (฿ ${fmt(physicalData.sum69)})`,
+              data: m69,
+              backgroundColor: '#0284c7',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.75
             }
-          }
+          ]
         },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
           },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: {
-              callback: (v) => fmtS(v),
-              font: { size: 11 },
-              color: '#94a3b8'
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 12,
+              cornerRadius: 10,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                callback: (v) => fmtS(v),
+                font: { size: 11 },
+                color: '#94a3b8'
+              }
             }
           }
         }
-      }
-    });
+      });
+    }, 50);
 
     return () => {
-      if (physYoYChartRef.current) physYoYChartRef.current.destroy();
+      clearTimeout(timer);
+      if (physYoYChartRef.current) {
+        physYoYChartRef.current.destroy();
+        physYoYChartRef.current = null;
+      }
     };
   }, [currentView, physicalData]);
 
   /* ─── Chart: Thai Medicine YoY Comparison ─── */
   useEffect(() => {
     if (currentView !== 'thai') return;
-    if (!thaiYoYCanvasRef.current) return;
 
-    if (thaiYoYChartRef.current) thaiYoYChartRef.current.destroy();
+    let timer = setTimeout(() => {
+      if (!thaiYoYCanvasRef.current) return;
+      if (thaiYoYChartRef.current) {
+        thaiYoYChartRef.current.destroy();
+        thaiYoYChartRef.current = null;
+      }
 
-    thaiYoYChartRef.current = new Chart(thaiYoYCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels: MONTHS_TH,
-        datasets: [
-          {
-            label: `ปีงบประมาณ 2568 (฿ ${fmt(thaiData.sum68)})`,
-            data: thaiData.monthly68,
-            backgroundColor: '#94a3b8',
-            borderRadius: 6,
-            barPercentage: 0.7,
-            categoryPercentage: 0.6
-          },
-          {
-            label: `ปีงบประมาณ 2569 (฿ ${fmt(thaiData.sum69)})`,
-            data: thaiData.monthly69,
-            backgroundColor: '#d97706',
-            borderRadius: 6,
-            barPercentage: 0.7,
-            categoryPercentage: 0.6
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+      const m68 = (thaiData.monthly68 || []).map(v => Number(v) || 0);
+      const m69 = (thaiData.monthly69 || []).map(v => Number(v) || 0);
+
+      thaiYoYChartRef.current = new Chart(thaiYoYCanvasRef.current, {
+        type: 'bar',
+        data: {
+          labels: MONTHS_TH,
+          datasets: [
+            {
+              label: `ปีงบประมาณ 2568 (฿ ${fmt(thaiData.sum68)})`,
+              data: m68,
+              backgroundColor: '#94a3b8',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.75
+            },
+            {
+              label: `ปีงบประมาณ 2569 (฿ ${fmt(thaiData.sum69)})`,
+              data: m69,
+              backgroundColor: '#d97706',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.75
             }
-          }
+          ]
         },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
           },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: {
-              callback: (v) => fmtS(v),
-              font: { size: 11 },
-              color: '#94a3b8'
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 12,
+              cornerRadius: 10,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                callback: (v) => fmtS(v),
+                font: { size: 11 },
+                color: '#94a3b8'
+              }
             }
           }
         }
-      }
-    });
+      });
+    }, 50);
 
     return () => {
-      if (thaiYoYChartRef.current) thaiYoYChartRef.current.destroy();
+      clearTimeout(timer);
+      if (thaiYoYChartRef.current) {
+        thaiYoYChartRef.current.destroy();
+        thaiYoYChartRef.current = null;
+      }
     };
   }, [currentView, thaiData]);
 
   /* ─── Chart: Herbal Medicine YoY Comparison ─── */
   useEffect(() => {
     if (currentView !== 'herbal') return;
-    if (!herbalYoYCanvasRef.current) return;
 
-    if (herbalYoYChartRef.current) herbalYoYChartRef.current.destroy();
+    let timer = setTimeout(() => {
+      if (!herbalYoYCanvasRef.current) return;
+      if (herbalYoYChartRef.current) {
+        herbalYoYChartRef.current.destroy();
+        herbalYoYChartRef.current = null;
+      }
 
-    herbalYoYChartRef.current = new Chart(herbalYoYCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels: MONTHS_TH,
-        datasets: [
-          {
-            label: `ปีงบประมาณ 2568 (฿ ${fmt(herbalData.sum68)})`,
-            data: herbalData.monthly68,
-            backgroundColor: '#94a3b8',
-            borderRadius: 6,
-            barPercentage: 0.7,
-            categoryPercentage: 0.6
-          },
-          {
-            label: `ปีงบประมาณ 2569 (฿ ${fmt(herbalData.sum69)})`,
-            data: herbalData.monthly69,
-            backgroundColor: '#059669',
-            borderRadius: 6,
-            barPercentage: 0.7,
-            categoryPercentage: 0.6
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+      const m68 = (herbalData.monthly68 || []).map(v => Number(v) || 0);
+      const m69 = (herbalData.monthly69 || []).map(v => Number(v) || 0);
+
+      herbalYoYChartRef.current = new Chart(herbalYoYCanvasRef.current, {
+        type: 'bar',
+        data: {
+          labels: MONTHS_TH,
+          datasets: [
+            {
+              label: `ปีงบประมาณ 2568 (฿ ${fmt(herbalData.sum68)})`,
+              data: m68,
+              backgroundColor: '#94a3b8',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.75
+            },
+            {
+              label: `ปีงบประมาณ 2569 (฿ ${fmt(herbalData.sum69)})`,
+              data: m69,
+              backgroundColor: '#059669',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.75
             }
-          }
+          ]
         },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
           },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: {
-              callback: (v) => fmtS(v),
-              font: { size: 11 },
-              color: '#94a3b8'
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 12,
+              cornerRadius: 10,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                callback: (v) => fmtS(v),
+                font: { size: 11 },
+                color: '#94a3b8'
+              }
             }
           }
         }
-      }
-    });
+      });
+    }, 50);
 
     return () => {
-      if (herbalYoYChartRef.current) herbalYoYChartRef.current.destroy();
+      clearTimeout(timer);
+      if (herbalYoYChartRef.current) {
+        herbalYoYChartRef.current.destroy();
+        herbalYoYChartRef.current = null;
+      }
     };
   }, [currentView, herbalData]);
 
