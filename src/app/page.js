@@ -800,7 +800,7 @@ export default function App() {
     return { totalAmt: Math.round(totalAmt), hospTotals, rankingList, groupCards };
   }, [claims, ppfsList, physicals, thais, herbals, currentYear, currentHosp, hospitalMap]);
 
-  /* ─── Monthly YoY Trend Data (Calculated dynamically from Payment Table & Live Modules) ─── */
+  /* ─── Monthly YoY Trend Data (Calculated dynamically from Live Modules across all 5 health centers) ─── */
   const monthlyTrendData = useMemo(() => {
     const y68 = Array(12).fill(0);
     const y69 = Array(12).fill(0);
@@ -822,56 +822,38 @@ export default function App() {
       return -1;
     };
 
-    if (payments && payments.length > 0) {
-      payments.forEach(p => {
-        const hcode = String(p.hcode || '').trim();
-        if (currentHosp === 'all' || hcode === currentHosp) {
-          const yr = String(p.fiscal_year || '');
-          const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
-          const idx = getMonthIdx(p.month);
-          if (idx >= 0) {
-            if (yr.includes('2568') || yr.endsWith('68')) {
-              y68[idx] += amt;
-            } else if (yr.includes('2569') || yr.endsWith('69')) {
-              y69[idx] += amt;
-            }
-          }
-        }
-      });
-    } else {
-      // Dynamic aggregation across all 4 live module tables for selected hospital
-      const addRow = (item, isPhy = false) => {
-        let hc = String(item.hcode || '').trim();
-        if (isPhy) {
-          if (hc === '54') hc = '05954';
-          if (hc === '56') hc = '05956';
-          if (hc === '62') hc = '05962';
-        }
-        if (currentHosp !== 'all' && hc !== currentHosp) return;
+    const addRow = (item, isPhy = false) => {
+      let hc = String(item.hcode || '').trim();
+      if (isPhy) {
+        if (hc === '54') hc = '05954';
+        if (hc === '56') hc = '05956';
+        if (hc === '62') hc = '05962';
+      }
+      if (currentHosp !== 'all' && hc !== currentHosp) return;
 
-        const yr = String(item.fiscal_year || '');
-        const amt = parseFloat(String(item.amount || 0).replace(/,/g, '')) || 0;
-        
-        let mIdx = getMonthIdx(item.month);
-        if (mIdx === -1 && item.rep) {
-          mIdx = item.rep === '2' ? 2 : 0;
-        }
-        if (mIdx === -1) {
-          mIdx = 0;
-        }
+      const yr = String(item.fiscal_year || '');
+      const amt = parseFloat(String(item.amount || 0).replace(/,/g, '')) || 0;
+      
+      let mIdx = getMonthIdx(item.month);
+      if (mIdx === -1 && item.rep) {
+        mIdx = item.rep === '2' ? 2 : 0;
+      }
+      if (mIdx === -1) {
+        mIdx = 0;
+      }
 
-        if (yr.includes('2568') || yr.endsWith('68')) {
-          y68[mIdx] += amt;
-        } else if (yr.includes('2569') || yr.endsWith('69')) {
-          y69[mIdx] += amt;
-        }
-      };
+      if (yr.includes('2568') || yr.endsWith('68')) {
+        y68[mIdx] += amt;
+      } else if (yr.includes('2569') || yr.endsWith('69')) {
+        y69[mIdx] += amt;
+      }
+    };
 
-      (physicals || []).forEach(p => addRow(p, true));
-      (thais || []).forEach(t => addRow(t, false));
-      (herbals || []).forEach(h => addRow(h, false));
-      (ppfsList || claims || []).forEach(c => addRow(c, false));
-    }
+    // Sum from all 4 modules dynamically:
+    (physicals && physicals.length > 0 ? physicals : OFFLINE_PHYSICAL_DATA).forEach(p => addRow(p, true));
+    (thais && thais.length > 0 ? thais : OFFLINE_THAI_DATA).forEach(t => addRow(t, false));
+    (herbals && herbals.length > 0 ? herbals : OFFLINE_HERBAL_DATA).forEach(h => addRow(h, false));
+    (ppfsList && ppfsList.length > 0 ? ppfsList : (claims && claims.length > 0 ? claims : OFFLINE_PPFS_DATA)).forEach(c => addRow(c, false));
 
     const total68 = Math.round(y68.reduce((a, b) => a + b, 0));
     const total69 = Math.round(y69.reduce((a, b) => a + b, 0));
@@ -882,7 +864,7 @@ export default function App() {
       total68, 
       total69 
     };
-  }, [payments, physicals, thais, herbals, ppfsList, claims, currentHosp]);
+  }, [physicals, thais, herbals, ppfsList, claims, currentHosp]);
 
   /* ─── Detail Comparison Table Data (2568 vs 2569) ─── */
   const detailComparisonData = useMemo(() => {
@@ -2487,7 +2469,7 @@ export default function App() {
                           เปรียบเทียบยอดเบิกรายเดือน (YoY) — ปีงบ 2568 VS 2569
                         </div>
                         <div className="text-xs text-[#64748b] mt-0.5">
-                          แหล่งข้อมูล: ตาราง Payment (เงินโอนจัดสรรจริง) | <span className="font-bold text-emerald-800">{selectedHospName}</span>
+                          แหล่งข้อมูล: ยอดเบิกจ่ายสะสม 4 หมวดงาน | <span className="font-bold text-emerald-800">{selectedHospName}</span>
                         </div>
                       </div>
                     </div>
@@ -2505,7 +2487,7 @@ export default function App() {
                       </div>
                       <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>Live Payment Trend</span>
+                        <span>Live Claim Trend</span>
                       </div>
                     </div>
                   </div>
