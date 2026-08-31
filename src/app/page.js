@@ -1788,98 +1788,6 @@ export default function App() {
     };
   }, [currentView, expenseStats]);
 
-  /* ─── Chart: Physical Therapy YoY Comparison Chart ─── */
-  useEffect(() => {
-    if (currentView !== 'physical') return;
-
-    let timer;
-    const renderChart = () => {
-      if (!physYoYCanvasRef.current) return;
-      const existing = Chart.getChart(physYoYCanvasRef.current);
-      if (existing) existing.destroy();
-      if (physYoYChartRef.current) {
-        physYoYChartRef.current.destroy();
-        physYoYChartRef.current = null;
-      }
-
-      const m68 = (physicalData.monthly68 || []).map(v => Number(v) || 0);
-      const m69 = (physicalData.monthly69 || []).map(v => Number(v) || 0);
-
-      physYoYChartRef.current = new Chart(physYoYCanvasRef.current, {
-        type: 'bar',
-        data: {
-          labels: MONTHS_TH,
-          datasets: [
-            {
-              label: `ปีงบประมาณ 2568 (฿ ${fmt(physicalData.sum68)})`,
-              data: m68,
-              backgroundColor: '#94a3b8',
-              borderRadius: 6,
-              barPercentage: 0.8,
-              categoryPercentage: 0.75
-            },
-            {
-              label: `ปีงบประมาณ 2569 (฿ ${fmt(physicalData.sum69)})`,
-              data: m69,
-              backgroundColor: '#0284c7',
-              borderRadius: 6,
-              barPercentage: 0.8,
-              categoryPercentage: 0.75
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0f172a',
-              padding: 12,
-              cornerRadius: 10,
-              callbacks: {
-                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { font: { size: 11.5, weight: '700' }, color: '#64748b' }
-            },
-            y: {
-              grid: { color: '#f1f5f9' },
-              ticks: {
-                callback: (v) => fmtS(v),
-                font: { size: 11 },
-                color: '#94a3b8'
-              }
-            }
-          }
-        }
-      });
-    };
-
-    renderChart();
-    timer = setTimeout(renderChart, 80);
-
-    return () => {
-      clearTimeout(timer);
-      if (physYoYCanvasRef.current) {
-        const existing = Chart.getChart(physYoYCanvasRef.current);
-        if (existing) existing.destroy();
-      }
-      if (physYoYChartRef.current) {
-        physYoYChartRef.current.destroy();
-        physYoYChartRef.current = null;
-      }
-    };
-  }, [currentView, physicalData]);
-
   /* ─── Chart: Thai Medicine YoY Comparison ─── */
   useEffect(() => {
     if (currentView !== 'thai') return;
@@ -3119,24 +3027,25 @@ export default function App() {
                 </div>
               </div>
 
-              {/* ─── กราฟเปรียบเทียบยอดเบิกรายเดือน (YoY Comparison Chart) ─── */}
-              <div className="bg-white rounded-3xl border border-indigo-200 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-400 transition-all duration-300 overflow-hidden relative group">
-                {/* Top Gradient Highlight Stripe */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400"></div>
+              {/* ─── กราฟเปรียบเทียบยอดเบิกรายเดือน (YoY Comparison Bar Chart) ─── */}
+              <div className="bg-white rounded-3xl border border-sky-200 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-400 transition-all duration-300 overflow-hidden relative group">
+                <div className="h-1.5 w-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500"></div>
                 <div className="p-6 md:p-8">
                   <div className="flex justify-between items-start mb-6 flex-wrap gap-4 border-b border-slate-100 pb-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-black">
+                      <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-[#0284c7] flex items-center justify-center font-black">
                         <Activity size={20} />
                       </div>
                       <div>
                         <div className="font-black text-slate-900 text-base">
                           กราฟเปรียบเทียบยอดเบิกรายเดือน (YoY Comparison)
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">เปรียบเทียบยอดเงินชดเชยค่าบริการกายภาพบำบัดรายเดือน ระหว่างปีงบประมาณ 2568 และ 2569</div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          เปรียบเทียบยอดเงินชดเชยค่าบริการกายภาพบำบัดรายเดือน ระหว่างปีงบประมาณ 2568 และ 2569
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs font-extrabold bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl">
+                    <div className="flex items-center gap-3 text-xs font-extrabold bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl shadow-xs">
                       <div className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-md bg-slate-400 inline-block shadow-xs"></span>
                         <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(physicalData.sum68)})</span>
@@ -3148,9 +3057,69 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  <div className="relative h-[320px] w-full">
-                    <canvas ref={physYoYCanvasRef}></canvas>
-                  </div>
+
+                  {/* Dynamic Dual-Bar Chart Grid (Guaranteed 100% Render for both years) */}
+                  {(() => {
+                    const m68 = (physicalData.monthly68 || []).map(v => Number(v) || 0);
+                    const m69 = (physicalData.monthly69 || []).map(v => Number(v) || 0);
+                    const maxVal = Math.max(...m68, ...m69, 1);
+
+                    return (
+                      <div className="pt-6 pb-2">
+                        <div className="grid grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-end h-[240px] px-2 border-b border-slate-200 pb-3">
+                          {MONTHS_TH.map((m, idx) => {
+                            const v68 = m68[idx] || 0;
+                            const v69 = m69[idx] || 0;
+                            const h68 = maxVal > 0 ? Math.max(Math.round((v68 / maxVal) * 100), v68 > 0 ? 4 : 0) : 0;
+                            const h69 = maxVal > 0 ? Math.max(Math.round((v69 / maxVal) * 100), v69 > 0 ? 4 : 0) : 0;
+
+                            return (
+                              <div key={m} className="flex flex-col items-center h-full justify-end group/bar relative">
+                                {/* Hover Floating Tooltip */}
+                                <div className="absolute -top-14 opacity-0 group-hover/bar:opacity-100 transition-all pointer-events-none z-30 bg-slate-900 text-white text-[11px] font-bold p-2 rounded-xl shadow-xl whitespace-nowrap -translate-y-1">
+                                  <div className="text-slate-300 font-normal">{m}</div>
+                                  <div className="text-slate-200">ปี 68: ฿{fmt(v68)}</div>
+                                  <div className="text-sky-300">ปี 69: ฿{fmt(v69)}</div>
+                                </div>
+
+                                {/* Dual Bars Container */}
+                                <div className="w-full flex items-end justify-center gap-1 sm:gap-1.5 h-[200px]">
+                                  {/* Bar 2568 (Grey) */}
+                                  <div className="flex-1 max-w-[18px] flex flex-col justify-end items-center h-full">
+                                    <div
+                                      style={{ height: `${h68}%` }}
+                                      className="w-full bg-slate-400 hover:bg-slate-500 rounded-t-md transition-all duration-500 shadow-xs cursor-pointer"
+                                      title={`ปี 2568: ฿${fmt(v68)}`}
+                                    ></div>
+                                  </div>
+
+                                  {/* Bar 2569 (Blue) */}
+                                  <div className="flex-1 max-w-[18px] flex flex-col justify-end items-center h-full">
+                                    <div
+                                      style={{ height: `${h69}%` }}
+                                      className="w-full bg-gradient-to-t from-sky-600 to-[#0284c7] hover:from-sky-500 hover:to-sky-400 rounded-t-md transition-all duration-500 shadow-xs cursor-pointer"
+                                      title={`ปี 2569: ฿${fmt(v69)}`}
+                                    ></div>
+                                  </div>
+                                </div>
+
+                                {/* Month Label */}
+                                <div className="mt-3 text-[11px] sm:text-xs font-bold text-slate-500 group-hover/bar:text-sky-700 transition-colors">
+                                  {m}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Scale Axis Helper */}
+                        <div className="flex justify-between items-center text-[10.5px] font-semibold text-slate-400 px-2 pt-2.5">
+                          <span>เริ่มต้น: ฿ 0</span>
+                          <span>ยอดเบิกสูงสุดต่อเดือน: ฿ {fmt(maxVal)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
