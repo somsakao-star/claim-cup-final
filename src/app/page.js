@@ -638,7 +638,9 @@ export default function App() {
     try {
       const saved = localStorage.getItem('claimcup_user');
       if (saved) setCurrentUser(JSON.parse(saved));
-    } catch (e) {}
+    } catch (e) {
+      localStorage.removeItem('claimcup_user');
+    }
   }, []);
   const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
@@ -705,13 +707,6 @@ export default function App() {
       events.forEach(e => window.removeEventListener(e, resetTimer));
     };
   }, [currentUser]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('claimcup_user');
-    if (saved) {
-      try { setCurrentUser(JSON.parse(saved)); } catch (e) { localStorage.removeItem('claimcup_user'); }
-    }
-  }, []);
 
   useEffect(() => {
     setClockTime(new Date().toLocaleTimeString('th-TH'));
@@ -1738,7 +1733,7 @@ export default function App() {
     return () => {
       if (donutChartRef.current) donutChartRef.current.destroy();
     };
-  }, [currentView, processedData, hospitalMap]);
+  }, [currentView, processedData, hospitalMap, currentUser]);
 
   /* ─── Chart: Overview YoY Monthly Trend (Live from Payment Table) ─── */
   useEffect(() => {
@@ -1816,7 +1811,7 @@ export default function App() {
       clearTimeout(timer);
       if (trendChartRef.current) trendChartRef.current.destroy();
     };
-  }, [currentView, currentYear, currentHosp, monthlyTrendData]);
+  }, [currentView, currentYear, currentHosp, monthlyTrendData, currentUser]);
 
   /* ─── Chart: Detail View Top Items Horizontal Bar ─── */
   useEffect(() => {
@@ -1858,7 +1853,7 @@ export default function App() {
     return () => {
       if (detailBarChartRef.current) detailBarChartRef.current.destroy();
     };
-  }, [currentView, detailComparisonData]);
+  }, [currentView, detailComparisonData, currentUser]);
 
   /* ─── Charts: Expense View ─── */
   useEffect(() => {
@@ -1932,7 +1927,7 @@ export default function App() {
       if (expenseChartRef.current) expenseChartRef.current.destroy();
       if (expDonutChartRef.current) expDonutChartRef.current.destroy();
     };
-  }, [currentView, expenseStats]);
+  }, [currentView, expenseStats, currentUser]);
 
   /* ─── Chart: Physical Therapy YoY Comparison Chart ─── */
   useEffect(() => {
@@ -2024,7 +2019,7 @@ export default function App() {
         physYoYChartRef.current = null;
       }
     };
-  }, [currentView, physicalData]);
+  }, [currentView, physicalData, currentUser]);
 
   /* ─── Chart: Thai Medicine YoY Comparison ─── */
   useEffect(() => {
@@ -2116,7 +2111,7 @@ export default function App() {
         thaiYoYChartRef.current = null;
       }
     };
-  }, [currentView, thaiData]);
+  }, [currentView, thaiData, currentUser]);
 
   /* ─── Chart: Herbal Medicine YoY Comparison ─── */
   useEffect(() => {
@@ -2208,7 +2203,7 @@ export default function App() {
         herbalYoYChartRef.current = null;
       }
     };
-  }, [currentView, herbalData]);
+  }, [currentView, herbalData, currentUser]);
 
   /* ─── Chart: PPFS 3-Year Comparison ─── */
   useEffect(() => {
@@ -2305,7 +2300,7 @@ export default function App() {
         ppfsYoYChartRef.current = null;
       }
     };
-  }, [currentView, ppfsData]);
+  }, [currentView, ppfsData, currentUser]);
 
     // Handle Loading & Login
   if (!mounted || loading) return (
