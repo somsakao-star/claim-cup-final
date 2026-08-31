@@ -432,7 +432,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPulled, setIsPulled] = useState(false);
+  const [isPulled, setIsPulled] = useState(true);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -513,7 +513,15 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
 /* ════════ MAIN APP COMPONENT ════════ */
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('claimcup_user');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return { name: 'ผู้ดูแลระบบ', role: 'admin' };
+  });
   const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
   const [currentHosp, setCurrentHosp] = useState('all');
