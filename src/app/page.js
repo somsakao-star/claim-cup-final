@@ -1,5 +1,5 @@
 "use client";
-import WebThreads from './WebThreads';
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Chart from 'chart.js/auto';
 import {
@@ -467,9 +467,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
   return (
     <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#050505]'}`}>
-      <div className="absolute inset-0 z-0 opacity-80">
-        <WebThreads color1="#059669" color2="#34d399" color3="#ffffff" speed={0.4} threadCount={6} opacity={0.8} brightness={0.8} />
-      </div>
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/50 via-slate-900 to-[#022c22]"></div>
 
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
         <div className="w-1.5 h-16 bg-slate-800"></div>
@@ -513,15 +511,16 @@ const LoginScreen = ({ onLoginSuccess }) => {
 
 /* ════════ MAIN APP COMPONENT ════════ */
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('claimcup_user');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return { name: 'ผู้ดูแลระบบ', role: 'admin' };
-  });
+  const [mounted, setMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState({ name: 'ผู้ดูแลระบบ', role: 'admin' });
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem('claimcup_user');
+      if (saved) setCurrentUser(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
   const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
   const [currentHosp, setCurrentHosp] = useState('all');
@@ -2070,7 +2069,7 @@ export default function App() {
   }, [currentView, ppfsData]);
 
     // Handle Loading & Login
-  if (loading) return (
+  if (!mounted || loading) return (
     <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
