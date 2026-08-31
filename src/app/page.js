@@ -2751,123 +2751,156 @@ export default function App() {
             {/* Physical Navbar */}
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-white flex items-center justify-center shadow-md">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="9" cy="17" r="4"/>
-                    <circle cx="18.5" cy="18.5" r="1.5"/>
-                    <path d="M9 13h5l3-7h3"/>
-                    <path d="M14 13v4"/>
-                    <path d="M9 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
-                  </svg>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-md">
+                  <Activity size={22} className="text-white" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="text-lg font-black text-slate-900">แดชบอร์ดบริการฟื้นฟูสมรรถภาพ & กายภาพบำบัด</div>
-                    <span className="bg-gradient-to-r from-[#0284c7] to-[#38bdf8] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                      Physical Therapy
+                    <span className="text-lg font-black text-slate-900">ชดเชยค่าบริการกายภาพบำบัด</span>
+                    <span className="text-[11px] font-extrabold bg-sky-50 text-sky-800 px-2.5 py-0.5 rounded-full border border-sky-200">
+                      PHYSICAL THERAPY & REHABILITATION
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500 font-semibold">สรุปข้อมูลการเบิกจ่ายและชดเชยค่าบริการกายภาพบำบัด เปรียบเทียบปีงบประมาณ 2568 - 2569</div>
+                  <div className="text-xs text-slate-500 font-semibold">
+                    องค์การบริหารส่วนจังหวัดเชียงใหม่ · เครือข่ายบริการสุขภาพ CUP สันโค้ง (ทีมนักกายภาพบำบัดกลาง)
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={() => setCurrentView('overview')}
-                className="px-5 py-2.5 rounded-full bg-[#022c22] text-white text-xs font-black flex items-center gap-2 hover:bg-[#064e3b] hover:-translate-y-0.5 transition-all shadow-[0_4px_14px_rgba(2,44,34,0.3)] cursor-pointer"
-              >
-                <ArrowLeft size={16} /> กลับสู่หน้าหลัก
-              </button>
+
+              <div className="flex items-center gap-3">
+                {/* Year Toggle */}
+                <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200 text-xs font-bold">
+                  {['2568', '2569'].map(yr => (
+                    <button
+                      key={yr}
+                      onClick={() => setCurrentYear(yr)}
+                      className={`px-3.5 py-1 rounded-full transition-all cursor-pointer ${
+                        currentYear === yr ? 'bg-[#0284c7] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      ปี {yr}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => window.print()}
+                  className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3.5 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Printer size={14} /> พิมพ์รายงาน
+                </button>
+                <button
+                  onClick={() => setCurrentView('overview')}
+                  className="bg-[#064e3b] hover:bg-[#022c22] text-white font-bold px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <ArrowLeft size={14} /> กลับหน้าหลัก
+                </button>
+              </div>
             </nav>
 
-            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-7">
-              {/* ─── สรุปยอดรวม CUP (ภาพรวม ไม่แยกหน่วยบริการ เพราะเป็นทีมนักกายภาพกลาง) ─── */}
-              <div className="bg-gradient-to-r from-[#0284c7] to-[#0369a1] rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-sky-900/15 flex justify-between items-center flex-wrap gap-6 border border-sky-400/30">
-                <div className="space-y-1.5">
-                  <div className="text-xs font-bold uppercase tracking-wider text-sky-200">
-                    ยอดเบิกรวมทั้ง CUP สันโค้ง — ปีงบ 2569
+            <div className="p-6 md:p-8 max-w-[1560px] mx-auto space-y-6">
+              {/* ─── Hero Banner: Physical Therapy ─── */}
+              <div className="bg-gradient-to-br from-[#0c4a6e] via-[#075985] to-[#0369a1] rounded-3xl p-7 md:p-9 text-white shadow-[0_12px_35px_rgba(2,132,199,0.25)] flex flex-col lg:flex-row items-center justify-between gap-8 border border-sky-400/30 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="flex-1 min-w-[320px] relative z-10">
+                  <div className="text-[12px] font-extrabold uppercase tracking-widest text-sky-300 mb-3 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-sky-300 animate-pulse"></span>
+                    <span>PHYSICAL THERAPY COMPENSATION · FY {currentYear}</span>
                   </div>
-                  <div className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                    ฿ {fmt(physicalData.totalAmt69)}
+
+                  <div className="flex items-baseline gap-3 my-2">
+                    <span className="text-4xl md:text-5xl font-black text-sky-300 leading-none">฿</span>
+                    <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
+                      {fmt(currentYear === '2568' ? physicalData.sum68 : physicalData.totalAmt69)}
+                    </span>
                   </div>
-                  <div className="text-xs text-sky-100/90 font-medium max-w-xl">
-                    ให้บริการโดยทีมนักกายภาพบำบัดกลาง {physicalData.therapistList.length} คน ครอบคลุมทุกหน่วยบริการในเครือข่าย (ไม่แยกยอดตามหน่วยบริการ)
+
+                  <div className="text-[14px] font-bold text-sky-100/90 mt-2">
+                    ยอดเงินชดเชยค่าบริการกายภาพบำบัดสะสม เครือข่าย CUP สันโค้ง (ให้บริการครอบคลุม 5 รพ.สต.)
+                  </div>
+
+                  {/* 3 Metric Pills */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
+                      <div className="text-[11px] font-bold text-sky-200">จำนวนการให้บริการ</div>
+                      <div className="text-xl font-black text-white mt-0.5">{fmt(physicalData.totalQty69)} <span className="text-xs font-normal text-sky-200">ครั้ง</span></div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
+                      <div className="text-[11px] font-bold text-sky-200">ทีมนักกายภาพบำบัดกลาง</div>
+                      <div className="text-xl font-black text-white mt-0.5">{physicalData.therapistList.length} <span className="text-xs font-normal text-sky-200">คน</span></div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
+                      <div className="text-[11px] font-bold text-sky-200">อัตราชดเชย</div>
+                      <div className="text-xl font-black text-emerald-300 mt-0.5 flex items-center gap-1">
+                        100% ✅
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-6 md:gap-8 text-right flex-wrap">
-                  <div>
-                    <div className="text-xs text-sky-200 font-semibold">จำนวนครั้งรวม</div>
-                    <div className="text-xl md:text-2xl font-black text-white">{fmt(physicalData.totalQty69)} ครั้ง</div>
+
+                {/* Right Side: Service Breakdown Summary Card */}
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 w-full lg:w-[360px] shrink-0 text-white relative z-10 space-y-4">
+                  <div className="flex justify-between items-center border-b border-white/15 pb-3">
+                    <span className="text-xs font-extrabold tracking-wider text-sky-200 uppercase">สัดส่วนบริการกายภาพบำบัด</span>
+                    <span className="text-[11px] bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded-full font-bold">{physicalData.serviceList.length} หมวด</span>
                   </div>
-                  <div>
-                    <div className="text-xs text-sky-200 font-semibold">ผู้ให้บริการ</div>
-                    <div className="text-xl md:text-2xl font-black text-white">{physicalData.therapistList.length} คน</div>
+
+                  <div className="space-y-3">
+                    {physicalData.serviceList.slice(0, 3).map((s, idx) => (
+                      <div key={idx}>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-200 truncate max-w-[200px]">{s.name}</span>
+                          <span className="text-white font-black">฿ {fmt(s.amt)}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full" style={{ width: s.pct }}></div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <div className="text-xs text-sky-200 font-semibold">อัตราชดเชย</div>
-                    <div className="text-xl md:text-2xl font-black text-emerald-300">100% ✅</div>
+
+                  <div className="pt-2 text-[11.5px] text-sky-200/80 flex items-center gap-1.5">
+                    <CheckCircle2 size={13} className="text-sky-300 shrink-0" />
+                    <span>ข้อมูลเชื่อมต่อสดจากระบบเบิกจ่าย สปสช.</span>
                   </div>
                 </div>
               </div>
 
-              {/* ─── การ์ดผลงานรายบุคคล (นักกายภาพบำบัด) ─── */}
-              <div>
-                <div className="mb-4 text-base font-extrabold text-slate-900 flex items-center justify-between">
+              {/* ─── การ์ดผลงานรายบุคคล: นักกายภาพบำบัด 3 ท่าน ─── */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <Activity size={20} className="text-[#0284c7]" /> ผลงานรายบุคคล — นักกายภาพบำบัด (ปีงบ 2569)
+                    <div className="w-2.5 h-6 bg-[#0284c7] rounded-full"></div>
+                    <h2 className="text-lg font-black text-slate-900">
+                      ผลงานรายบุคคล — ทีมนักกายภาพบำบัดกลาง (ปีงบ 2569)
+                    </h2>
                   </div>
-                  <span className="text-xs font-semibold text-slate-400">คลิกการ์ดเพื่อดูรายงานเจาะลึก 🔍</span>
+                  <span className="text-xs font-bold text-slate-400">
+                    คลิกการ์ดเพื่อดูรายงานเจาะลึก 🔍
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {physicalData.therapistList.map((t, idx) => {
-                    const isRank1 = idx === 0;
-                    const themeColors = {
-                      '54': {
-                        gradHeader: 'from-sky-500/15 via-sky-500/5 to-transparent',
-                        borderColor: 'hover:border-sky-400',
-                        accentColor: '#0284c7',
-                        badgeBg: 'bg-sky-50 text-sky-700 border-sky-200',
-                        avatarBg: 'bg-gradient-to-br from-sky-500 to-blue-600',
-                        progressGrad: 'from-sky-500 to-blue-600',
-                        glow: 'hover:shadow-sky-500/15',
-                        statBg: 'bg-sky-50/50 border-sky-100',
-                      },
-                      '56': {
-                        gradHeader: 'from-emerald-500/15 via-emerald-500/5 to-transparent',
-                        borderColor: 'hover:border-emerald-400',
-                        accentColor: '#059669',
-                        badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                        avatarBg: 'bg-gradient-to-br from-emerald-500 to-teal-600',
-                        progressGrad: 'from-emerald-500 to-teal-600',
-                        glow: 'hover:shadow-emerald-500/15',
-                        statBg: 'bg-emerald-50/50 border-emerald-100',
-                      },
-                      '62': {
-                        gradHeader: 'from-amber-500/15 via-amber-500/5 to-transparent',
-                        borderColor: 'hover:border-amber-400',
-                        accentColor: '#d97706',
-                        badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
-                        avatarBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
-                        progressGrad: 'from-amber-500 to-orange-600',
-                        glow: 'hover:shadow-amber-500/15',
-                        statBg: 'bg-amber-50/50 border-amber-100',
-                      }
-                    };
 
-                    const th = themeColors[t.code] || themeColors['54'];
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {physicalData.therapistList.map((t, idx) => {
+                    const rankThemes = [
+                      { border: 'border-2 border-sky-300 hover:border-sky-500 bg-gradient-to-b from-sky-50/60 to-white', badge: 'bg-sky-100 text-sky-900 border border-sky-300 font-black', shadow: 'hover:shadow-sky-500/15', rank: '🥇 อันดับ 1', barGrad: 'from-sky-500 to-blue-600', avatarBg: 'bg-sky-600' },
+                      { border: 'border-2 border-emerald-300 hover:border-emerald-500 bg-gradient-to-b from-emerald-50/60 to-white', badge: 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold', shadow: 'hover:shadow-emerald-500/15', rank: '🥈 อันดับ 2', barGrad: 'from-emerald-500 to-teal-600', avatarBg: 'bg-emerald-600' },
+                      { border: 'border-2 border-amber-300 hover:border-amber-500 bg-gradient-to-b from-amber-50/60 to-white', badge: 'bg-amber-100 text-amber-900 border border-amber-300 font-bold', shadow: 'hover:shadow-amber-500/15', rank: '🥉 อันดับ 3', barGrad: 'from-amber-500 to-orange-600', avatarBg: 'bg-amber-600' }
+                    ];
+                    const rt = rankThemes[idx] || rankThemes[0];
 
                     return (
                       <div
-                        key={t.id}
+                        key={t.id || idx}
                         onClick={() => setTherapistPopupId(t.id)}
-                        className={`bg-white rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl ${th.glow} ${th.borderColor} hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group relative overflow-hidden flex flex-col justify-between`}
+                        className={`rounded-3xl ${rt.border} p-6 shadow-sm hover:shadow-xl ${rt.shadow} hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group relative overflow-hidden`}
                       >
-                        {/* Background Subtle Gradient Glow */}
-                        <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${th.gradHeader} pointer-events-none`}></div>
-
-                        <div className="p-6 relative z-10">
-                          {/* Card Top: Avatar, Name, Rank Pill */}
+                        <div>
+                          {/* Card Header: Avatar & Rank */}
                           <div className="flex items-start justify-between gap-3 mb-5">
                             <div className="flex items-center gap-3">
-                              <div className={`w-12 h-12 rounded-2xl ${th.avatarBg} text-white shadow-md flex items-center justify-center font-black shrink-0 transition-transform group-hover:scale-105 group-hover:rotate-1`}>
+                              <div className={`w-12 h-12 rounded-2xl ${rt.avatarBg} text-white shadow-md flex items-center justify-center font-black shrink-0 transition-transform group-hover:scale-105`}>
                                 <Activity size={22} className="text-white drop-shadow-xs" />
                               </div>
                               <div>
@@ -2875,20 +2908,18 @@ export default function App() {
                                   {t.name}
                                 </h4>
                                 <div className="text-xs text-slate-400 font-semibold mt-0.5">
-                                  {t.role}
+                                  {t.role || 'นักกายภาพบำบัด'}
                                 </div>
                               </div>
                             </div>
 
-                            {/* Rank Pill */}
-                            <span className={`text-[11px] font-black px-2.5 py-1 rounded-full border shadow-xs flex items-center gap-1 ${th.badgeBg} shrink-0`}>
-                              {isRank1 ? <Trophy size={12} className="text-amber-500 inline" /> : null}
-                              อันดับ #{idx + 1}
+                            <span className={`text-[11px] px-2.5 py-1 rounded-full ${rt.badge} shrink-0`}>
+                              {rt.rank}
                             </span>
                           </div>
 
                           {/* Hero Metric: Total Amount Claimed */}
-                          <div className="bg-slate-50/90 rounded-2xl p-4 border border-slate-100 mb-4 group-hover:bg-white group-hover:border-slate-200 group-hover:shadow-xs transition-all">
+                          <div className="bg-slate-50/90 rounded-2xl p-4 border border-slate-100 mb-4 group-hover:bg-white group-hover:border-slate-200 transition-all">
                             <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-1">
                               <span className="flex items-center gap-1">
                                 <DollarSign size={13} className="text-slate-400" /> ยอดเบิกชดเชยรวม
@@ -2905,7 +2936,7 @@ export default function App() {
                             {/* Progress bar of CUP Share */}
                             <div className="w-full h-2 bg-slate-200/70 rounded-full mt-3 overflow-hidden">
                               <div
-                                className={`h-full rounded-full bg-gradient-to-r ${th.progressGrad} transition-all duration-500`}
+                                className={`h-full rounded-full bg-gradient-to-r ${rt.barGrad} transition-all duration-500`}
                                 style={{ width: t.pct }}
                               ></div>
                             </div>
@@ -2913,7 +2944,7 @@ export default function App() {
 
                           {/* 2 Micro-Stat Boxes */}
                           <div className="grid grid-cols-2 gap-3 mb-4">
-                            <div className={`rounded-2xl p-3 border ${th.statBg} flex flex-col justify-between`}>
+                            <div className="rounded-2xl p-3 bg-slate-50/70 border border-slate-100 flex flex-col justify-between">
                               <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
                                 <Activity size={13} className="text-slate-400" /> จำนวนบริการ
                               </div>
@@ -2922,7 +2953,7 @@ export default function App() {
                               </div>
                             </div>
 
-                            <div className={`rounded-2xl p-3 border ${th.statBg} flex flex-col justify-between`}>
+                            <div className="rounded-2xl p-3 bg-slate-50/70 border border-slate-100 flex flex-col justify-between">
                               <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
                                 <TrendingUp size={13} className="text-slate-400" /> เฉลี่ย/ครั้ง
                               </div>
@@ -2941,7 +2972,7 @@ export default function App() {
                               <div className="flex flex-wrap gap-1.5">
                                 {t.services.slice(0, 2).map((s, sI) => (
                                   <span key={sI} className="text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200/60 truncate max-w-full">
-                                    {(s.name || s.service_item || s.service || 'บริการ').replace('กายภาพบำบัด_', '')}: <strong className="text-slate-900 font-bold">฿{fmt(s.amt || s.amount)}</strong>
+                                    {(s?.name || s?.service || 'บริการ').replace('กายภาพบำบัด_', '')}: <strong className="text-slate-900 font-bold">฿{fmt(s?.amt || s?.amount || 0)}</strong>
                                   </span>
                                 ))}
                               </div>
@@ -2950,11 +2981,11 @@ export default function App() {
                         </div>
 
                         {/* Card Interactive Footer */}
-                        <div className="px-6 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between group-hover:bg-slate-100/90 transition-colors">
-                          <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700">
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between group-hover:text-[#0284c7] transition-colors">
+                          <span className="text-xs font-bold text-slate-500">
                             คลิกดูสถิติเจาะลึก
                           </span>
-                          <span className={`text-xs font-extrabold flex items-center gap-1 text-[#0284c7] group-hover:translate-x-1 transition-transform`}>
+                          <span className="text-xs font-extrabold flex items-center gap-1 text-[#0284c7] group-hover:translate-x-1 transition-transform">
                             รายละเอียด <ArrowUpRight size={14} />
                           </span>
                         </div>
@@ -2966,7 +2997,6 @@ export default function App() {
 
               {/* ─── ตารางแยกตามประเภทการให้บริการ (Service Types) ─── */}
               <div className="bg-white rounded-3xl border border-sky-200 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-400 transition-all duration-300 overflow-hidden relative group">
-                {/* Top Gradient Highlight Stripe */}
                 <div className="h-1.5 w-full bg-gradient-to-r from-[#0284c7] via-cyan-400 to-emerald-400"></div>
                 <div className="p-5 md:p-6 border-b border-sky-100/80 bg-gradient-to-r from-sky-50/50 via-white to-sky-50/20 flex justify-between items-center flex-wrap gap-3">
                   <div className="flex items-center gap-3">
@@ -3127,7 +3157,7 @@ export default function App() {
               {/* ─── Popup: รายละเอียดการให้บริการรายบุคคล (นักกายภาพ) ─── */}
               {therapistPopupId && (
                 (() => {
-                  const currentTherapist = physicalData.therapistList.find(t => String(t.id) === String(therapistPopupId)) || THERAPIST_DETAIL[therapistPopupId];
+                  const currentTherapist = (physicalData.therapistList || []).find(t => String(t.id) === String(therapistPopupId)) || THERAPIST_DETAIL[therapistPopupId];
                   if (!currentTherapist) return null;
                   return (
                     <div
@@ -3141,8 +3171,7 @@ export default function App() {
                         <div className="flex justify-between items-center p-5 border-b border-slate-100">
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-sm"
-                              style={{ backgroundColor: currentTherapist.color }}
+                              className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-sm bg-[#0284c7]"
                             >
                               <Activity size={22} className="text-white drop-shadow-xs" />
                             </div>
@@ -3150,7 +3179,7 @@ export default function App() {
                               <div className="font-extrabold text-base text-slate-900">
                                 {currentTherapist.name}
                               </div>
-                              <div className="text-xs text-slate-500 font-medium">{currentTherapist.role} · ปีงบ 2569</div>
+                              <div className="text-xs text-slate-500 font-medium">{currentTherapist.role || 'นักกายภาพบำบัด'} · ปีงบ 2569</div>
                             </div>
                           </div>
                           <button
@@ -3166,13 +3195,13 @@ export default function App() {
                             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                               <div className="text-xs text-slate-500 font-semibold">จำนวนครั้งรวม</div>
                               <div className="text-xl font-black text-slate-900 mt-1">
-                                {fmt(currentTherapist.totalQty)} ครั้ง
+                                {fmt(currentTherapist.totalQty || 0)} ครั้ง
                               </div>
                             </div>
                             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                               <div className="text-xs text-slate-500 font-semibold">ยอดเบิกรวม</div>
                               <div className="text-xl font-black text-slate-900 mt-1">
-                                ฿ {fmt(currentTherapist.totalAmt)}
+                                ฿ {fmt(currentTherapist.totalAmt || 0)}
                               </div>
                             </div>
                           </div>
@@ -3201,7 +3230,7 @@ export default function App() {
                             </table>
                           </div>
 
-                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+                          <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-800 flex items-center gap-2">
                             <span>ℹ️</span>
                             <span>ตัวเลขรายบุคคลคำนวณจากสัดส่วนการให้บริการจริงในเครือข่าย</span>
                           </div>
