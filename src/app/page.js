@@ -426,6 +426,8 @@ const fmtS = (n) => {
 
 const HOSP_PALETTE = ['#3b82f6', '#10b981', '#f97316', '#a855f7', '#ec4899', '#06b6d4'];
 
+// use top-level defaultHMap
+
 /* ════════ LOGIN SCREEN ════════ */
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
@@ -602,17 +604,7 @@ export default function App() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const defaultHMap = {
-        'all': 'All Cup',
-        '05954': '05954 - รพ.สต.บ้านสันโค้ง (แม่ข่าย)',
-        '05962': '05962 - รพ.สต.บ้านต้นเปา',
-        '05957': '05957 - รพ.สต.บ้านกอสะเรียม',
-        '05959': '05959 - รพ.สต.บ้านแม่ผาแหน',
-        '05956': '05956 - รพ.สต.บ้านป่าตาล',
-        '54': 'พัทธนันท์  พชรสุข',
-        '56': 'จตุพล กันธะเรียน',
-        '62': 'ทิพย์สุดา มาแจ้'
-      };
+      // use top-level defaultHMap
 
       try {
         const [resC, resE, resHos, resP, resPhy, resThai, resHerbal, resPpfs] = await Promise.allSettled([
