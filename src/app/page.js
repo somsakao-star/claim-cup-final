@@ -750,9 +750,7 @@ export default function App() {
     });
 
     // 3. Sum Thai Medicine
-    const tList = (thais && thais.length > 0 && thais.some(x => String(x.fiscal_year) === currentYear))
-      ? thais
-      : OFFLINE_THAI_DATA;
+    const tList = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
     tList.forEach(t => {
       const yr = String(t.fiscal_year || '');
       if (currentYear === 'all' || yr === currentYear) {
@@ -1133,16 +1131,9 @@ export default function App() {
     const selectedYr = String(currentYear || '2569');
     const prevYr = String(Number(selectedYr) - 1);
 
-    let rowsSelected = rawList.filter(r => String(r.fiscal_year || '') === selectedYr);
-    let rowsPrev = rawList.filter(r => String(r.fiscal_year || '') === prevYr);
-
-    // Fallback if live database lacks rows for selected fiscal year
-    if (rowsSelected.length === 0) {
-      rowsSelected = OFFLINE_THAI_DATA.filter(r => String(r.fiscal_year || '') === selectedYr);
-    }
-    if (rowsPrev.length === 0) {
-      rowsPrev = OFFLINE_THAI_DATA.filter(r => String(r.fiscal_year || '') === prevYr);
-    }
+    // Filter strictly by selected fiscal year from database
+    const rowsSelected = rawList.filter(r => String(r.fiscal_year || '') === selectedYr);
+    const rowsPrev = rawList.filter(r => String(r.fiscal_year || '') === prevYr);
 
     let totalAmt = 0;
     let rep1Amt = 0;
@@ -1205,7 +1196,7 @@ export default function App() {
     const hospList = Object.values(hospStats).map(h => {
       const pctVal = totalAmt > 0 ? (h.totalAmt / totalAmt) * 100 : 0;
       const sSorted = Object.values(h.services).sort((a, b) => b.amt - a.amt);
-      const topService = sSorted[0] ? sSorted[0].name : 'บริการนวดและประคบสมุนไพรเพื่อการรักษา';
+      const topService = sSorted[0] ? sSorted[0].name : 'ยังไม่มีข้อมูล';
       return {
         ...h,
         avg: h.totalQty > 0 ? Math.round(h.totalAmt / h.totalQty) : 0,
@@ -1236,27 +1227,22 @@ export default function App() {
 
     const sumPrev = monthlyPrev.reduce((a, b) => a + b, 0);
     const sumSelected = monthlySelected.reduce((a, b) => a + b, 0);
-    const totalQty = rowsSelected.length || 412;
-    const avgPerService = totalQty > 0 ? Math.round((totalAmt || 252900) / totalQty) : 551;
+    const totalQty = rowsSelected.length;
+    const avgPerService = totalQty > 0 ? Math.round(totalAmt / totalQty) : 0;
 
     return {
-      totalAmt: totalAmt > 0 ? totalAmt : (selectedYr === '2569' ? 252900 : 310339),
-      totalAmt69: totalAmt > 0 ? totalAmt : 252900,
+      totalAmt: Math.round(totalAmt),
+      totalAmt69: Math.round(totalAmt),
       totalQty69: totalQty,
-      rep1Amt69: rep1Amt > 0 ? rep1Amt : 142000,
-      rep2Amt69: rep2Amt > 0 ? rep2Amt : 84931,
+      rep1Amt69: Math.round(rep1Amt),
+      rep2Amt69: Math.round(rep2Amt),
       avgPerService,
       hospList,
-      serviceList: serviceList.length > 0 ? serviceList : [
-        { name: 'บริการนวดและประคบสมุนไพรเพื่อการรักษา', qty: 310, amt: 175400, pct: '77.3%' },
-        { name: 'การตรวจวินิจฉัยและให้คำปรึกษาทางการแพทย์แผนไทย', qty: 65, amt: 28200, pct: '12.4%' },
-        { name: 'บริการอบไอน้ำสมุนไพรเพื่อการรักษา', qty: 25, amt: 14500, pct: '6.4%' },
-        { name: 'การฟื้นฟูสุขภาพมารดาหลังคลอด (ทับหม้อเกลือ)', qty: 12, amt: 8831, pct: '3.9%' }
-      ],
-      monthly68: sumPrev > 0 ? monthlyPrev : [18000, 21000, 24000, 26000, 22000, 20000, 19500, 18000, 16500, 19000, 17500, 15000],
-      monthly69: sumSelected > 0 ? sumSelected : [28500, 31200, 23250, 34000, 38000, 39000, 32981, 0, 0, 0, 0, 0],
-      sum68: sumPrev > 0 ? sumPrev : 310339,
-      sum69: sumSelected > 0 ? sumSelected : 252900
+      serviceList,
+      monthly68: monthlyPrev,
+      monthly69: monthlySelected,
+      sum68: Math.round(sumPrev),
+      sum69: Math.round(sumSelected)
     };
   }, [thais, hospitalMap, currentYear]);
 
