@@ -2269,6 +2269,142 @@ export default function App() {
     };
   }, [currentView, ppfsData]);
 
+  /* ─── Print 2-Page Landscape Expense Report ─── */
+  const handlePrintExpenses = () => {
+    const printWindow = window.open('', '_blank', 'width=1280,height=900');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    const dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+    
+    // Rows for Sheet 1 (ครึ่งปีแรก: ต.ค. - มี.ค.)
+    const p1Rows = expenseStats.table.map((row, idx) => `
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 11.5px; color: #1e293b;">${idx + 1}. ${row.name}</td>
+        ${row.m.slice(0, 6).map(val => `<td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-size: 11.5px; color: #334155;">${val > 0 ? fmtD(val) : '—'}</td>`).join('')}
+        <td style="padding: 6px 10px; text-align: right; border: 1px solid #cbd5e1; font-weight: 700; background: #f0fdf4; color: #065f46; font-size: 11.5px;">${row.sumH1 > 0 ? fmtD(row.sumH1) : '—'}</td>
+      </tr>
+    `).join('');
+
+    const p1Foot = `
+      <tr style="background: #065f46; color: white; font-weight: 800; font-size: 11.5px;">
+        <td style="padding: 7px 10px; border: 1px solid #065f46;">รวมทุกหมวดหมู่ (6 เดือนแรก)</td>
+        ${expenseStats.monthTotals.slice(0, 6).map(sum => `<td style="padding: 7px 8px; text-align: right; border: 1px solid #065f46;">${sum > 0 ? fmt(sum) : '—'}</td>`).join('')}
+        <td style="padding: 7px 10px; text-align: right; border: 1px solid #065f46; background: #022c22;">${fmtD(expenseStats.sumAllH1)}</td>
+      </tr>
+    `;
+
+    // Rows for Sheet 2 (ครึ่งปีหลัง: เม.ย. - ก.ย.)
+    const p2Rows = expenseStats.table.map((row, idx) => `
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 11.5px; color: #1e293b;">${idx + 1}. ${row.name}</td>
+        ${row.m.slice(6, 12).map(val => `<td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-size: 11.5px; color: #334155;">${val > 0 ? fmtD(val) : '—'}</td>`).join('')}
+        <td style="padding: 6px 10px; text-align: right; border: 1px solid #cbd5e1; font-weight: 700; background: #f0fdf4; color: #065f46; font-size: 11.5px;">${row.total > 0 ? fmtD(row.total) : '—'}</td>
+      </tr>
+    `).join('');
+
+    const p2Foot = `
+      <tr style="background: #065f46; color: white; font-weight: 800; font-size: 11.5px;">
+        <td style="padding: 7px 10px; border: 1px solid #065f46;">รวมทุกหมวดหมู่</td>
+        ${expenseStats.monthTotals.slice(6, 12).map(sum => `<td style="padding: 7px 8px; text-align: right; border: 1px solid #065f46;">${sum > 0 ? fmt(sum) : '—'}</td>`).join('')}
+        <td style="padding: 7px 10px; text-align: right; border: 1px solid #065f46; background: #022c22;">${fmtD(expenseStats.total)}</td>
+      </tr>
+    `;
+
+    const monthsH1Th = MONTHS_TH.slice(0, 6);
+    const monthsH2Th = MONTHS_TH.slice(6, 12);
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="th">
+      <head>
+        <meta charset="UTF-8">
+        <title>รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</title>
+        <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          @page { size: landscape; margin: 8mm; }
+          * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+          body { margin: 0; padding: 0; background: #fff; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .page-container { padding: 8px 12px; background: white; min-height: 94vh; display: flex; flex-direction: column; justify-content: flex-start; }
+          .page-break-after { page-break-after: always; break-after: page; }
+          .header-row { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #059669; padding-bottom: 8px; margin-bottom: 10px; }
+          .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; }
+          .subtitle { font-size: 11.5px; color: #64748b; margin: 2px 0 0; }
+          .info-right { text-align: right; font-size: 11px; color: #64748b; font-weight: 600; }
+          table { width: 100%; border-collapse: collapse; margin-top: 2px; }
+          th, td { border: 1px solid #cbd5e1; }
+          th { background-color: #f1f5f9; font-size: 11.5px; padding: 7px 8px; }
+        </style>
+      </head>
+      <body>
+        <!-- แผ่นที่ 1: ต.ค. - มี.ค. -->
+        <div class="page-container page-break-after">
+          <div class="header-row">
+            <div>
+              <h2 class="title">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีแรก: ต.ค. - มี.ค.)</h2>
+              <p class="subtitle">ประจำปีงบประมาณ \${currentYear} &nbsp;|&nbsp; แผ่นที่ 1/2</p>
+            </div>
+            <div class="info-right">วันที่พิมพ์: \${dateStr}</div>
+          </div>
+          <table>
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="text-align:left; width:28%; padding:7px 10px;">หมวดหมู่รายการจ่าย</th>
+                \${monthsH1Th.map(m => \`<th style="text-align:right; color:#059669;">\${m}</th>\`).join('')}
+                <th style="text-align:right; background:#e6fffa; color:#059669; font-weight:800; padding:7px 10px;">รวม 6 เดือนแรก</th>
+              </tr>
+            </thead>
+            <tbody>
+              \${p1Rows}
+            </tbody>
+            <tfoot>
+              \${p1Foot}
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- แผ่นที่ 2: เม.ย. - ก.ย. -->
+        <div class="page-container">
+          <div class="header-row">
+            <div>
+              <h2 class="title">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีหลัง: เม.ย. - ก.ย.)</h2>
+              <p class="subtitle">ประจำปีงบประมาณ \${currentYear} &nbsp;|&nbsp; แผ่นที่ 2/2</p>
+            </div>
+            <div class="info-right" style="color:#059669; font-size:12px; font-weight:800;">
+              ยอดรวมทั้งปีงบประมาณ: ฿\${fmtD(expenseStats.total)} บาท
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="text-align:left; width:28%; padding:7px 10px;">หมวดหมู่รายการจ่าย</th>
+                \${monthsH2Th.map(m => \`<th style="text-align:right; color:#059669;">\${m}</th>\`).join('')}
+                <th style="text-align:right; background:#e6fffa; color:#059669; font-weight:800; padding:7px 10px;">รวมทั้งสิ้น (12 เดือน)</th>
+              </tr>
+            </thead>
+            <tbody>
+              \${p2Rows}
+            </tbody>
+            <tfoot>
+              \${p2Foot}
+            </tfoot>
+          </table>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.focus();
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+          };
+        <\/script>
+      </body>
+      </html>
+    \`);
+    printWindow.document.close();
+  };
+
     // Handle Loading & Login
   if (!mounted || loading) return (
     <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
@@ -4719,12 +4855,6 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowExpPrintModal(true)}
-                  className="px-4 py-2 bg-sky-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-sky-800 transition-all shadow-sm cursor-pointer"
-                >
-                  <Printer size={15} /> พิมพ์รายงาน
-                </button>
-                <button
                   onClick={() => setCurrentView('overview')}
                   className="px-4 py-2 bg-[#022c22] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#064e3b] transition-all cursor-pointer"
                 >
@@ -4791,7 +4921,7 @@ export default function App() {
                     onClick={() => setShowExpPrintModal(true)}
                     className="px-3.5 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-800 transition-all cursor-pointer"
                   >
-                    <Printer size={14} /> พิมพ์รายงาน (2 แผ่น แนวนอน)
+                    <Printer size={14} /> พิมพ์รายงาน
                   </button>
                 </div>
                 <div className="overflow-x-auto">
@@ -4857,7 +4987,7 @@ export default function App() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => window.print()}
+                        onClick={handlePrintExpenses}
                         className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
                       >
                         <Printer size={15} /> สั่งพิมพ์ (Print)
