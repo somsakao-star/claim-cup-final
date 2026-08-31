@@ -1784,8 +1784,11 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'physical') return;
 
-    let timer = setTimeout(() => {
+    let timer;
+    const renderChart = () => {
       if (!physYoYCanvasRef.current) return;
+      const existing = Chart.getChart(physYoYCanvasRef.current);
+      if (existing) existing.destroy();
       if (physYoYChartRef.current) {
         physYoYChartRef.current.destroy();
         physYoYChartRef.current = null;
@@ -1825,9 +1828,7 @@ export default function App() {
             intersect: false
           },
           plugins: {
-            legend: {
-              display: false
-            },
+            legend: { display: false },
             tooltip: {
               backgroundColor: '#0f172a',
               padding: 12,
@@ -1853,10 +1854,17 @@ export default function App() {
           }
         }
       });
-    }, 50);
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
       clearTimeout(timer);
+      if (physYoYCanvasRef.current) {
+        const existing = Chart.getChart(physYoYCanvasRef.current);
+        if (existing) existing.destroy();
+      }
       if (physYoYChartRef.current) {
         physYoYChartRef.current.destroy();
         physYoYChartRef.current = null;
@@ -1868,8 +1876,11 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'thai') return;
 
-    let timer = setTimeout(() => {
+    let timer;
+    const renderChart = () => {
       if (!thaiYoYCanvasRef.current) return;
+      const existing = Chart.getChart(thaiYoYCanvasRef.current);
+      if (existing) existing.destroy();
       if (thaiYoYChartRef.current) {
         thaiYoYChartRef.current.destroy();
         thaiYoYChartRef.current = null;
@@ -1935,10 +1946,17 @@ export default function App() {
           }
         }
       });
-    }, 50);
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
       clearTimeout(timer);
+      if (thaiYoYCanvasRef.current) {
+        const existing = Chart.getChart(thaiYoYCanvasRef.current);
+        if (existing) existing.destroy();
+      }
       if (thaiYoYChartRef.current) {
         thaiYoYChartRef.current.destroy();
         thaiYoYChartRef.current = null;
@@ -1950,8 +1968,11 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'herbal') return;
 
-    let timer = setTimeout(() => {
+    let timer;
+    const renderChart = () => {
       if (!herbalYoYCanvasRef.current) return;
+      const existing = Chart.getChart(herbalYoYCanvasRef.current);
+      if (existing) existing.destroy();
       if (herbalYoYChartRef.current) {
         herbalYoYChartRef.current.destroy();
         herbalYoYChartRef.current = null;
@@ -2017,10 +2038,17 @@ export default function App() {
           }
         }
       });
-    }, 50);
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
       clearTimeout(timer);
+      if (herbalYoYCanvasRef.current) {
+        const existing = Chart.getChart(herbalYoYCanvasRef.current);
+        if (existing) existing.destroy();
+      }
       if (herbalYoYChartRef.current) {
         herbalYoYChartRef.current.destroy();
         herbalYoYChartRef.current = null;
@@ -2031,79 +2059,101 @@ export default function App() {
   /* ─── Chart: PPFS 3-Year Comparison ─── */
   useEffect(() => {
     if (currentView !== 'ppfs') return;
-    if (!ppfsYoYCanvasRef.current) return;
 
-    if (ppfsYoYChartRef.current) ppfsYoYChartRef.current.destroy();
+    let timer;
+    const renderChart = () => {
+      if (!ppfsYoYCanvasRef.current) return;
+      const existing = Chart.getChart(ppfsYoYCanvasRef.current);
+      if (existing) existing.destroy();
+      if (ppfsYoYChartRef.current) {
+        ppfsYoYChartRef.current.destroy();
+        ppfsYoYChartRef.current = null;
+      }
 
-    const hospNames = ['สันโค้ง', 'กอสะเรียม', 'ต้นเปา', 'แม่ผาแหน', 'ป่าตาล'];
+      const hospNames = ['สันโค้ง', 'กอสะเรียม', 'ต้นเปา', 'แม่ผาแหน', 'ป่าตาล'];
 
-    ppfsYoYChartRef.current = new Chart(ppfsYoYCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels: hospNames,
-        datasets: [
-          {
-            label: 'ปีงบ 2567',
-            data: ppfsData.hospBar67,
-            backgroundColor: '#cbd5e1',
-            borderRadius: 6,
-            barPercentage: 0.8,
-            categoryPercentage: 0.7
-          },
-          {
-            label: 'ปีงบ 2568',
-            data: ppfsData.hospBar68,
-            backgroundColor: '#60a5fa',
-            borderRadius: 6,
-            barPercentage: 0.8,
-            categoryPercentage: 0.7
-          },
-          {
-            label: 'ปีงบ 2569',
-            data: ppfsData.hospBar69,
-            backgroundColor: '#2563eb',
-            borderRadius: 6,
-            barPercentage: 0.8,
-            categoryPercentage: 0.7
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ` ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+      ppfsYoYChartRef.current = new Chart(ppfsYoYCanvasRef.current, {
+        type: 'bar',
+        data: {
+          labels: hospNames,
+          datasets: [
+            {
+              label: 'ปีงบ 2567',
+              data: ppfsData.hospBar67,
+              backgroundColor: '#cbd5e1',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7
+            },
+            {
+              label: 'ปีงบ 2568',
+              data: ppfsData.hospBar68,
+              backgroundColor: '#60a5fa',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7
+            },
+            {
+              label: 'ปีงบ 2569',
+              data: ppfsData.hospBar69,
+              backgroundColor: '#2563eb',
+              borderRadius: 6,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7
             }
-          }
+          ]
         },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { size: 12, weight: '700' }, color: '#475569' }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              padding: 12,
+              cornerRadius: 10,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+              }
+            }
           },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: {
-              callback: (v) => fmtS(v),
-              font: { size: 11 },
-              color: '#94a3b8'
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 12, weight: '700' }, color: '#475569' }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                callback: (v) => fmtS(v),
+                font: { size: 11 },
+                color: '#94a3b8'
+              }
             }
           }
         }
-      }
-    });
+      });
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
-      if (ppfsYoYChartRef.current) ppfsYoYChartRef.current.destroy();
+      clearTimeout(timer);
+      if (ppfsYoYCanvasRef.current) {
+        const existing = Chart.getChart(ppfsYoYCanvasRef.current);
+        if (existing) existing.destroy();
+      }
+      if (ppfsYoYChartRef.current) {
+        ppfsYoYChartRef.current.destroy();
+        ppfsYoYChartRef.current = null;
+      }
     };
   }, [currentView, ppfsData]);
 
-  // Handle Loading & Login
+    // Handle Loading & Login
   if (loading) return (
     <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
       <div className="flex flex-col items-center gap-3">
