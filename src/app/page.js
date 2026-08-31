@@ -800,7 +800,7 @@ export default function App() {
     return { totalAmt: Math.round(totalAmt), hospTotals, rankingList, groupCards };
   }, [claims, ppfsList, physicals, thais, herbals, currentYear, currentHosp, hospitalMap]);
 
-  /* ─── Monthly YoY Trend Data (Calculated dynamically from Payment Table) ─── */
+  /* ─── Monthly YoY Trend Data (Calculated dynamically from Payment Table & Live Modules) ─── */
   const monthlyTrendData = useMemo(() => {
     const y68 = Array(12).fill(0);
     const y69 = Array(12).fill(0);
@@ -824,7 +824,7 @@ export default function App() {
 
     if (payments && payments.length > 0) {
       payments.forEach(p => {
-        const hcode = String(p.hcode || '');
+        const hcode = String(p.hcode || '').trim();
         if (currentHosp === 'all' || hcode === currentHosp) {
           const yr = String(p.fiscal_year || '');
           const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
@@ -839,25 +839,50 @@ export default function App() {
         }
       });
     } else {
-      // Fallback to pre-calculated statement matrix
-      const m68 = PAY_MATRIX_68[currentHosp === 'all' ? 'ALL' : currentHosp] || PAY_MATRIX_68['ALL'] || [];
-      const m69 = PAY_MATRIX_69[currentHosp === 'all' ? 'ALL' : currentHosp] || PAY_MATRIX_69['ALL'] || [];
+      // Dynamic aggregation across all 4 live module tables for selected hospital
+      const addRow = (item, isPhy = false) => {
+        let hc = String(item.hcode || '').trim();
+        if (isPhy) {
+          if (hc === '54') hc = '05954';
+          if (hc === '56') hc = '05956';
+          if (hc === '62') hc = '05962';
+        }
+        if (currentHosp !== 'all' && hc !== currentHosp) return;
 
-      m68.forEach(r => {
-        const idx = getMonthIdx(r.Month);
-        if (idx >= 0) y68[idx] += (r.Total || 0);
-      });
-      m69.forEach(r => {
-        const idx = getMonthIdx(r.Month);
-        if (idx >= 0) y69[idx] += (r.Total || 0);
-      });
+        const yr = String(item.fiscal_year || '');
+        const amt = parseFloat(String(item.amount || 0).replace(/,/g, '')) || 0;
+        
+        let mIdx = getMonthIdx(item.month);
+        if (mIdx === -1 && item.rep) {
+          mIdx = item.rep === '2' ? 2 : 0;
+        }
+        if (mIdx === -1) {
+          mIdx = 0;
+        }
+
+        if (yr.includes('2568') || yr.endsWith('68')) {
+          y68[mIdx] += amt;
+        } else if (yr.includes('2569') || yr.endsWith('69')) {
+          y69[mIdx] += amt;
+        }
+      };
+
+      (physicals || []).forEach(p => addRow(p, true));
+      (thais || []).forEach(t => addRow(t, false));
+      (herbals || []).forEach(h => addRow(h, false));
+      (ppfsList || claims || []).forEach(c => addRow(c, false));
     }
 
-    const total68 = y68.reduce((a, b) => a + b, 0);
-    const total69 = y69.reduce((a, b) => a + b, 0);
+    const total68 = Math.round(y68.reduce((a, b) => a + b, 0));
+    const total69 = Math.round(y69.reduce((a, b) => a + b, 0));
 
-    return { y68, y69, total68, total69 };
-  }, [payments, currentHosp]);
+    return { 
+      y68: y68.map(v => Math.round(v)), 
+      y69: y69.map(v => Math.round(v)), 
+      total68, 
+      total69 
+    };
+  }, [payments, physicals, thais, herbals, ppfsList, claims, currentHosp]);
 
   /* ─── Detail Comparison Table Data (2568 vs 2569) ─── */
   const detailComparisonData = useMemo(() => {
@@ -1587,8 +1612,6 @@ export default function App() {
       if (!trendCanvasRef.current) return;
       if (trendChartRef.current) trendChartRef.current.destroy();
 
-      const is68Only = currentYear === '2568';
-
       trendChartRef.current = new Chart(trendCanvasRef.current, {
         type: 'line',
         data: {
@@ -1609,7 +1632,7 @@ export default function App() {
             },
             {
               label: `ปีงบ 2569 (฿ ${fmt(monthlyTrendData.total69)})`,
-              data: is68Only ? monthlyTrendData.y68.map(v => Math.round(v * 0.85)) : monthlyTrendData.y69,
+              data: monthlyTrendData.y69,
               borderColor: '#064e3b',
               backgroundColor: 'rgba(6,78,59,0.12)',
               tension: 0.35,
