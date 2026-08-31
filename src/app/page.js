@@ -2941,7 +2941,7 @@ export default function App() {
                               <div className="flex flex-wrap gap-1.5">
                                 {t.services.slice(0, 2).map((s, sI) => (
                                   <span key={sI} className="text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200/60 truncate max-w-full">
-                                    {s.name.replace('กายภาพบำบัด_', '')}: <strong className="text-slate-900 font-bold">฿{fmt(s.amt || s.amount)}</strong>
+                                    {(s.name || s.service_item || s.service || 'บริการ').replace('กายภาพบำบัด_', '')}: <strong className="text-slate-900 font-bold">฿{fmt(s.amt || s.amount)}</strong>
                                   </span>
                                 ))}
                               </div>
@@ -3190,11 +3190,11 @@ export default function App() {
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100 text-xs">
-                                {currentTherapist.services.map((s, sIdx) => (
+                                {(currentTherapist.services || []).map((s, sIdx) => (
                                   <tr key={sIdx}>
-                                    <td className="py-2.5 font-semibold text-slate-700">{s.name}</td>
-                                    <td className="py-2.5 text-right text-slate-500">{fmt(s.qty || s.count)}</td>
-                                    <td className="py-2.5 text-right font-bold text-slate-900">฿ {fmtD(s.amt || s.amount)}</td>
+                                    <td className="py-2.5 font-semibold text-slate-700">{s?.name || s?.service || 'บริการ'}</td>
+                                    <td className="py-2.5 text-right text-slate-500">{fmt(s?.qty || s?.count || 0)}</td>
+                                    <td className="py-2.5 text-right font-bold text-slate-900">฿ {fmtD(s?.amt || s?.amount || 0)}</td>
                                   </tr>
                                 ))}
                               </tbody>
