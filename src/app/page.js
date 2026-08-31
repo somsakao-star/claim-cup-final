@@ -2384,7 +2384,50 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 🏆 Top 5 Internal Ranking (5-Column Grid) */}
+              {/* ══ 2. YoY Comparison Chart (Live from Payment table) ══ */}
+              <div className="bg-white rounded-3xl border-2 border-emerald-200/90 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-400 transition-all duration-300 overflow-hidden relative group">
+                {/* Top Gradient Highlight Stripe */}
+                <div className="h-1.5 w-full bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-400"></div>
+                <div className="p-6 md:p-8">
+                  <div className="flex justify-between items-center mb-6 flex-wrap gap-3 border-b border-slate-100 pb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
+                        <TrendingUp size={20} />
+                      </div>
+                      <div>
+                        <div className="font-black text-base text-[#0f172a]">
+                          เปรียบเทียบยอดเบิกรายเดือน (YoY) — ปีงบ 2568 VS 2569
+                        </div>
+                        <div className="text-xs text-[#64748b] mt-0.5">
+                          แหล่งข้อมูล: ตาราง Payment (เงินโอนจัดสรรจริง) | <span className="font-bold text-emerald-800">{selectedHospName}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2.5 text-xs font-extrabold bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl shadow-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span>
+                          <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(monthlyTrendData.total68)})</span>
+                        </div>
+                        <span className="text-slate-300">|</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#064e3b] inline-block"></span>
+                          <span className="text-[#064e3b]">ปีงบ 2569 (฿ {fmt(monthlyTrendData.total69)})</span>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Live Payment Trend</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative h-[320px] w-full">
+                    <canvas ref={trendCanvasRef}></canvas>
+                  </div>
+                </div>
+              </div>
+
+              {/* 🏆 3. Top 5 Internal Ranking (5-Column Grid) */}
               <div className="bg-white rounded-3xl border-2 border-[#064e3b] shadow-sm hover:shadow-md transition-all overflow-hidden relative">
                 <div className="p-6 md:p-7">
                   <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
@@ -2443,49 +2486,6 @@ export default function App() {
                     {processedData.rankingList.length === 0 && (
                       <div className="col-span-5 text-center text-slate-400 font-bold py-6">ไม่มีข้อมูล</div>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ══ 3. YoY Comparison Chart (Live from Payment table) ══ */}
-              <div className="bg-white rounded-3xl border-2 border-emerald-200/90 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-400 transition-all duration-300 overflow-hidden relative group">
-                {/* Top Gradient Highlight Stripe */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-400"></div>
-                <div className="p-6 md:p-8">
-                  <div className="flex justify-between items-center mb-6 flex-wrap gap-3 border-b border-slate-100 pb-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
-                        <TrendingUp size={20} />
-                      </div>
-                      <div>
-                        <div className="font-black text-base text-[#0f172a]">
-                          เปรียบเทียบยอดเบิกรายเดือน (YoY) — ปีงบ 2568 VS 2569
-                        </div>
-                        <div className="text-xs text-[#64748b] mt-0.5">
-                          แหล่งข้อมูล: ตาราง Payment (เงินโอนจัดสรรจริง) | <span className="font-bold text-emerald-800">{selectedHospName}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2.5 text-xs font-extrabold bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl shadow-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span>
-                          <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(monthlyTrendData.total68)})</span>
-                        </div>
-                        <span className="text-slate-300">|</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#064e3b] inline-block"></span>
-                          <span className="text-[#064e3b]">ปีงบ 2569 (฿ {fmt(monthlyTrendData.total69)})</span>
-                        </div>
-                      </div>
-                      <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>Live Payment Trend</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="relative h-[320px] w-full">
-                    <canvas ref={trendCanvasRef}></canvas>
                   </div>
                 </div>
               </div>
