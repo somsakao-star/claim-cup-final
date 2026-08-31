@@ -662,7 +662,7 @@ export default function App() {
   const [ppfsHospitalPopupId, setPpfsHospitalPopupId] = useState(null);
   const [thaiHospitalPopupId, setThaiHospitalPopupId] = useState(null);
   const [herbalHospitalPopupId, setHerbalHospitalPopupId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState(defaultHMap);
   const [clockTime, setClockTime] = useState('');
 
@@ -717,6 +717,7 @@ export default function App() {
   useEffect(() => {
     const fetchAll = async () => {
       // use top-level defaultHMap
+      setLoading(true);
 
       try {
         const [resC, resE, resHos, resP, resPhy, resThai, resHerbal, resPpfs] = await Promise.allSettled([
