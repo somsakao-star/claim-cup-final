@@ -564,8 +564,8 @@ const LoginScreen = ({ onLoginSuccess }) => {
             onClick={() => setIsPulled(!isPulled)}
             title="ดึงสายโคมไฟเพื่อเปิด/ปิดหน้าต่างเข้าสู่ระบบ"
           >
-            <div className={`w-1 bg-gradient-to-b from-red-600 to-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.7)] group-hover:from-red-500 group-hover:to-rose-400 transition-all duration-500 origin-top rounded-full ${isPulled ? 'h-8' : 'h-20 group-active:h-32'}`}></div>
-            <div className={`w-5 h-5 bg-gradient-to-br from-red-500 via-red-600 to-rose-700 group-hover:scale-110 rounded-full transition-all duration-500 shadow-[0_0_15px_5px_rgba(239,68,68,0.75)] border-2 border-red-200/90 ${isPulled ? 'scale-75' : 'group-active:scale-130 animate-pulse'}`}></div>
+            <div className={`w-1 bg-gradient-to-b from-blue-600 to-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.7)] group-hover:from-blue-500 group-hover:to-sky-300 transition-all duration-500 origin-top rounded-full ${isPulled ? 'h-8' : 'h-20 group-active:h-32'}`}></div>
+            <div className={`w-5 h-5 bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 group-hover:scale-110 rounded-full transition-all duration-500 shadow-[0_0_15px_5px_rgba(56,189,248,0.75)] border-2 border-sky-200/90 ${isPulled ? 'scale-75' : 'group-active:scale-130 animate-pulse'}`}></div>
           </div>
           {/* Lamp Bulb */}
           <div
