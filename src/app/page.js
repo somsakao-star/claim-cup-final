@@ -531,18 +531,18 @@ export default function App() {
   const [therapistPopupId, setTherapistPopupId] = useState(null);
   const [showExpPrintModal, setShowExpPrintModal] = useState(false);
 
-  const [claims, setClaims] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [physicals, setPhysicals] = useState([]);
-  const [thais, setThais] = useState([]);
-  const [herbals, setHerbals] = useState([]);
-  const [ppfsList, setPpfsList] = useState([]);
+  const [claims, setClaims] = useState(OFFLINE_CLAIMS);
+  const [expenses, setExpenses] = useState(REAL_EXPENSES_TABLE);
+  const [payments, setPayments] = useState(OFFLINE_PAYMENTS);
+  const [physicals, setPhysicals] = useState(OFFLINE_PHYSICAL_DATA);
+  const [thais, setThais] = useState(OFFLINE_THAI_DATA);
+  const [herbals, setHerbals] = useState(OFFLINE_HERBAL_DATA);
+  const [ppfsList, setPpfsList] = useState(OFFLINE_PPFS_DATA);
   const [ppfsHospitalPopupId, setPpfsHospitalPopupId] = useState(null);
   const [thaiHospitalPopupId, setThaiHospitalPopupId] = useState(null);
   const [herbalHospitalPopupId, setHerbalHospitalPopupId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [hospitalMap, setHospitalMap] = useState({ 'all': 'All Cup' });
+  const [loading, setLoading] = useState(false);
+  const [hospitalMap, setHospitalMap] = useState(defaultHMap);
   const [clockTime, setClockTime] = useState('');
 
   const donutChartRef = useRef(null);
