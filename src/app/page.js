@@ -2277,9 +2277,114 @@ export default function App() {
                 </div>
               </div>
 
-              {/* ══ 1. 4 METRIC CARDS (1.Physical, 2.PPFS, 3.Thai Med, 4.Herbal) ══ */}
+              {/* ══ 1. 4 METRIC CARDS (1.PPFS, 2.Thai Med, 3.Herbal, 4.Physical) ══ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-                {/* 1. กายภาพบำบัด */}
+                {/* 1. PPFS (รายได้งบ PPFS) */}
+                {(() => {
+                  const pHosp = ppfsData.hospList.find(x => x.code === currentHosp);
+                  const pAmt = currentHosp === 'all' ? (ppfsData.totalAmt || 294185) : (pHosp ? pHosp.totalAmt : 0);
+                  const pTop = currentHosp === 'all' ? 'คัดกรองเบาหวาน-ไขมัน/CXR' : (pHosp?.topService || 'คัดกรองสุขภาพ');
+                  return (
+                    <div
+                      onClick={() => setCurrentView('ppfs')}
+                      className="bg-gradient-to-br from-white via-white to-blue-50 rounded-3xl border-2 border-blue-200 p-5 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
+                    >
+                      <div className="absolute top-0 right-0 w-28 h-28 bg-blue-200/20 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-300/30 transition-all"></div>
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xs font-bold text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
+                            <span>✨</span> รายได้งบ PPFS
+                          </span>
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                            <DollarSign size={16} />
+                          </div>
+                        </div>
+                        <div className="text-xs font-semibold text-slate-500">
+                          รายได้งบ PPFS ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
+                          ฿ {fmt(pAmt)}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-semibold text-blue-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+                        <Trophy size={13} className="text-blue-500 shrink-0" />
+                        <span>สูงสุด: {pTop}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Thai Med (แพทย์แผนไทย) */}
+                {(() => {
+                  const tHosp = thaiData.hospList.find(x => x.code === currentHosp);
+                  const tAmt = currentHosp === 'all' ? (thaiData.totalAmt || 252900) : (tHosp ? tHosp.totalAmt : 0);
+                  const tTop = currentHosp === 'all' ? 'บริการนวด/ประคบ (฿ 175,400)' : (tHosp?.topService || 'บริการนวดและประคบ');
+                  return (
+                    <div
+                      onClick={() => setCurrentView('thai')}
+                      className="bg-gradient-to-br from-white via-white to-amber-50 rounded-3xl border-2 border-amber-200 p-5 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
+                    >
+                      <div className="absolute top-0 right-0 w-28 h-28 bg-amber-200/20 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-300/30 transition-all"></div>
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
+                            <span>✨</span> แพทย์แผนไทย
+                          </span>
+                          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                            <HeartPulse size={16} />
+                          </div>
+                        </div>
+                        <div className="text-xs font-semibold text-slate-500">
+                          ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
+                          ฿ {fmt(tAmt)}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-semibold text-amber-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+                        <Trophy size={13} className="text-amber-500 shrink-0" />
+                        <span>สูงสุด: {tTop}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. Herbal (ยาสมุนไพร) */}
+                {(() => {
+                  const hHosp = herbalData.hospList.find(x => x.code === currentHosp);
+                  const hAmt = currentHosp === 'all' ? (herbalData.totalAmt || 244931) : (hHosp ? hHosp.totalAmt : 0);
+                  const hTop = currentHosp === 'all' ? `ขมิ้นชันแคปซูล (กำไร +${herbalData.marginPct}%)` : (hHosp?.topMedicine || 'ขมิ้นชันแคปซูล');
+                  return (
+                    <div
+                      onClick={() => setCurrentView('herbal')}
+                      className="bg-gradient-to-br from-white via-white to-emerald-50 rounded-3xl border-2 border-emerald-200 p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
+                    >
+                      <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-200/20 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-300/30 transition-all"></div>
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
+                            <span>✨</span> ยาสมุนไพร
+                          </span>
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                            <Leaf size={16} />
+                          </div>
+                        </div>
+                        <div className="text-xs font-semibold text-slate-500">
+                          ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
+                          ฿ {fmt(hAmt)}
+                        </div>
+                      </div>
+                      <div className="text-[11px] font-semibold text-emerald-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+                        <Trophy size={13} className="text-emerald-500 shrink-0" />
+                        <span>สูงสุด: {hTop}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 4. กายภาพบำบัด (ลำดับที่ 4 - เปลี่ยนตามปีงบประมาณ) */}
                 <div
                   onClick={() => setCurrentView('physical')}
                   className="bg-gradient-to-br from-white via-white to-sky-50 rounded-3xl border-2 border-sky-200 p-5 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
@@ -2294,92 +2399,16 @@ export default function App() {
                         <Activity size={16} />
                       </div>
                     </div>
-                    <div className="text-xs font-semibold text-slate-500">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
+                    <div className="text-xs font-semibold text-slate-500">
+                      ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}
+                    </div>
                     <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
                       ฿ {fmt(physicalData.totalAmt || 230800)}
                     </div>
                   </div>
                   <div className="text-[11px] font-semibold text-sky-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                     <Trophy size={13} className="text-sky-500 shrink-0" />
-                    <span>สูงสุด: กายภาพบำบัด_IMC</span>
-                  </div>
-                </div>
-
-                {/* 2. PPFS (รายได้งบ PPFS) */}
-                <div
-                  onClick={() => setCurrentView('ppfs')}
-                  className="bg-gradient-to-br from-white via-white to-blue-50 rounded-3xl border-2 border-blue-200 p-5 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
-                >
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-blue-200/20 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-300/30 transition-all"></div>
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-bold text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
-                        <span>✨</span> รายได้งบ PPFS
-                      </span>
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                        <DollarSign size={16} />
-                      </div>
-                    </div>
-                    <div className="text-xs font-semibold text-slate-500">รายได้งบ PPFS ปี {currentYear.slice(2)}</div>
-                    <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      ฿ {fmt(ppfsData.totalAmt || 294185)}
-                    </div>
-                  </div>
-                  <div className="text-[11px] font-semibold text-blue-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-                    <Trophy size={13} className="text-blue-500 shrink-0" />
-                    <span>สูงสุด: คัดกรองเบาหวาน-ไขมัน/CXR</span>
-                  </div>
-                </div>
-
-                {/* 3. Thai Med (แพทย์แผนไทย) */}
-                <div
-                  onClick={() => setCurrentView('thai')}
-                  className="bg-gradient-to-br from-white via-white to-amber-50 rounded-3xl border-2 border-amber-200 p-5 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
-                >
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-amber-200/20 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-300/30 transition-all"></div>
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
-                        <span>✨</span> แพทย์แผนไทย
-                      </span>
-                      <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                        <HeartPulse size={16} />
-                      </div>
-                    </div>
-                    <div className="text-xs font-semibold text-slate-500">ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)}</div>
-                    <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      ฿ {fmt(thaiData.totalAmt || 252900)}
-                    </div>
-                  </div>
-                  <div className="text-[11px] font-semibold text-amber-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-                    <Trophy size={13} className="text-amber-500 shrink-0" />
-                    <span>สูงสุด: บริการนวด/ประคบ (฿ 175,400)</span>
-                  </div>
-                </div>
-
-                {/* 4. Herbal (ยาสมุนไพร) */}
-                <div
-                  onClick={() => setCurrentView('herbal')}
-                  className="bg-gradient-to-br from-white via-white to-emerald-50 rounded-3xl border-2 border-emerald-200 p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-400 hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group"
-                >
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-200/20 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-300/30 transition-all"></div>
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
-                        <span>✨</span> ยาสมุนไพร
-                      </span>
-                      <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                        <Leaf size={16} />
-                      </div>
-                    </div>
-                    <div className="text-xs font-semibold text-slate-500">ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)}</div>
-                    <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      ฿ {fmt(herbalData.totalAmt)}
-                    </div>
-                  </div>
-                  <div className="text-[11px] font-semibold text-emerald-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-                    <Trophy size={13} className="text-emerald-500 shrink-0" />
-                    <span>สูงสุด: ขมิ้นชันแคปซูล (กำไร +{herbalData.marginPct}%)</span>
+                    <span>สูงสุด: กายภาพบำบัด_IMC (ภาพรวม)</span>
                   </div>
                 </div>
               </div>
