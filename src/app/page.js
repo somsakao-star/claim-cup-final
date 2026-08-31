@@ -528,27 +528,24 @@ const LoginScreen = ({ onLoginSuccess }) => {
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username: username.trim(), password: password.trim() })
       });
       const data = await response.json();
       if (response.ok && data.success) {
         localStorage.setItem('claimcup_user', JSON.stringify(data.user));
         onLoginSuccess(data.user);
         return;
+      } else {
+        setErrorMsg(data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        setIsLoading(false);
+        return;
       }
     } catch (err) {
-      console.warn("API offline fallback used for login");
+      console.warn("Login connection error:", err);
+      setErrorMsg('ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+      setIsLoading(false);
+      return;
     }
-    // Local / Offline demo login
-    const offlineUser = {
-      id: 1,
-      username: username || 'admin',
-      name: username || 'ผู้ดูแลระบบ (Localhost Mode)',
-      role: 'admin'
-    };
-    localStorage.setItem('claimcup_user', JSON.stringify(offlineUser));
-    onLoginSuccess(offlineUser);
-    setIsLoading(false);
   };
 
   return (
