@@ -972,129 +972,20 @@ export default function App() {
     return { total, table, monthTotals, sumAllH1, sumAllH2, categories, monthlyEntries, topCategory, topMonth, avgPerMonth };
   }, [expenses, currentYear]);
 
-  /* ─── Payable Stats (Using Payment table: rep, month, fiscal_year, platform, hcode, amount, receive) ─── */
+  /* ─── Payable Stats (Using official PAY_DATA & Statement Matrix) ─── */
   const payableStats = useMemo(() => {
-    if (payments && payments.length > 0) {
-      // 1. Calculate sum68 and sum69 for all or selected hospital
-      let sum68 = 0, sum69 = 0;
-      payments.forEach(p => {
-        const yr = String(p.fiscal_year || '');
-        const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
-        const matchHosp = payableHosp === 'ALL' || String(p.hcode) === payableHosp;
-        if (matchHosp) {
-          if (yr.includes('2568') || yr.endsWith('68')) sum68 += amt;
-          if (yr.includes('2569') || yr.endsWith('69')) sum69 += amt;
-        }
-      });
-
-      // 2. Table 1: สรุปแยกตามหน่วยบริการ (สำหรับปีที่เลือก หรือปีล่าสุด)
-      const currentYearFilter = payableYear === '69' ? '69' : '68';
-      const hospDataMap = {};
-      Object.entries(hospitalMap).filter(([k]) => k !== 'all' && k.length >= 5).forEach(([code, name]) => {
-        hospDataMap[code] = {
-          'หน่วยบริการ': `${code} - ${name}`,
-          'code': code,
-          'รับเงินครั้งที่1': 0,
-          'รับเงินครั้งที่2': 0,
-          'หักเงิน': 0,
-          'ยอดสุทธิ': 0
-        };
-      });
-
-      let p1 = 0, p2 = 0, ded = 0;
-
-      payments.forEach(p => {
-        const yr = String(p.fiscal_year || '');
-        const matchYr = yr.includes(`25${currentYearFilter}`) || yr.endsWith(currentYearFilter);
-        const code = String(p.hcode || '').trim();
-        const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
-        const rep = parseInt(String(p.rep || 1), 10);
-        const isRec = String(p.receive || '').trim().toUpperCase() === 'Y';
-
-        if (matchYr && hospDataMap[code]) {
-          if (isRec) {
-            if (rep === 2) {
-              hospDataMap[code]['รับเงินครั้งที่2'] += amt;
-              p2 += amt;
-            } else {
-              hospDataMap[code]['รับเงินครั้งที่1'] += amt;
-              p1 += amt;
-            }
-          } else {
-            hospDataMap[code]['หักเงิน'] += amt;
-            ded += amt;
-          }
-        }
-      });
-
-      Object.values(hospDataMap).forEach(row => {
-        row['ยอดสุทธิ'] = (row['รับเงินครั้งที่1'] + row['รับเงินครั้งที่2']) - row['หักเงิน'];
-      });
-
-      const filteredPayData = Object.values(hospDataMap).filter(r => payableHosp === 'ALL' || r.code === payableHosp);
-      const totalReceived = p1 + p2;
-      const netRemain = totalReceived - ded;
-
-      // 3. Table 2: Statement Matrix รายเดือน x Platform
-      const monthMatrixMap = {};
-      payments.forEach(p => {
-        const yr = String(p.fiscal_year || '');
-        const matchYr = yr.includes(`25${currentYearFilter}`) || yr.endsWith(currentYearFilter);
-        const matchHosp = payableHosp === 'ALL' || String(p.hcode) === payableHosp;
-        if (matchYr && matchHosp) {
-          const m = String(p.month || '').trim();
-          let platform = String(p.platform || 'อื่นๆ').trim();
-          if (/ntip|cxr|tb|วัณโรค/i.test(platform)) {
-            platform = 'NTIP';
-          }
-          const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
-
-          if (!monthMatrixMap[m]) {
-            monthMatrixMap[m] = {
-              'Month': m,
-              'KTB Claim': 0,
-              'MOPH Claim': 0,
-              'E-Claim': 0,
-              'NTIP': 0,
-              'แพทย์แผนไทย': 0,
-              'Total': 0
-            };
-          }
-          if (monthMatrixMap[m][platform] !== undefined) {
-            monthMatrixMap[m][platform] += amt;
-          } else {
-            monthMatrixMap[m][platform] = amt;
-          }
-          monthMatrixMap[m]['Total'] += amt;
-        }
-      });
-
-      let matrixRows = Object.values(monthMatrixMap);
-      if (matrixRows.length === 0) {
-        matrixRows = payableYear === '69' ? (PAY_MATRIX_69[payableHosp] || PAY_MATRIX_69['ALL'] || []) : (PAY_MATRIX_68[payableHosp] || PAY_MATRIX_68['ALL'] || []);
-      }
-
-      const matrixTotal = matrixRows.reduce((acc, row) => {
-        ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย', 'Total'].forEach(k => {
-          acc[k] = (acc[k] || 0) + (row[k] || 0);
-        });
-        return acc;
-      }, {});
-
-      return { filteredPayData, p1, p2, ded, totalReceived, netRemain, sum68, sum69, matrixRows, matrixTotal };
-    }
-
-    // Fallback if payments table is empty
+    // 1. Table 1: สรุปยอดรับเงินและหักเงินรายหน่วยบริการจาก PAY_DATA
     const filteredPayData = PAY_DATA.filter(r => payableHosp === 'ALL' || r.code === payableHosp);
     let p1 = 0, p2 = 0, ded = 0;
     filteredPayData.forEach(r => {
-      p1 += r['รับเงินครั้งที่1'] || 0;
-      p2 += r['รับเงินครั้งที่2'] || 0;
-      ded += r['หักเงิน'] || 0;
+      p1 += (r['รับเงินครั้งที่1'] || 0);
+      p2 += (r['รับเงินครั้งที่2'] || 0);
+      ded += (r['หักเงิน'] || 0);
     });
     const totalReceived = p1 + p2;
     const netRemain = totalReceived - ded;
 
+    // 2. Table 2: Statement Matrix รายเดือน x Platform
     const m68List = PAY_MATRIX_68[payableHosp] || PAY_MATRIX_68['ALL'] || [];
     const m69List = PAY_MATRIX_69[payableHosp] || PAY_MATRIX_69['ALL'] || [];
     const sum68 = m68List.reduce((a, b) => a + (b.Total || 0), 0);
@@ -1109,7 +1000,7 @@ export default function App() {
     }, {});
 
     return { filteredPayData, p1, p2, ded, totalReceived, netRemain, sum68, sum69, matrixRows, matrixTotal };
-  }, [payments, payableHosp, payableYear, hospitalMap]);
+  }, [payableHosp, payableYear]);
 
   /* ─── Physical Therapy Dynamic Stats from physical table ─── */
   const physicalData = useMemo(() => {
