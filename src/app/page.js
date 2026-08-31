@@ -651,10 +651,10 @@ export default function App() {
   const trendChartRef = useRef(null);
   const trendCanvasRef = useRef(null);
 
-  // Auto-Logout 30 mins
+  // Auto-Logout 9 mins
   useEffect(() => {
     if (!currentUser) return;
-    const INACTIVITY_TIME = 30 * 60 * 1000;
+    const INACTIVITY_TIME = 9 * 60 * 1000;
     let timeoutId;
     const handleAutoLogout = () => {
       localStorage.removeItem('claimcup_user');
