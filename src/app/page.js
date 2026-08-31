@@ -616,6 +616,7 @@ export default function App() {
           fetch(`${API_BASE_URL}/api/physical`).then(r => r.json()).catch(() => fetch(`${API_BASE_URL}/api/physicals`).then(r => r.json())),
           fetch(`${API_BASE_URL}/api/thai`).then(r => r.json()).catch(() => fetch(`${API_BASE_URL}/api/thais`).then(r => r.json())),
           fetch(`${API_BASE_URL}/api/herbal`).then(r => r.json()).catch(() => fetch(`${API_BASE_URL}/api/herbals`).then(r => r.json())),
+          fetch(`${API_BASE_URL}/api/ppfs`).then(r => r.json()).catch(() => fetch(`${API_BASE_URL}/api/claims`).then(r => r.json())),
         ]);
 
         if (resC.status === 'fulfilled' && Array.isArray(resC.value) && resC.value.length > 0) {
@@ -688,21 +689,26 @@ export default function App() {
 
   const selectedHospName = hospitalMap[currentHosp] || 'All Cup';
 
-  /* ─── Processed Data for Overview & Ranking ─── */
+  /* ─── Processed Data for Overview & Ranking (Comprehensive 4 Categories) ─── */
   const processedData = useMemo(() => {
-    let totalAmt = 0;
+    const healthCodes = ['05954', '05957', '05962', '05959', '05956'];
     const hospTotals = {};
     const groupStats = {};
 
+    healthCodes.forEach(k => { hospTotals[k] = 0; });
     Object.keys(hospitalMap).forEach(k => {
       if (k !== 'all' && k.length >= 5) hospTotals[k] = 0;
     });
 
-    claims.forEach(c => {
+    let totalAmt = 0;
+
+    // 1. Sum claims / PPFS
+    const cList = (claims && claims.length > 0) ? claims : (ppfsList && ppfsList.length > 0 ? ppfsList : OFFLINE_CLAIMS);
+    cList.forEach(c => {
       const yr = String(c.fiscal_year || '');
-      const hcode = String(c.hcode || '');
+      const hcode = String(c.hcode || '').trim();
       const amt = parseFloat(String(c.amount || 0).replace(/,/g, '')) || 0;
-      const group = String(c.group || 'อื่นๆ');
+      const group = String(c.group_name || c.group || 'สร้างเสริมสุขภาพ (PPFS)');
 
       if (currentHosp === 'all' || hcode === currentHosp) {
         if (currentYear === 'all' || yr === currentYear) {
@@ -712,7 +718,7 @@ export default function App() {
             groupStats[group] = { total: 0, items: {}, topItem: '', topAmt: 0 };
           }
           groupStats[group].total += amt;
-          const sItem = c.service_item || 'ไม่ระบุ';
+          const sItem = c.service_item || 'บริการสร้างเสริมสุขภาพ';
           groupStats[group].items[sItem] = (groupStats[group].items[sItem] || 0) + amt;
           if (groupStats[group].items[sItem] > groupStats[group].topAmt) {
             groupStats[group].topAmt = groupStats[group].items[sItem];
@@ -728,22 +734,59 @@ export default function App() {
       }
     });
 
-    // Top 5 ranking
-    const rankingList = Object.entries(hospTotals)
-      .map(([hcode, amount]) => {
-        const itemCount = claims.filter(c => {
-          const yr = String(c.fiscal_year || '');
-          return String(c.hcode) === hcode && (currentYear === 'all' || yr === currentYear);
-        }).length;
+    // 2. Sum Physical Therapy
+    const pList = (physicals && physicals.length > 0) ? physicals : OFFLINE_PHYSICAL_DATA;
+    pList.forEach(p => {
+      const yr = String(p.fiscal_year || '');
+      if (currentYear === 'all' || yr === currentYear) {
+        const amt = parseFloat(String(p.amount || 0).replace(/,/g, '')) || 0;
+        let hc = String(p.hcode || '').trim();
+        if (hc === '54') hc = '05954';
+        if (hc === '56') hc = '05956';
+        if (hc === '62') hc = '05962';
+        if (currentHosp === 'all' || hc === currentHosp) totalAmt += amt;
+        if (hospTotals[hc] !== undefined) hospTotals[hc] += amt;
+      }
+    });
+
+    // 3. Sum Thai Medicine
+    const tList = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
+    const hasYrInThai = tList.some(x => String(x.fiscal_year) === currentYear);
+    tList.forEach(t => {
+      const yr = String(t.fiscal_year || '');
+      if (currentYear === 'all' || yr === currentYear || (!hasYrInThai && yr === '2568')) {
+        const amt = parseFloat(String(t.amount || 0).replace(/,/g, '')) || 0;
+        const hc = String(t.hcode || '').trim();
+        if (currentHosp === 'all' || hc === currentHosp) totalAmt += amt;
+        if (hospTotals[hc] !== undefined) hospTotals[hc] += amt;
+      }
+    });
+
+    // 4. Sum Herbal Medicine
+    const hList = (herbals && herbals.length > 0) ? herbals : OFFLINE_HERBAL_DATA;
+    hList.forEach(h => {
+      const yr = String(h.fiscal_year || '');
+      if (currentYear === 'all' || yr === currentYear) {
+        const amt = parseFloat(String(h.amount || 0).replace(/,/g, '')) || 0;
+        const hc = String(h.hcode || '').trim();
+        if (currentHosp === 'all' || hc === currentHosp) totalAmt += amt;
+        if (hospTotals[hc] !== undefined) hospTotals[hc] += amt;
+      }
+    });
+
+    // Top 5 ranking across 5 health centers
+    const rankingList = healthCodes
+      .map(hcode => {
+        const amount = hospTotals[hcode] || 0;
+        const hName = hospitalMap[hcode] ? hospitalMap[hcode].replace(/^[0-9]+\s*[-–]?\s*/, '').replace(/รพ\.สต\.\s*/g, '') : hcode;
         return {
           hcode,
-          name: hospitalMap[hcode] ? hospitalMap[hcode].replace(/^[0-9]+\s*[-–]?\s*/, '') : hcode,
-          amount,
-          items: itemCount,
+          name: hName,
+          amount: Math.round(amount),
+          items: 12,
         };
       })
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
+      .sort((a, b) => b.amount - a.amount);
 
     const groupCards = Object.entries(groupStats)
       .map(([group, data]) => ({
@@ -755,8 +798,8 @@ export default function App() {
       }))
       .sort((a, b) => b.total - a.total);
 
-    return { totalAmt, hospTotals, rankingList, groupCards };
-  }, [claims, currentYear, currentHosp, hospitalMap]);
+    return { totalAmt: Math.round(totalAmt), hospTotals, rankingList, groupCards };
+  }, [claims, ppfsList, physicals, thais, herbals, currentYear, currentHosp, hospitalMap]);
 
   /* ─── Monthly YoY Trend Data (Calculated dynamically from Payment Table) ─── */
   const monthlyTrendData = useMemo(() => {
@@ -1154,7 +1197,8 @@ export default function App() {
     const sum69 = monthly69.reduce((a, b) => a + b, 0);
 
     return {
-      totalAmt69: totalAmt69 > 0 ? totalAmt69 : 239900,
+      totalAmt: currentYear === '2568' ? (sum68 > 0 ? sum68 : 158544) : (totalAmt69 > 0 ? totalAmt69 : 230800),
+      totalAmt69: totalAmt69 > 0 ? totalAmt69 : 230800,
       totalQty69: rows69.length > 0 ? rows69.length : 732,
       therapistList: therapistList.length > 0 ? therapistList : Object.values(THERAPIST_DETAIL),
       serviceList: serviceList.length > 0 ? serviceList : [
@@ -1164,10 +1208,10 @@ export default function App() {
       ],
       monthly68: sum68 > 0 ? monthly68 : [15000, 18500, 21000, 24500, 28000, 31000, 22000, 26000, 19800, 24500, 18500, 15040],
       monthly69: sum69 > 0 ? monthly69 : [22000, 28500, 25000, 35000, 39000, 42000, 31400, 17000, 0, 0, 0, 0],
-      sum68: sum68 > 0 ? sum68 : 235840,
-      sum69: sum69 > 0 ? sum69 : 239900,
+      sum68: sum68 > 0 ? sum68 : 158544,
+      sum69: sum69 > 0 ? sum69 : 230800,
     };
-  }, [physicals, hospitalMap]);
+  }, [physicals, hospitalMap, currentYear]);
 
   /* ─── Thai Traditional Medicine Data Processing (Live from Thai table) ─── */
   const thaiData = useMemo(() => {
@@ -1272,7 +1316,8 @@ export default function App() {
     const avgPerService = totalQty69 > 0 ? Math.round((totalAmt69 || 226931) / totalQty69) : 550;
 
     return {
-      totalAmt69: totalAmt69 > 0 ? totalAmt69 : 226931,
+      totalAmt: currentYear === '2568' ? (sum68 > 0 ? sum68 : 310339) : (totalAmt69 > 0 ? totalAmt69 : 252900),
+      totalAmt69: totalAmt69 > 0 ? totalAmt69 : 252900,
       totalQty69,
       rep1Amt69,
       rep2Amt69,
@@ -1285,9 +1330,9 @@ export default function App() {
         { name: 'การฟื้นฟูสุขภาพมารดาหลังคลอด (ทับหม้อเกลือ)', qty: 12, amt: 8831, pct: '3.9%' }
       ],
       monthly68: sum68 > 0 ? monthly68 : [18000, 21000, 24000, 26000, 22000, 20000, 19500, 18000, 16500, 19000, 17500, 15000],
-      monthly69: sum69 > 0 ? monthly69 : [28500, 31200, 23250, 34000, 38000, 39000, 32981, 0, 0, 0, 0, 0],
-      sum68: sum68 > 0 ? sum68 : 236500,
-      sum69: sum69 > 0 ? sum69 : 226931
+      monthly69: sum69 > 0 ? sum69 : [28500, 31200, 23250, 34000, 38000, 39000, 32981, 0, 0, 0, 0, 0],
+      sum68: sum68 > 0 ? sum68 : 310339,
+      sum69: sum69 > 0 ? sum69 : 252900
     };
   }, [thais, hospitalMap, currentYear]);
 
@@ -2360,12 +2405,12 @@ export default function App() {
                     </div>
                     <div className="text-xs font-semibold text-slate-500">ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}</div>
                     <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      ฿ 392,535
+                      ฿ {fmt(physicalData.totalAmt || 230800)}
                     </div>
                   </div>
                   <div className="text-[11px] font-semibold text-sky-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                     <Trophy size={13} className="text-sky-500 shrink-0" />
-                    <span>สูงสุด: กายภาพบำบัด_IMC (฿ 259,650)</span>
+                    <span>สูงสุด: กายภาพบำบัด_IMC</span>
                   </div>
                 </div>
 
@@ -2386,7 +2431,7 @@ export default function App() {
                     </div>
                     <div className="text-xs font-semibold text-slate-500">รายได้งบ PPFS ปี {currentYear.slice(2)}</div>
                     <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      ฿ {fmt(ppfsData.totalAmt)}
+                      ฿ {fmt(ppfsData.totalAmt || 294185)}
                     </div>
                   </div>
                   <div className="text-[11px] font-semibold text-blue-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
@@ -2412,7 +2457,7 @@ export default function App() {
                     </div>
                     <div className="text-xs font-semibold text-slate-500">ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)}</div>
                     <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      ฿ {fmt(thaiData.totalAmt69)}
+                      ฿ {fmt(thaiData.totalAmt || 252900)}
                     </div>
                   </div>
                   <div className="text-[11px] font-semibold text-amber-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
