@@ -438,13 +438,87 @@ const defaultHMap = {
   '62': 'ทิพย์สุดา มาแจ้'
 };
 
+/* ════════ INTERACTIVE WEB THREADS CANVAS ════════ */
+const WebThreads = ({ color1 = "#059669", color2 = "#34d399", color3 = "#ffffff", speed = 0.4, threadCount = 6, opacity = 0.8 }) => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    let t = 0;
+    const render = () => {
+      t += 0.008 * speed;
+      ctx.clearRect(0, 0, width, height);
+
+      // Flowing curved emerald wave threads
+      for (let i = 0; i < threadCount; i++) {
+        ctx.beginPath();
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, color1);
+        grad.addColorStop(0.5, color2);
+        grad.addColorStop(1, color3);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6 + Math.sin(t + i) * 0.8;
+        ctx.globalAlpha = opacity * 0.65;
+
+        for (let x = 0; x < width; x += 18) {
+          const y = height * 0.52 + 
+            Math.sin(x * 0.0025 + t + i * 0.85) * 130 * Math.cos(t * 0.45 + i) +
+            Math.cos(x * 0.0045 - t * 0.75) * 65;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      // Glowing floating light particles
+      for (let j = 0; j < 28; j++) {
+        const px = (Math.sin(t * 0.28 + j * 1.6) * 0.5 + 0.5) * width;
+        const py = (Math.cos(t * 0.38 + j * 2.2) * 0.5 + 0.5) * height;
+        const pr = 1.6 + Math.sin(t + j) * 1.2;
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fillStyle = j % 2 === 0 ? color2 : color1;
+        ctx.globalAlpha = opacity * 0.75;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = color2;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [color1, color2, color3, speed, threadCount, opacity]);
+
+  return <canvas ref={canvasRef} className="w-full h-full block pointer-events-none" />;
+};
+
 /* ════════ LOGIN SCREEN ════════ */
 const LoginScreen = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPulled, setIsPulled] = useState(true);
+  const [isPulled, setIsPulled] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -478,30 +552,34 @@ const LoginScreen = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-900' : 'bg-[#050505]'}`}>
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/50 via-slate-900 to-[#022c22]"></div>
+    <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-950' : 'bg-[#030712]'}`}>
+      <div className="absolute inset-0 z-0 opacity-80">
+        <WebThreads color1="#059669" color2="#34d399" color3="#a7f3d0" speed={0.4} threadCount={6} opacity={0.85} />
+      </div>
 
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
         <div className="w-1.5 h-16 bg-slate-800"></div>
         <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
-          <div className="absolute top-0 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(true)}>
-            <div className={`w-0.5 bg-slate-500 transition-all duration-500 origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
-            <div className={`w-4 h-4 bg-slate-500 rounded-full transition-all duration-500 ${isPulled ? 'scale-75' : 'group-active:scale-110'}`}></div>
+          <div className="absolute top-0 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(!isPulled)}>
+            <div className={`w-0.5 bg-slate-400 transition-all duration-500 origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
+            <div className={`w-4 h-4 bg-slate-400 rounded-full transition-all duration-500 shadow-sm ${isPulled ? 'scale-75' : 'group-active:scale-110'}`}></div>
           </div>
-          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled) ? 'bg-emerald-400 shadow-[0_0_40px_15px_rgba(52,211,153,0.6)]' : 'bg-slate-800'}`}></div>
+          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled) ? 'bg-emerald-400 shadow-[0_0_50px_20px_rgba(52,211,153,0.7)]' : 'bg-slate-800 shadow-none'}`}></div>
         </div>
       </div>
+
       {!isPulled && (
-        <div className="absolute top-52 text-slate-300 animate-pulse text-sm font-bold tracking-widest z-20 flex flex-col items-center gap-2 drop-shadow-md cursor-pointer" onClick={() => setIsPulled(true)}>
-          <span>👇</span><span>คลิกเพื่อเปิดระบบ</span>
+        <div className="absolute top-52 text-emerald-300 animate-bounce text-sm font-black tracking-widest z-20 flex flex-col items-center gap-2 drop-shadow-[0_4px_10px_rgba(16,185,129,0.5)] cursor-pointer" onClick={() => setIsPulled(true)}>
+          <span className="text-2xl">👇</span>
+          <span className="bg-emerald-950/80 border border-emerald-500/40 px-4 py-1.5 rounded-full backdrop-blur-md">คลิกเพื่อเปิดระบบ</span>
         </div>
       )}
 
-      <div className={`relative bg-white/90 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.4)] w-full max-w-md z-20 mt-24 transition-all duration-1000 ease-out transform border-2 border-emerald-400/50 ring-4 ring-emerald-500/10 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-20 opacity-0 scale-95 pointer-events-none'}`}>
+      <div className={`relative bg-white/95 backdrop-blur-2xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.45)] w-full max-w-md z-20 mt-20 transition-all duration-1000 ease-out transform border-2 border-emerald-400/60 ring-4 ring-emerald-500/20 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-24 opacity-0 scale-95 pointer-events-none'}`}>
         <div className="text-center mb-8 flex flex-col items-center">
-          <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-28 h-28 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.2)] bg-white border-4 border-emerald-100" />
+          <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-28 h-28 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.25)] bg-white border-4 border-emerald-200" />
           <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
-          <p className="text-emerald-700 font-bold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
+          <p className="text-emerald-700 font-extrabold text-xs uppercase tracking-[0.25em]">Sankhong Portal</p>
           <div className="mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-[11px] font-bold text-emerald-800 shadow-sm flex items-center gap-1.5 tracking-wide">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Reimbursement Tracking System
@@ -524,7 +602,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
 /* ════════ MAIN APP COMPONENT ════════ */
 export default function App() {
   const [mounted, setMounted] = useState(false);
-  const [currentUser, setCurrentUser] = useState({ name: 'ผู้ดูแลระบบ', role: 'admin' });
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     setMounted(true);
