@@ -2512,9 +2512,12 @@ export default function App() {
 
                 {/* 2. Thai Med (แพทย์แผนไทย) */}
                 {(() => {
+                  const isYr69 = String(currentYear || '') === '2569';
                   const tHosp = thaiData.hospList.find(x => x.code === currentHosp);
-                  const tAmt = currentHosp === 'all' ? (thaiData.totalAmt || 252900) : (tHosp ? tHosp.totalAmt : 0);
-                  const tTop = currentHosp === 'all' ? 'บริการนวด/ประคบ (฿ 175,400)' : (tHosp?.topService || 'บริการนวดและประคบ');
+                  const tAmt = isYr69 ? 0 : (currentHosp === 'all' ? (thaiData.totalAmt || 252900) : (tHosp ? tHosp.totalAmt : 0));
+                  const tTop = isYr69
+                    ? 'รอเชื่อมต่อข้อมูลปี 2569'
+                    : (currentHosp === 'all' ? 'บริการนวด/ประคบ (฿ 175,400)' : (tHosp?.topService || 'บริการนวดและประคบ'));
                   return (
                     <div
                       onClick={() => setCurrentView('thai')}
@@ -2534,12 +2537,16 @@ export default function App() {
                           ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
                         </div>
                         <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                          ฿ {fmt(tAmt)}
+                          {isYr69 ? (
+                            <span className="text-xl font-extrabold text-slate-400">ยังไม่มีข้อมูล</span>
+                          ) : (
+                            `฿ ${fmt(tAmt)}`
+                          )}
                         </div>
                       </div>
                       <div className="text-[11px] font-semibold text-amber-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                         <Trophy size={13} className="text-amber-500 shrink-0" />
-                        <span>สูงสุด: {tTop}</span>
+                        <span>{isYr69 ? 'รอข้อมูลนำเข้าปี 2569' : `สูงสุด: ${tTop}`}</span>
                       </div>
                     </div>
                   );
