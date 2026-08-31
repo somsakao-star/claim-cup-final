@@ -518,7 +518,6 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPulled, setIsPulled] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -549,30 +548,12 @@ const LoginScreen = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className={`relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans transition-colors duration-1000 ${isPulled ? 'bg-slate-950' : 'bg-[#030712]'}`}>
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans bg-slate-950 p-4">
       <div className="absolute inset-0 z-0 opacity-80">
         <WebThreads color1="#059669" color2="#34d399" color3="#a7f3d0" speed={0.4} threadCount={6} opacity={0.85} />
       </div>
 
-      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-30">
-        <div className="w-1.5 h-16 bg-slate-800"></div>
-        <div className="w-32 h-12 bg-slate-800 rounded-t-[3rem] relative shadow-lg flex justify-center">
-          <div className="absolute top-0 flex flex-col items-center group cursor-pointer" onClick={() => setIsPulled(!isPulled)}>
-            <div className={`w-0.5 bg-slate-400 transition-all duration-500 origin-top ${isPulled ? 'h-6' : 'h-16 group-active:h-28'}`}></div>
-            <div className={`w-4 h-4 bg-slate-400 rounded-full transition-all duration-500 shadow-sm ${isPulled ? 'scale-75' : 'group-active:scale-110'}`}></div>
-          </div>
-          <div className={`absolute -bottom-3 w-10 h-10 rounded-full transition-all duration-500 ${(isPulled) ? 'bg-emerald-400 shadow-[0_0_50px_20px_rgba(52,211,153,0.7)]' : 'bg-slate-800 shadow-none'}`}></div>
-        </div>
-      </div>
-
-      {!isPulled && (
-        <div className="absolute top-52 text-emerald-300 animate-bounce text-sm font-black tracking-widest z-20 flex flex-col items-center gap-2 drop-shadow-[0_4px_10px_rgba(16,185,129,0.5)] cursor-pointer" onClick={() => setIsPulled(true)}>
-          <span className="text-2xl">👇</span>
-          <span className="bg-emerald-950/80 border border-emerald-500/40 px-4 py-1.5 rounded-full backdrop-blur-md">คลิกเพื่อเปิดระบบ</span>
-        </div>
-      )}
-
-      <div className={`relative bg-white/95 backdrop-blur-2xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.45)] w-full max-w-md z-20 mt-20 transition-all duration-1000 ease-out transform border-2 border-emerald-400/60 ring-4 ring-emerald-500/20 ${isPulled ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-24 opacity-0 scale-95 pointer-events-none'}`}>
+      <div className="relative bg-white/95 backdrop-blur-2xl p-8 sm:p-10 rounded-[2.5rem] shadow-[0_25px_70px_-10px_rgba(5,150,105,0.45)] w-full max-w-md z-20 transition-all duration-500 ease-out border-2 border-emerald-400/60 ring-4 ring-emerald-500/20">
         <div className="text-center mb-8 flex flex-col items-center">
           <img src="/my-logo.png" alt="โลโก้ รพ.สต." className="w-28 h-28 mb-4 rounded-full object-cover shadow-[0_10px_30px_rgba(5,150,105,0.25)] bg-white border-4 border-emerald-200" />
           <h2 className="text-3xl font-black text-emerald-950 mb-1 tracking-tight">ClaimCup</h2>
@@ -583,12 +564,40 @@ const LoginScreen = ({ onLoginSuccess }) => {
           </div>
         </div>
 
-        {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100">{errorMsg}</div>}
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center border border-red-100 flex items-center justify-center gap-1.5">
+            <span>⚠️</span> {errorMsg}
+          </div>
+        )}
         <form onSubmit={handleLogin} className="space-y-4">
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" placeholder="Username" required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm" placeholder="Password" required />
-          <button type="submit" disabled={isLoading} className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] tracking-wide text-sm cursor-pointer">
-            {isLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm"
+              placeholder="กรอกชื่อผู้ใช้ เช่น admin"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">รหัสผ่าน (Password)</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="text-gray-900 w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200/80 bg-white/90 focus:bg-white focus:border-emerald-500 outline-none transition-all font-medium text-sm"
+              placeholder="กรอกรหัสผ่าน"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full text-white font-black py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_10px_25px_rgba(5,150,105,0.3)] tracking-wide text-sm cursor-pointer mt-2"
+          >
+            {isLoading ? 'กำลังตรวจสอบสิทธิ์...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
       </div>
