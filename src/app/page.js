@@ -1866,37 +1866,56 @@ export default function App() {
   /* ─── Chart: Donut in Overview ─── */
   useEffect(() => {
     if (currentView !== 'overview') return;
-    if (!donutCanvasRef.current) return;
 
-    if (donutChartRef.current) donutChartRef.current.destroy();
-
-    const hospEntries = Object.entries(processedData.hospTotals).filter(([, v]) => v > 0);
-    const labels = hospEntries.map(([code]) => {
-      const raw = hospitalMap[code] || code;
-      return raw.replace(/^[0-9]+\s*[-–]?\s*/, '').replace('รพ.สต.', '');
-    });
-    const values = hospEntries.map(([, v]) => v);
-
-    donutChartRef.current = new Chart(donutCanvasRef.current, {
-      type: 'doughnut',
-      data: {
-        labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
-        datasets: [{
-          data: values.length > 0 ? values : [1],
-          backgroundColor: values.length > 0 ? HOSP_PALETTE.slice(0, values.length) : ['#e2e8f0'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '72%',
-        plugins: { legend: { display: false } }
+    let timer;
+    const renderChart = () => {
+      if (!donutCanvasRef.current) return;
+      const existing = Chart.getChart(donutCanvasRef.current);
+      if (existing) existing.destroy();
+      if (donutChartRef.current) {
+        donutChartRef.current.destroy();
+        donutChartRef.current = null;
       }
-    });
+
+      const hospEntries = Object.entries(processedData.hospTotals).filter(([, v]) => v > 0);
+      const labels = hospEntries.map(([code]) => {
+        const raw = hospitalMap[code] || code;
+        return raw.replace(/^[0-9]+\s*[-–]?\s*/, '').replace('รพ.สต.', '');
+      });
+      const values = hospEntries.map(([, v]) => v);
+
+      donutChartRef.current = new Chart(donutCanvasRef.current, {
+        type: 'doughnut',
+        data: {
+          labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
+          datasets: [{
+            data: values.length > 0 ? values : [1],
+            backgroundColor: values.length > 0 ? HOSP_PALETTE.slice(0, values.length) : ['#e2e8f0'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: { legend: { display: false } }
+        }
+      });
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
-      if (donutChartRef.current) donutChartRef.current.destroy();
+      clearTimeout(timer);
+      if (donutCanvasRef.current) {
+        const existing = Chart.getChart(donutCanvasRef.current);
+        if (existing) existing.destroy();
+      }
+      if (donutChartRef.current) {
+        donutChartRef.current.destroy();
+        donutChartRef.current = null;
+      }
     };
   }, [currentView, processedData, hospitalMap]);
 
@@ -1904,9 +1923,15 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'overview') return;
 
-    let timer = setTimeout(() => {
+    let timer;
+    const renderChart = () => {
       if (!trendCanvasRef.current) return;
-      if (trendChartRef.current) trendChartRef.current.destroy();
+      const existing = Chart.getChart(trendCanvasRef.current);
+      if (existing) existing.destroy();
+      if (trendChartRef.current) {
+        trendChartRef.current.destroy();
+        trendChartRef.current = null;
+      }
 
       trendChartRef.current = new Chart(trendCanvasRef.current, {
         type: 'line',
@@ -1970,53 +1995,82 @@ export default function App() {
           }
         }
       });
-    }, 50);
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
       clearTimeout(timer);
-      if (trendChartRef.current) trendChartRef.current.destroy();
+      if (trendCanvasRef.current) {
+        const existing = Chart.getChart(trendCanvasRef.current);
+        if (existing) existing.destroy();
+      }
+      if (trendChartRef.current) {
+        trendChartRef.current.destroy();
+        trendChartRef.current = null;
+      }
     };
   }, [currentView, currentYear, currentHosp, monthlyTrendData]);
 
   /* ─── Chart: Detail View Top Items Horizontal Bar ─── */
   useEffect(() => {
     if (currentView !== 'detail') return;
-    if (!detailBarCanvasRef.current) return;
 
-    if (detailBarChartRef.current) detailBarChartRef.current.destroy();
-
-    const topItems = detailComparisonData.rows.slice(0, 8);
-    const labels = topItems.map(d => d.service.length > 20 ? d.service.slice(0, 20) + '...' : d.service);
-    const values = topItems.map(d => d.amt69);
-
-    detailBarChartRef.current = new Chart(detailBarCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
-        datasets: [{
-          label: 'ยอดชดเชย ปี 69 (บาท)',
-          data: values.length > 0 ? values : [0],
-          backgroundColor: '#d97706',
-          borderRadius: 6,
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => `${fmtD(ctx.parsed.x)} บาท` } }
-        },
-        scales: {
-          x: { ticks: { callback: v => fmtS(v) }, grid: { color: '#f1f5f9' } },
-          y: { grid: { display: false } }
-        }
+    let timer;
+    const renderChart = () => {
+      if (!detailBarCanvasRef.current) return;
+      const existing = Chart.getChart(detailBarCanvasRef.current);
+      if (existing) existing.destroy();
+      if (detailBarChartRef.current) {
+        detailBarChartRef.current.destroy();
+        detailBarChartRef.current = null;
       }
-    });
+
+      const topItems = detailComparisonData.rows.slice(0, 8);
+      const labels = topItems.map(d => d.service.length > 20 ? d.service.slice(0, 20) + '...' : d.service);
+      const values = topItems.map(d => d.amt69);
+
+      detailBarChartRef.current = new Chart(detailBarCanvasRef.current, {
+        type: 'bar',
+        data: {
+          labels: labels.length > 0 ? labels : ['ไม่มีข้อมูล'],
+          datasets: [{
+            label: 'ยอดชดเชย ปี 69 (บาท)',
+            data: values.length > 0 ? values : [0],
+            backgroundColor: '#d97706',
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => `${fmtD(ctx.parsed.x)} บาท` } }
+          },
+          scales: {
+            x: { ticks: { callback: v => fmtS(v) }, grid: { color: '#f1f5f9' } },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+    };
+
+    renderChart();
+    timer = setTimeout(renderChart, 80);
 
     return () => {
-      if (detailBarChartRef.current) detailBarChartRef.current.destroy();
+      clearTimeout(timer);
+      if (detailBarCanvasRef.current) {
+        const existing = Chart.getChart(detailBarCanvasRef.current);
+        if (existing) existing.destroy();
+      }
+      if (detailBarChartRef.current) {
+        detailBarChartRef.current.destroy();
+        detailBarChartRef.current = null;
+      }
     };
   }, [currentView, detailComparisonData]);
 
