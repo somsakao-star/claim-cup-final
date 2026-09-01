@@ -1699,6 +1699,98 @@ export default function App() {
     };
   }, [ppfsList, claims, hospitalMap, currentYear]);
 
+  /* ─── Director (ผอ.) Executive Summary Data ───
+     Independent of currentYear / currentHosp filters — always compares FY2569 vs FY2568
+     across all 5 หน่วยบริการ + Cup รวม, for all 4 หมวด (PPFS / แผนไทย / สมุนไพร / กายภาพ) */
+  const directorSummaryData = useMemo(() => {
+    const healthCodes = ['05954', '05957', '05962', '05959', '05956'];
+    const physCodeMap = { '54': '05954', '56': '05956', '62': '05962' };
+    const catLabels = [
+      { key: 'ppfs', label: 'PP & PPFS' },
+      { key: 'thai', label: 'การแพทย์แผนไทย' },
+      { key: 'herbal', label: 'ยาสมุนไพร' },
+      { key: 'phys', label: 'กายภาพบำบัด' },
+    ];
+
+    const byHosp = {};
+    healthCodes.forEach(c => { byHosp[c] = { ppfs69: 0, ppfs68: 0, thai69: 0, thai68: 0, herbal69: 0, herbal68: 0, phys69: 0, phys68: 0 }; });
+
+    const addRows = (rows, catKey, hcodeFn) => {
+      rows.forEach(r => {
+        const yr = String(r.fiscal_year || '');
+        if (yr !== '2569' && yr !== '2568') return;
+        const hc = hcodeFn(r);
+        if (!byHosp[hc]) return;
+        const amt = parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0;
+        byHosp[hc][`${catKey}${yr === '2569' ? '69' : '68'}`] += amt;
+      });
+    };
+
+    const ppfsRaw = (ppfsList && ppfsList.length > 0) ? ppfsList : (claims && claims.length > 0 ? claims : OFFLINE_PPFS_DATA);
+    addRows(ppfsRaw, 'ppfs', r => String(r.hcode || '').trim());
+    addRows((thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA, 'thai', r => String(r.hcode || '').trim());
+    addRows((herbals && herbals.length > 0) ? herbals : OFFLINE_HERBAL_DATA, 'herbal', r => String(r.hcode || '').trim());
+    addRows((physicals && physicals.length > 0) ? physicals : OFFLINE_PHYSICAL_DATA, 'phys', r => physCodeMap[String(r.hcode || '').trim()] || String(r.hcode || '').trim());
+
+    const pct = (v69, v68) => (v68 > 0 ? ((v69 - v68) / v68) * 100 : (v69 > 0 ? 100 : 0));
+
+    const hospRows = healthCodes.map(code => {
+      const b = byHosp[code];
+      const cats = catLabels.map(c => {
+        const amt69 = Math.round(b[`${c.key}69`] || 0);
+        const amt68 = Math.round(b[`${c.key}68`] || 0);
+        return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68) };
+      });
+      const total69 = cats.reduce((s, c) => s + c.amt69, 0);
+      const total68 = cats.reduce((s, c) => s + c.amt68, 0);
+      return {
+        code,
+        name: hospitalMap[code] ? hospitalMap[code].replace(/^[0-9]+\s*[-–]?\s*/, '') : code,
+        cats, total69, total68, diff: total69 - total68, pct: pct(total69, total68)
+      };
+    });
+
+    const cupCats = catLabels.map(c => {
+      const amt69 = hospRows.reduce((s, h) => s + (h.cats.find(x => x.key === c.key)?.amt69 || 0), 0);
+      const amt68 = hospRows.reduce((s, h) => s + (h.cats.find(x => x.key === c.key)?.amt68 || 0), 0);
+      return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68) };
+    });
+    const cupTotal69 = hospRows.reduce((s, h) => s + h.total69, 0);
+    const cupTotal68 = hospRows.reduce((s, h) => s + h.total68, 0);
+
+    const allCombos = [];
+    hospRows.forEach(h => {
+      h.cats.forEach(c => {
+        if (c.amt69 > 0 || c.amt68 > 0) {
+          allCombos.push({ hospName: h.name, hospCode: h.code, label: c.label, amt69: c.amt69, amt68: c.amt68, diff: c.diff, pct: c.pct });
+        }
+      });
+    });
+    const highlights = allCombos.filter(x => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 5);
+    const concerns = allCombos.filter(x => x.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 5);
+
+    const channelKeys = ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย'];
+    const buildChannel = (code) => {
+      const rows = PAY_MATRIX_69[code] || [];
+      const totals = {};
+      channelKeys.forEach(k => { totals[k] = 0; });
+      rows.forEach(r => channelKeys.forEach(k => { totals[k] += (r[k] || 0); }));
+      const sum = channelKeys.reduce((s, k) => s + totals[k], 0);
+      return channelKeys
+        .map(k => ({ key: k, amt: Math.round(totals[k]), pct: sum > 0 ? (totals[k] / sum) * 100 : 0 }))
+        .filter(x => x.amt > 0)
+        .sort((a, b) => b.amt - a.amt);
+    };
+    const cupChannel = buildChannel('ALL');
+    const hospChannels = healthCodes.map(code => ({
+      code,
+      name: hospitalMap[code] ? hospitalMap[code].replace(/^[0-9]+\s*[-–]?\s*/, '') : code,
+      channel: buildChannel(code)
+    }));
+
+    return { hospRows, cupCats, cupTotal69, cupTotal68, cupDiff: cupTotal69 - cupTotal68, cupPct: pct(cupTotal69, cupTotal68), highlights, concerns, cupChannel, hospChannels };
+  }, [claims, ppfsList, thais, herbals, physicals, hospitalMap]);
+
   /* ─── Chart: Donut in Overview ─── */
   useEffect(() => {
     if (currentView !== 'overview') return;
@@ -2485,12 +2577,14 @@ export default function App() {
                   </div>
 
                   <div className="mt-5 flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }}
-                      className="bg-white/15 hover:bg-white/25 border border-white/30 px-5 py-2.5 rounded-full text-xs font-black transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 cursor-pointer"
-                    >
-                      <Sparkles size={15} className="text-[#34d399]" /> ดูรายละเอียดเจาะลึก 4 หมวด
-                    </button>
+                    {currentUser?.role === 'bm' && (
+                      <button
+                        onClick={() => setCurrentView('director')}
+                        className="bg-white/15 hover:bg-white/25 border border-white/30 px-5 py-2.5 rounded-full text-xs font-black transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <Sparkles size={15} className="text-[#34d399]" /> สรุปบทวิเคราะห์ Cup สันโค้ง (สำหรับ ผอ.)
+                      </button>
+                    )}
                     <div className="bg-emerald-950/50 border border-emerald-400/20 px-4 py-2 rounded-full text-xs font-bold text-emerald-200 hidden sm:flex items-center gap-2">
                       <CheckCircle2 size={14} className="text-[#34d399]" /> รพ.สต. ในเครือข่าย 5 แห่ง
                     </div>
@@ -5216,6 +5310,160 @@ export default function App() {
                     </tfoot>
                   </table>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════ VIEW 4: DIRECTOR (ผอ.) EXECUTIVE SUMMARY ════════ */}
+        {currentView === 'director' && (
+          <div className="w-full min-h-screen bg-[#f8fafc]">
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm flex-wrap gap-3">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#064e3b] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(6,78,59,0.25)]">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-0.5">
+                    สรุปบทวิเคราะห์ Cup บ้านสันโค้ง • สำหรับ ผอ. เท่านั้น
+                  </span>
+                  <div className="text-lg font-black text-[#0f172a] leading-tight">ภาพรวมผลการเบิกจ่ายทุกหมวด ปีงบ 2569 เทียบ 2568</div>
+                  <div className="text-[11.5px] text-[#64748b] font-semibold">รวมทั้ง 5 หน่วยบริการในเครือข่าย อ.สันกำแพง</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('overview')}
+                className="px-4 py-2 rounded-xl bg-[#f1f5f9] border border-[#cbd5e1] text-[#334155] text-xs font-bold flex items-center gap-1.5 hover:bg-[#e2e8f0] transition-all cursor-pointer"
+              >
+                <ArrowLeft size={15} /> กลับหน้าหลัก
+              </button>
+            </nav>
+
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+
+              {/* Cup-wide Hero */}
+              <div className="bg-gradient-to-br from-[#022c22] via-[#043e30] to-[#064e3b] rounded-3xl p-7 md:p-9 text-white shadow-[0_12px_35px_rgba(2,44,34,0.2)] border border-emerald-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <div className="text-[12px] font-extrabold uppercase tracking-widest text-[#34d399] mb-2.5">CUP รวมทั้งหมด (5 หน่วยบริการ)</div>
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-3xl font-black text-[#34d399]">฿</span>
+                    <span className="text-5xl font-black tracking-tight leading-none">{fmt(directorSummaryData.cupTotal69)}</span>
+                  </div>
+                  <div className="text-[13px] text-[#d1fae5] font-semibold mt-2">ปีงบ 2568: ฿{fmt(directorSummaryData.cupTotal68)}</div>
+                </div>
+                <div className={`px-5 py-3 rounded-2xl flex items-center gap-2.5 font-black text-lg border ${directorSummaryData.cupPct >= 0 ? 'bg-emerald-500/20 border-emerald-400/40 text-[#6ee7b7]' : 'bg-red-500/20 border-red-400/40 text-[#fca5a5]'}`}>
+                  {directorSummaryData.cupPct >= 0 ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
+                  {directorSummaryData.cupPct >= 0 ? '+' : ''}{directorSummaryData.cupPct.toFixed(1)}% เทียบปีก่อน
+                </div>
+              </div>
+
+              {/* Category breakdown (4 หมวด) — Cup-wide */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {directorSummaryData.cupCats.map(c => (
+                  <div key={c.key} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm">
+                    <div className="text-xs font-bold text-[#64748b] mb-2">{c.label}</div>
+                    <div className="text-xl font-black text-[#0f172a]">฿{fmt(c.amt69)}</div>
+                    <div className={`text-xs font-bold mt-1.5 flex items-center gap-1 ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {c.pct >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                      {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(1)}% ({fmt(c.amt68)} → {fmt(c.amt69)})
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Highlights & Concerns */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="bg-white rounded-2xl border border-emerald-200 p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#065f46] flex items-center gap-2 mb-4"><TrendingUp size={17} /> จุดเด่น — หมวดที่เติบโตสูงสุด</div>
+                  {directorSummaryData.highlights.length === 0 ? (
+                    <div className="text-xs text-[#94a3b8]">ไม่มีหมวดที่เติบโตเมื่อเทียบปีก่อน</div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {directorSummaryData.highlights.map((h, i) => (
+                        <div key={i} className="flex justify-between items-center bg-emerald-50/60 rounded-xl px-4 py-2.5 border border-emerald-100">
+                          <div>
+                            <div className="text-xs font-bold text-[#0f172a]">{h.label} — {h.hospName}</div>
+                            <div className="text-[10.5px] text-[#64748b]">{fmt(h.amt68)} → {fmt(h.amt69)} บาท</div>
+                          </div>
+                          <div className="text-xs font-black text-emerald-600">+{fmt(h.diff)} ({h.pct.toFixed(0)}%)</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="bg-white rounded-2xl border border-red-200 p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#991b1b] flex items-center gap-2 mb-4"><TrendingDown size={17} /> จุดที่ควรระวัง — หมวดที่ลดลง</div>
+                  {directorSummaryData.concerns.length === 0 ? (
+                    <div className="text-xs text-[#94a3b8]">ไม่มีหมวดที่ลดลงเมื่อเทียบปีก่อน</div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {directorSummaryData.concerns.map((c, i) => (
+                        <div key={i} className="flex justify-between items-center bg-red-50/60 rounded-xl px-4 py-2.5 border border-red-100">
+                          <div>
+                            <div className="text-xs font-bold text-[#0f172a]">{c.label} — {c.hospName}</div>
+                            <div className="text-[10.5px] text-[#64748b]">{fmt(c.amt68)} → {fmt(c.amt69)} บาท</div>
+                          </div>
+                          <div className="text-xs font-black text-red-600">{fmt(c.diff)} ({c.pct.toFixed(0)}%)</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Channel breakdown — Cup-wide */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="text-sm font-black text-[#0f172a] mb-4">สัดส่วนรายรับแยกช่องทาง — Cup รวม (ปีงบ 2569)</div>
+                <div className="space-y-2.5">
+                  {directorSummaryData.cupChannel.map(ch => (
+                    <div key={ch.key} className="flex items-center gap-3">
+                      <div className="w-24 text-[11px] font-bold text-[#475569] shrink-0">{ch.key}</div>
+                      <div className="flex-1 h-6 bg-[#f1f5f9] rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#059669] to-[#34d399] rounded-full flex items-center justify-end pr-2" style={{ width: `${Math.max(ch.pct, 4)}%` }}>
+                          <span className="text-[10px] font-black text-white">{ch.pct.toFixed(0)}%</span>
+                        </div>
+                      </div>
+                      <div className="w-28 text-right text-xs font-bold text-[#0f172a] shrink-0">฿{fmt(ch.amt)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Per-hospital summary cards */}
+              <div className="text-sm font-black text-[#0f172a] pt-2">สรุปแยกรายหน่วยบริการ (5 แห่ง)</div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {directorSummaryData.hospRows.map(h => (
+                  <div key={h.code} className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-1">{h.code}</div>
+                        <div className="text-sm font-black text-[#0f172a]">{h.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-black text-[#0f172a]">฿{fmt(h.total69)}</div>
+                        <div className={`text-[11px] font-bold flex items-center gap-1 justify-end ${h.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {h.pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                          {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {h.cats.map(c => (
+                        <div key={c.key} className="flex justify-between items-center text-xs border-b border-[#f1f5f9] py-1.5 last:border-0">
+                          <span className="text-[#64748b] font-semibold">{c.label}</span>
+                          <span className="font-bold text-[#334155]">฿{fmt(c.amt69)}</span>
+                          <span className={`font-bold w-16 text-right ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center text-xs text-[#94a3b8] pt-4 pb-2 border-t border-[#e2e8f0]">
+                © 2026 CLAIMCUP Sankhong Portal • Executive Summary สำหรับผู้อำนวยการ
               </div>
             </div>
           </div>
