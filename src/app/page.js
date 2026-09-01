@@ -1714,7 +1714,9 @@ export default function App() {
      Independent of currentYear / currentHosp filters — always compares FY2569 vs FY2568
      across all 5 หน่วยบริการ + Cup รวม, for all 4 หมวด (PPFS / แผนไทย / สมุนไพร / กายภาพ) */
   const directorSummaryData = useMemo(() => {
-    const healthCodes = ['05954', '05957', '05962', '05959', '05956'];
+    const allHealthCodes = ['05954', '05957', '05962', '05959', '05956'];
+    const scopeHcode = (currentUser?.hcode && currentUser.hcode !== 'ALL') ? String(currentUser.hcode).trim() : null;
+    const healthCodes = scopeHcode ? allHealthCodes.filter(c => c === scopeHcode) : allHealthCodes;
     const physCodeMap = { '54': '05954', '56': '05956', '62': '05962' };
     const catLabels = [
       { key: 'ppfs', label: 'PP & PPFS' },
@@ -1792,15 +1794,15 @@ export default function App() {
         .filter(x => x.amt > 0)
         .sort((a, b) => b.amt - a.amt);
     };
-    const cupChannel = buildChannel('ALL');
+    const cupChannel = buildChannel(scopeHcode || 'ALL');
     const hospChannels = healthCodes.map(code => ({
       code,
       name: hospitalMap[code] ? hospitalMap[code].replace(/^[0-9]+\s*[-–]?\s*/, '') : code,
       channel: buildChannel(code)
     }));
 
-    return { hospRows, cupCats, cupTotal69, cupTotal68, cupDiff: cupTotal69 - cupTotal68, cupPct: pct(cupTotal69, cupTotal68), highlights, concerns, cupChannel, hospChannels };
-  }, [claims, ppfsList, thais, herbals, physicals, hospitalMap]);
+    return { hospRows, cupCats, cupTotal69, cupTotal68, cupDiff: cupTotal69 - cupTotal68, cupPct: pct(cupTotal69, cupTotal68), highlights, concerns, cupChannel, hospChannels, isScoped: !!scopeHcode, scopeHospName: scopeHcode ? (hospitalMap[scopeHcode] ? hospitalMap[scopeHcode].replace(/^[0-9]+\s*[-–]?\s*/, '') : scopeHcode) : null };
+  }, [claims, ppfsList, thais, herbals, physicals, hospitalMap, currentUser]);
 
   /* ─── Director Insight Cards (บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย) ─── */
   const directorInsights = useMemo(() => {
@@ -5485,7 +5487,7 @@ export default function App() {
                     สรุปบทวิเคราะห์ Cup บ้านสันโค้ง • สำหรับ ผอ. เท่านั้น
                   </span>
                   <div className="text-lg font-black text-[#0f172a] leading-tight">ภาพรวมผลการเบิกจ่ายทุกหมวด ปีงบ 2569 เทียบ 2568</div>
-                  <div className="text-[11.5px] text-[#64748b] font-semibold">รวมทั้ง 5 หน่วยบริการในเครือข่าย อ.สันกำแพง</div>
+                  <div className="text-[11.5px] text-[#64748b] font-semibold">{directorSummaryData.isScoped ? `เฉพาะหน่วยบริการ ${directorSummaryData.scopeHospName}` : 'รวมทั้ง 5 หน่วยบริการในเครือข่าย อ.สันกำแพง'}</div>
                 </div>
               </div>
               <button
@@ -5501,7 +5503,7 @@ export default function App() {
               {/* Cup-wide Hero */}
               <div className="bg-gradient-to-br from-[#022c22] via-[#043e30] to-[#064e3b] rounded-3xl p-7 md:p-9 text-white shadow-[0_12px_35px_rgba(2,44,34,0.2)] border border-emerald-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                  <div className="text-[12px] font-extrabold uppercase tracking-widest text-[#34d399] mb-2.5">CUP รวมทั้งหมด (5 หน่วยบริการ)</div>
+                  <div className="text-[12px] font-extrabold uppercase tracking-widest text-[#34d399] mb-2.5">{directorSummaryData.isScoped ? `${directorSummaryData.scopeHospName}` : 'CUP รวมทั้งหมด (5 หน่วยบริการ)'}</div>
                   <div className="flex items-baseline gap-2.5">
                     <span className="text-3xl font-black text-[#34d399]">฿</span>
                     <span className="text-5xl font-black tracking-tight leading-none">{fmt(directorSummaryData.cupTotal69)}</span>
@@ -5615,7 +5617,7 @@ export default function App() {
 
               {/* Channel breakdown — Cup-wide */}
               <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
-                <div className="text-sm font-black text-[#0f172a] mb-4">สัดส่วนรายรับแยกช่องทาง — Cup รวม (ปีงบ 2569)</div>
+                <div className="text-sm font-black text-[#0f172a] mb-4">สัดส่วนรายรับแยกช่องทาง — {directorSummaryData.isScoped ? directorSummaryData.scopeHospName : 'Cup รวม'} (ปีงบ 2569)</div>
                 <div className="space-y-2.5">
                   {directorSummaryData.cupChannel.map(ch => (
                     <div key={ch.key} className="flex items-center gap-3">
@@ -5631,37 +5633,42 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Per-hospital summary cards */}
-              <div className="text-sm font-black text-[#0f172a] pt-2">สรุปแยกรายหน่วยบริการ (5 แห่ง)</div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {directorSummaryData.hospRows.map(h => (
-                  <div key={h.code} className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <div className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-1">{h.code}</div>
-                        <div className="text-sm font-black text-[#0f172a]">{h.name}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-black text-[#0f172a]">฿{fmt(h.total69)}</div>
-                        <div className={`text-[11px] font-bold flex items-center gap-1 justify-end ${h.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                          {h.pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                          {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(1)}%
+              {/* Per-hospital summary cards — only for the Cup-wide ผอ. */}
+              {!directorSummaryData.isScoped && (
+                <>
+                  <div className="text-sm font-black text-[#0f172a] pt-2">สรุปแยกรายหน่วยบริการ (5 แห่ง)</div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {directorSummaryData.hospRows.map(h => (
+                      <div key={h.code} className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <div className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-1">{h.code}</div>
+                            <div className="text-sm font-black text-[#0f172a]">{h.name}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-black text-[#0f172a]">฿{fmt(h.total69)}</div>
+                            <div className={`text-[11px] font-bold flex items-center gap-1 justify-end ${h.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                              {h.pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                              {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          {h.cats.map(c => (
+                            <div key={c.key} className="flex justify-between items-center text-xs border-b border-[#f1f5f9] py-1.5 last:border-0">
+                              <span className="text-[#64748b] font-semibold">{c.label}</span>
+                              <span className="font-bold text-[#334155]">฿{fmt(c.amt69)}</span>
+                              <span className={`font-bold w-16 text-right ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      {h.cats.map(c => (
-                        <div key={c.key} className="flex justify-between items-center text-xs border-b border-[#f1f5f9] py-1.5 last:border-0">
-                          <span className="text-[#64748b] font-semibold">{c.label}</span>
-                          <span className="font-bold text-[#334155]">฿{fmt(c.amt69)}</span>
-                          <span className={`font-bold w-16 text-right ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                            {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(0)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </>
+              )}
               </div>
 
               <div className="text-center text-xs text-[#94a3b8] pt-4 pb-2 border-t border-[#e2e8f0]">
