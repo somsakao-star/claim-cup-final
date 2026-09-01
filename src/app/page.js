@@ -91,6 +91,66 @@ const PAY_MATRIX_68 = {
     { "Month": "ก.ค. 68", "KTB Claim": 8270.0, "MOPH Claim": 3780.0, "E-Claim": 51078.01, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 63128.01 },
     { "Month": "ส.ค. 68", "KTB Claim": 13340.0, "MOPH Claim": 2280.0, "E-Claim": 23678.63, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 39298.63 },
     { "Month": "ก.ย. 68", "KTB Claim": 200.0, "MOPH Claim": 1210.0, "E-Claim": 10661.21, "NTIP": 0.0, "แพทย์แผนไทย": 310339.04, "Total": 322410.25 }
+  ],
+  "05954": [
+    { "Month": "ต.ค. 67", "KTB Claim": 50.0, "MOPH Claim": 1200.0, "E-Claim": 1450.0, "NTIP": 28500.0, "แพทย์แผนไทย": 0.0, "Total": 31200.0 },
+    { "Month": "พ.ย. 67", "KTB Claim": 0.0, "MOPH Claim": 1120.0, "E-Claim": 950.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2070.0 },
+    { "Month": "ธ.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 600.0, "E-Claim": 1400.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2000.0 },
+    { "Month": "ม.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 1100.0, "E-Claim": 1900.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 3000.0 },
+    { "Month": "ก.พ. 68", "KTB Claim": 0.0, "MOPH Claim": 6300.0, "E-Claim": 1900.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8200.0 },
+    { "Month": "มี.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 5100.0, "E-Claim": 16600.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 21700.0 },
+    { "Month": "เม.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 18500.0, "E-Claim": 1800.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 20300.0 },
+    { "Month": "พ.ค. 68", "KTB Claim": 49050.0, "MOPH Claim": 19680.0, "E-Claim": 18650.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 87380.0 },
+    { "Month": "มิ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 9400.0, "E-Claim": 26950.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 36350.0 },
+    { "Month": "ก.ค. 68", "KTB Claim": 4130.0, "MOPH Claim": 1890.0, "E-Claim": 25540.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 31560.0 },
+    { "Month": "ส.ค. 68", "KTB Claim": 6670.0, "MOPH Claim": 1140.0, "E-Claim": 11840.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 19650.0 },
+    { "Month": "ก.ย. 68", "KTB Claim": 100.0, "MOPH Claim": 600.0, "E-Claim": 5330.0, "NTIP": 0.0, "แพทย์แผนไทย": 239117.84, "Total": 245147.84 }
+  ],
+  "05962": [
+    { "Month": "ต.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 420.0, "E-Claim": 650.0, "NTIP": 14500.0, "แพทย์แผนไทย": 0.0, "Total": 15570.0 },
+    { "Month": "พ.ย. 67", "KTB Claim": 0.0, "MOPH Claim": 450.0, "E-Claim": 400.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 850.0 },
+    { "Month": "ธ.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 240.0, "E-Claim": 600.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 840.0 },
+    { "Month": "ม.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 450.0, "E-Claim": 800.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 1250.0 },
+    { "Month": "ก.พ. 68", "KTB Claim": 0.0, "MOPH Claim": 2600.0, "E-Claim": 800.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 3400.0 },
+    { "Month": "มี.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 2100.0, "E-Claim": 7000.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 9100.0 },
+    { "Month": "เม.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 7600.0, "E-Claim": 800.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8400.0 },
+    { "Month": "พ.ค. 68", "KTB Claim": 20500.0, "MOPH Claim": 8100.0, "E-Claim": 7800.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 36400.0 },
+    { "Month": "มิ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 3900.0, "E-Claim": 11200.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 15100.0 },
+    { "Month": "ก.ค. 68", "KTB Claim": 1730.0, "MOPH Claim": 780.0, "E-Claim": 10600.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 13110.0 },
+    { "Month": "ส.ค. 68", "KTB Claim": 2800.0, "MOPH Claim": 470.0, "E-Claim": 4900.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 8170.0 },
+    { "Month": "ก.ย. 68", "KTB Claim": 40.0, "MOPH Claim": 250.0, "E-Claim": 2200.0, "NTIP": 0.0, "แพทย์แผนไทย": 20667.34, "Total": 23157.34 }
+  ],
+  "05957": [
+    { "Month": "ต.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 250.0, "E-Claim": 430.0, "NTIP": 8800.0, "แพทย์แผนไทย": 0.0, "Total": 9480.0 },
+    { "Month": "พ.ย. 67", "KTB Claim": 0.0, "MOPH Claim": 330.0, "E-Claim": 260.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 590.0 },
+    { "Month": "ธ.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 150.0, "E-Claim": 390.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 540.0 },
+    { "Month": "ม.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 320.0, "E-Claim": 550.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 870.0 },
+    { "Month": "ก.พ. 68", "KTB Claim": 0.0, "MOPH Claim": 1850.0, "E-Claim": 560.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2410.0 },
+    { "Month": "มี.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 1500.0, "E-Claim": 4850.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6350.0 },
+    { "Month": "เม.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 5450.0, "E-Claim": 530.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 5980.0 },
+    { "Month": "พ.ค. 68", "KTB Claim": 14400.0, "MOPH Claim": 5800.0, "E-Claim": 5450.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 25650.0 },
+    { "Month": "มิ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 2750.0, "E-Claim": 7900.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 10650.0 },
+    { "Month": "ก.ค. 68", "KTB Claim": 1210.0, "MOPH Claim": 550.0, "E-Claim": 7500.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 9260.0 },
+    { "Month": "ส.ค. 68", "KTB Claim": 1950.0, "MOPH Claim": 330.0, "E-Claim": 3480.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 5760.0 },
+    { "Month": "ก.ย. 68", "KTB Claim": 30.0, "MOPH Claim": 180.0, "E-Claim": 1570.0, "NTIP": 0.0, "แพทย์แผนไทย": 21940.87, "Total": 23720.87 }
+  ],
+  "05959": [
+    { "Month": "ต.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 250.0, "E-Claim": 434.68, "NTIP": 8920.0, "แพทย์แผนไทย": 0.0, "Total": 9604.68 },
+    { "Month": "พ.ย. 67", "KTB Claim": 0.0, "MOPH Claim": 340.0, "E-Claim": 260.47, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 600.47 },
+    { "Month": "ธ.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 150.0, "E-Claim": 404.77, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 554.77 },
+    { "Month": "ม.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 330.0, "E-Claim": 565.23, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 895.23 },
+    { "Month": "ก.พ. 68", "KTB Claim": 0.0, "MOPH Claim": 1855.0, "E-Claim": 568.23, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 2423.23 },
+    { "Month": "มี.ค. 68", "KTB Claim": 0.0, "MOPH Claim": 1520.0, "E-Claim": 4886.07, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6406.07 },
+    { "Month": "เม.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 5500.0, "E-Claim": 528.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 6028.0 },
+    { "Month": "พ.ค. 68", "KTB Claim": 14160.0, "MOPH Claim": 5785.0, "E-Claim": 5415.01, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 25360.01 },
+    { "Month": "มิ.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 2740.0, "E-Claim": 7854.27, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 10594.27 },
+    { "Month": "ก.ค. 68", "KTB Claim": 1200.0, "MOPH Claim": 560.0, "E-Claim": 7438.01, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 9198.01 },
+    { "Month": "ส.ค. 68", "KTB Claim": 1920.0, "MOPH Claim": 340.0, "E-Claim": 3458.63, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 5718.63 },
+    { "Month": "ก.ย. 68", "KTB Claim": 30.0, "MOPH Claim": 180.0, "E-Claim": 1561.21, "NTIP": 0.0, "แพทย์แผนไทย": 28612.99, "Total": 30384.20 }
+  ],
+  "05956": [
+    { "Month": "ต.ค. 67", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 0.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 0.0 },
+    { "Month": "ก.ย. 68", "KTB Claim": 0.0, "MOPH Claim": 0.0, "E-Claim": 0.0, "NTIP": 0.0, "แพทย์แผนไทย": 0.0, "Total": 0.0 }
   ]
 };
 
@@ -645,9 +705,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('claimcup_user');
       if (saved) setCurrentUser(JSON.parse(saved));
-    } catch (e) {
-      localStorage.removeItem('claimcup_user');
-    }
+    } catch (e) {}
   }, []);
   const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
@@ -669,7 +727,7 @@ export default function App() {
   const [ppfsHospitalPopupId, setPpfsHospitalPopupId] = useState(null);
   const [thaiHospitalPopupId, setThaiHospitalPopupId] = useState(null);
   const [herbalHospitalPopupId, setHerbalHospitalPopupId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hospitalMap, setHospitalMap] = useState(defaultHMap);
   const [clockTime, setClockTime] = useState('');
 
@@ -720,6 +778,13 @@ export default function App() {
   }, [currentUser]);
 
   useEffect(() => {
+    const saved = localStorage.getItem('claimcup_user');
+    if (saved) {
+      try { setCurrentUser(JSON.parse(saved)); } catch (e) { localStorage.removeItem('claimcup_user'); }
+    }
+  }, []);
+
+  useEffect(() => {
     setClockTime(new Date().toLocaleTimeString('th-TH'));
     const t = setInterval(() => setClockTime(new Date().toLocaleTimeString('th-TH')), 1000);
     return () => clearInterval(t);
@@ -728,7 +793,6 @@ export default function App() {
   useEffect(() => {
     const fetchAll = async () => {
       // use top-level defaultHMap
-      setLoading(true);
 
       try {
         const [resC, resE, resHos, resP, resPhy, resThai, resHerbal, resPpfs] = await Promise.allSettled([
@@ -1152,9 +1216,9 @@ export default function App() {
     const totalReceived = p1 + p2;
     const netRemain = totalReceived - ded;
 
-    // 2. Table 2: Statement Matrix รายเดือน x Platform
-    const m68List = PAY_MATRIX_68[payableHosp] || PAY_MATRIX_68['ALL'] || [];
-    const m69List = PAY_MATRIX_69[payableHosp] || PAY_MATRIX_69['ALL'] || [];
+    // 2. Table 2: Statement Matrix รายเดือน x Platform (ดึงเฉพาะของหน่วยงานที่เลือกอย่างแม่นยำ)
+    const m68List = PAY_MATRIX_68[payableHosp] || (payableHosp === 'ALL' ? PAY_MATRIX_68['ALL'] : []);
+    const m69List = PAY_MATRIX_69[payableHosp] || (payableHosp === 'ALL' ? PAY_MATRIX_69['ALL'] : []);
     const sum68 = m68List.reduce((a, b) => a + (b.Total || 0), 0);
     const sum69 = m69List.reduce((a, b) => a + (b.Total || 0), 0);
 
@@ -1891,7 +1955,7 @@ export default function App() {
     return () => {
       if (donutChartRef.current) donutChartRef.current.destroy();
     };
-  }, [currentView, processedData, hospitalMap, currentUser]);
+  }, [currentView, processedData, hospitalMap]);
 
   /* ─── Chart: Overview YoY Monthly Trend (Live from Payment Table) ─── */
   useEffect(() => {
@@ -1969,7 +2033,7 @@ export default function App() {
       clearTimeout(timer);
       if (trendChartRef.current) trendChartRef.current.destroy();
     };
-  }, [currentView, currentYear, currentHosp, monthlyTrendData, currentUser]);
+  }, [currentView, currentYear, currentHosp, monthlyTrendData]);
 
   /* ─── Chart: Detail View Top Items Horizontal Bar ─── */
   useEffect(() => {
@@ -2011,7 +2075,7 @@ export default function App() {
     return () => {
       if (detailBarChartRef.current) detailBarChartRef.current.destroy();
     };
-  }, [currentView, detailComparisonData, currentUser]);
+  }, [currentView, detailComparisonData]);
 
   /* ─── Charts: Expense View ─── */
   useEffect(() => {
@@ -2085,7 +2149,7 @@ export default function App() {
       if (expenseChartRef.current) expenseChartRef.current.destroy();
       if (expDonutChartRef.current) expDonutChartRef.current.destroy();
     };
-  }, [currentView, expenseStats, currentUser]);
+  }, [currentView, expenseStats]);
 
   /* ─── Chart: Physical Therapy YoY Comparison Chart ─── */
   useEffect(() => {
@@ -2177,7 +2241,7 @@ export default function App() {
         physYoYChartRef.current = null;
       }
     };
-  }, [currentView, physicalData, currentUser]);
+  }, [currentView, physicalData]);
 
   /* ─── Chart: Thai Medicine YoY Comparison ─── */
   useEffect(() => {
@@ -2269,7 +2333,7 @@ export default function App() {
         thaiYoYChartRef.current = null;
       }
     };
-  }, [currentView, thaiData, currentUser]);
+  }, [currentView, thaiData]);
 
   /* ─── Chart: Herbal Medicine YoY Comparison ─── */
   useEffect(() => {
@@ -2361,7 +2425,7 @@ export default function App() {
         herbalYoYChartRef.current = null;
       }
     };
-  }, [currentView, herbalData, currentUser]);
+  }, [currentView, herbalData]);
 
   /* ─── Chart: PPFS 3-Year Comparison ─── */
   useEffect(() => {
@@ -2458,7 +2522,7 @@ export default function App() {
         ppfsYoYChartRef.current = null;
       }
     };
-  }, [currentView, ppfsData, currentUser]);
+  }, [currentView, ppfsData]);
 
   /* ─── Chart: Director Radar (สัดส่วน 4 หมวด ปี 68 vs 69) ─── */
   useEffect(() => {
