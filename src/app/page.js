@@ -1311,7 +1311,7 @@ export default function App() {
     const totalReceived = p1 + p2;
     const netRemain = (sum68 + sum69) - (p1 + p2 + ded);
 
-    const matrixRows = Object.values(monthMap).filter(row => row.Total > 0 || (row.monthNum >= 1 && row.monthNum <= 12));
+    const matrixRows = MONTH_KEYS.map(m => monthMap[m]);
     const matrixTotal = matrixRows.reduce((acc, row) => {
       ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย', 'Total'].forEach(k => {
         acc[k] = (acc[k] || 0) + (row[k] || 0);
