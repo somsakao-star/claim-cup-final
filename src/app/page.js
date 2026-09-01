@@ -416,6 +416,13 @@ const OFFLINE_HERBAL_DATA = [
 ];
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
+const DIR_ICON_MAP = { check: CheckCircle2, hourglass: Clock, building: Building2, leaf: Leaf, heart: HeartPulse, target: Sparkles };
+const DIR_COLOR_MAP = {
+  green: { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'text-emerald-600', title: 'text-emerald-900' },
+  yellow: { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600', title: 'text-amber-900' },
+  blue: { bg: 'bg-sky-50', border: 'border-sky-200', icon: 'text-sky-600', title: 'text-sky-900' },
+  pink: { bg: 'bg-pink-50', border: 'border-pink-200', icon: 'text-pink-600', title: 'text-pink-900' },
+};
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtS = (n) => {
   const v = Math.abs(Math.round(n || 0));
@@ -684,6 +691,10 @@ export default function App() {
   const ppfsYoYCanvasRef = useRef(null);
   const trendChartRef = useRef(null);
   const trendCanvasRef = useRef(null);
+  const dirRadarChartRef = useRef(null);
+  const dirRadarCanvasRef = useRef(null);
+  const dirBarChartRef = useRef(null);
+  const dirBarCanvasRef = useRef(null);
 
   // Auto-Logout 9 mins
   useEffect(() => {
@@ -1791,6 +1802,60 @@ export default function App() {
     return { hospRows, cupCats, cupTotal69, cupTotal68, cupDiff: cupTotal69 - cupTotal68, cupPct: pct(cupTotal69, cupTotal68), highlights, concerns, cupChannel, hospChannels };
   }, [claims, ppfsList, thais, herbals, physicals, hospitalMap]);
 
+  /* ─── Director Insight Cards (บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย) ─── */
+  const directorInsights = useMemo(() => {
+    const d = directorSummaryData;
+    const topHosp = [...d.hospRows].sort((a, b) => b.total69 - a.total69)[0];
+    const topCat = [...d.cupCats].sort((a, b) => b.amt69 - a.amt69)[0];
+    const topHighlight = d.highlights[0];
+    const topConcern = d.concerns[0];
+    const hospSharePct = d.cupTotal69 > 0 && topHosp ? (topHosp.total69 / d.cupTotal69) * 100 : 0;
+    const catSharePct = d.cupTotal69 > 0 && topCat ? (topCat.amt69 / d.cupTotal69) * 100 : 0;
+
+    const cards = [
+      {
+        icon: 'check', color: 'green',
+        title: `1. ยอดเบิกรวม Cup ปี 69 อยู่ที่ ${fmt(d.cupTotal69)} บาท ${d.cupPct >= 0 ? `สูงกว่าปี 68 ${d.cupPct.toFixed(1)}%` : `ลดลงจากปี 68 ${Math.abs(d.cupPct).toFixed(1)}%`}`,
+        desc: `เทียบกับปีงบ 2568 ที่ทำได้ ${fmt(d.cupTotal68)} บาท ${d.cupPct >= 0 ? 'สะท้อนแนวโน้มการให้บริการที่ขยายตัวต่อเนื่อง' : 'ควรทบทวนสาเหตุการลดลงเพื่อวางแผนรับมือ'}`
+      },
+      topConcern ? {
+        icon: 'hourglass', color: 'yellow',
+        title: `2. "${topConcern.label}" ที่ ${topConcern.hospName} ลดลง ${fmt(Math.abs(topConcern.diff))} บาท (${topConcern.pct.toFixed(1)}%) — ควรติดตามเร่งด่วน`,
+        desc: `จาก ${fmt(topConcern.amt68)} บาท เหลือ ${fmt(topConcern.amt69)} บาท ในปีงบ 2569 ควรตรวจสอบสาเหตุและเร่งติดตามการเบิกจ่ายให้ครบ`
+      } : {
+        icon: 'check', color: 'green',
+        title: `2. ไม่พบหมวดที่ยอดลดลงอย่างมีนัยสำคัญในปีนี้`,
+        desc: `ทุกหมวดในทุกหน่วยบริการมีแนวโน้มทรงตัวหรือเติบโตเมื่อเทียบปีก่อน`
+      },
+      topHosp ? {
+        icon: 'building', color: 'blue',
+        title: `3. ${topHosp.name} เป็นหน่วยบริการหลัก (${hospSharePct.toFixed(1)}% ของยอดปี 69)`,
+        desc: `ยอด ${fmt(topHosp.total69)} บาท จากทั้งหมด ${fmt(d.cupTotal69)} บาท — รองลงมาคือ ${d.hospRows.filter(h => h.code !== topHosp.code).sort((a, b) => b.total69 - a.total69).slice(0, 3).map(h => `${h.name} ${fmt(h.total69)} บาท`).join(' · ')}`
+      } : null,
+      topCat ? {
+        icon: 'leaf', color: 'green',
+        title: `4. "${topCat.label}" ยังเป็นหมวดบริการยอดสูงสุด (${catSharePct.toFixed(1)}% ของยอดปี 69)`,
+        desc: `ยอดรวม ${fmt(topCat.amt69)} บาท จากทั้ง 4 หมวด — ควรรักษามาตรฐานคุณภาพบริการหมวดนี้ไว้อย่างต่อเนื่อง`
+      } : null,
+      topHighlight ? {
+        icon: 'heart', color: 'pink',
+        title: `5. "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตสูงสุด (+${topHighlight.pct.toFixed(1)}%)`,
+        desc: `จาก ${fmt(topHighlight.amt68)} บาท เป็น ${fmt(topHighlight.amt69)} บาท (+${fmt(topHighlight.diff)} บาท) ควรถอดบทเรียนความสำเร็จไปปรับใช้กับหน่วยบริการอื่น`
+      } : null,
+      {
+        icon: 'target', color: 'blue',
+        title: '6. ข้อเสนอแนะเชิงนโยบาย',
+        recs: [
+          { label: 'เร่งด่วน', text: topConcern ? `ติดตามหมวด "${topConcern.label}" ที่ ${topConcern.hospName} ที่ยอดลดลง` : 'ติดตามความครบถ้วนของเอกสารเบิกจ่ายทุกหมวดในปีงบ 2569' },
+          { label: 'ระยะกลาง', text: topHighlight ? `ขยายแนวทางที่ทำให้ "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตไปยังหน่วยบริการอื่น` : 'ทบทวนแผนการให้บริการรายหมวดเพื่อกระจายรายได้ให้สมดุลขึ้น' },
+          { label: 'ระยะยาว', text: `พัฒนาระบบบันทึกข้อมูลให้ครบถ้วนตรงตามเงื่อนไขการเบิกจ่ายของ สปสช. ในทุกหน่วยบริการ` },
+        ]
+      }
+    ].filter(Boolean);
+
+    return cards;
+  }, [directorSummaryData]);
+
   /* ─── Chart: Donut in Overview ─── */
   useEffect(() => {
     if (currentView !== 'overview') return;
@@ -2394,6 +2459,98 @@ export default function App() {
       }
     };
   }, [currentView, ppfsData, currentUser]);
+
+  /* ─── Chart: Director Radar (สัดส่วน 4 หมวด ปี 68 vs 69) ─── */
+  useEffect(() => {
+    if (currentView !== 'director') return;
+    if (!dirRadarCanvasRef.current) return;
+
+    if (dirRadarChartRef.current) dirRadarChartRef.current.destroy();
+
+    const cats = directorSummaryData.cupCats;
+    dirRadarChartRef.current = new Chart(dirRadarCanvasRef.current, {
+      type: 'radar',
+      data: {
+        labels: cats.map(c => c.label),
+        datasets: [
+          {
+            label: `ปีงบ 2568`,
+            data: cats.map(c => c.amt68),
+            borderColor: '#0369a1',
+            backgroundColor: 'rgba(3,105,161,0.12)',
+            pointBackgroundColor: '#0369a1',
+            borderWidth: 2
+          },
+          {
+            label: `ปีงบ 2569`,
+            data: cats.map(c => c.amt69),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5,150,105,0.18)',
+            pointBackgroundColor: '#059669',
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            ticks: { display: false },
+            grid: { color: '#e2e8f0' },
+            pointLabels: { font: { size: 11, weight: 'bold' }, color: '#334155' }
+          }
+        },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+
+    return () => {
+      if (dirRadarChartRef.current) dirRadarChartRef.current.destroy();
+    };
+  }, [currentView, directorSummaryData, currentUser]);
+
+  /* ─── Chart: Director Bar (ยอดเบิกรายหน่วยบริการ ปี 68 vs 69) ─── */
+  useEffect(() => {
+    if (currentView !== 'director') return;
+    if (!dirBarCanvasRef.current) return;
+
+    if (dirBarChartRef.current) dirBarChartRef.current.destroy();
+
+    const rows = directorSummaryData.hospRows;
+    dirBarChartRef.current = new Chart(dirBarCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels: rows.map(h => h.name),
+        datasets: [
+          {
+            label: 'ปีงบ 2568',
+            data: rows.map(h => h.total68),
+            backgroundColor: '#7dd3c0'
+          },
+          {
+            label: 'ปีงบ 2569',
+            data: rows.map(h => h.total69),
+            backgroundColor: '#059669'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { font: { size: 10.5 } }, grid: { display: false } },
+          y: { ticks: { callback: (v) => fmt(v), font: { size: 10.5 } }, grid: { color: '#f1f5f9' } }
+        },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+
+    return () => {
+      if (dirBarChartRef.current) dirBarChartRef.current.destroy();
+    };
+  }, [currentView, directorSummaryData, currentUser]);
 
     // Handle Loading & Login
   if (!mounted || loading) return (
@@ -5354,6 +5511,51 @@ export default function App() {
                 <div className={`px-5 py-3 rounded-2xl flex items-center gap-2.5 font-black text-lg border ${directorSummaryData.cupPct >= 0 ? 'bg-emerald-500/20 border-emerald-400/40 text-[#6ee7b7]' : 'bg-red-500/20 border-red-400/40 text-[#fca5a5]'}`}>
                   {directorSummaryData.cupPct >= 0 ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
                   {directorSummaryData.cupPct >= 0 ? '+' : ''}{directorSummaryData.cupPct.toFixed(1)}% เทียบปีก่อน
+                </div>
+              </div>
+
+              {/* บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="text-sm font-black text-[#0f172a] flex items-center gap-2 mb-5">
+                  <Sparkles size={17} className="text-[#059669]" /> บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย
+                </div>
+                <div className="space-y-3">
+                  {directorInsights.map((card, i) => {
+                    const Icon = DIR_ICON_MAP[card.icon];
+                    const c = DIR_COLOR_MAP[card.color];
+                    return (
+                      <div key={i} className={`rounded-2xl border ${c.border} ${c.bg} p-4 flex gap-3`}>
+                        <Icon size={18} className={`${c.icon} shrink-0 mt-0.5`} />
+                        <div className="flex-1">
+                          <div className={`text-[13px] font-black ${c.title}`}>{card.title}</div>
+                          {card.desc && <div className="text-[12px] text-[#475569] mt-1 font-medium">{card.desc}</div>}
+                          {card.recs && (
+                            <div className="mt-1.5 space-y-1">
+                              {card.recs.map((r, j) => (
+                                <div key={j} className="text-[12px] text-[#475569] font-medium">
+                                  <span className={`font-black ${c.title}`}>{r.label}:</span> {r.text}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Radar & Bar Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#0f172a] mb-1">Radar: สัดส่วน 4 หมวดบริการ</div>
+                  <div className="text-[11px] text-[#94a3b8] font-semibold mb-3">เปรียบเทียบยอดเบิก ปีงบ 2568 vs 2569</div>
+                  <div className="relative h-[280px]"><canvas ref={dirRadarCanvasRef}></canvas></div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#0f172a] mb-1">ยอดเบิกรายหน่วยบริการ</div>
+                  <div className="text-[11px] text-[#94a3b8] font-semibold mb-3">เปรียบเทียบ ปีงบ 2568 vs 2569</div>
+                  <div className="relative h-[280px]"><canvas ref={dirBarCanvasRef}></canvas></div>
                 </div>
               </div>
 
