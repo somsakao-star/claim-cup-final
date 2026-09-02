@@ -5829,7 +5829,6 @@ export default function App() {
                   </div>
                 </>
               )}
-              </div>
 
               <div className="text-center text-xs text-[#94a3b8] pt-4 pb-2 border-t border-[#e2e8f0]">
                 © 2026 CLAIMCUP Sankhong Portal • Executive Summary สำหรับผู้อำนวยการ
