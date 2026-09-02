@@ -476,6 +476,13 @@ const OFFLINE_HERBAL_DATA = [
 ];
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('th-TH');
+const DIR_ICON_MAP = { check: CheckCircle2, hourglass: Clock, building: Building2, leaf: Leaf, heart: HeartPulse, target: Sparkles };
+const DIR_COLOR_MAP = {
+  green: { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'text-emerald-600', title: 'text-emerald-900' },
+  yellow: { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600', title: 'text-amber-900' },
+  blue: { bg: 'bg-sky-50', border: 'border-sky-200', icon: 'text-sky-600', title: 'text-sky-900' },
+  pink: { bg: 'bg-pink-50', border: 'border-pink-200', icon: 'text-pink-600', title: 'text-pink-900' },
+};
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtS = (n) => {
   const v = Math.abs(Math.round(n || 0));
@@ -698,7 +705,9 @@ export default function App() {
     try {
       const saved = localStorage.getItem('claimcup_user');
       if (saved) setCurrentUser(JSON.parse(saved));
-    } catch (e) {}
+    } catch (e) {
+      localStorage.removeItem('claimcup_user');
+    }
   }, []);
   const [currentView, setCurrentView] = useState('overview');
   const [currentYear, setCurrentYear] = useState('2569');
@@ -720,7 +729,7 @@ export default function App() {
   const [ppfsHospitalPopupId, setPpfsHospitalPopupId] = useState(null);
   const [thaiHospitalPopupId, setThaiHospitalPopupId] = useState(null);
   const [herbalHospitalPopupId, setHerbalHospitalPopupId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState(defaultHMap);
   const [clockTime, setClockTime] = useState('');
 
@@ -742,6 +751,10 @@ export default function App() {
   const ppfsYoYCanvasRef = useRef(null);
   const trendChartRef = useRef(null);
   const trendCanvasRef = useRef(null);
+  const dirRadarChartRef = useRef(null);
+  const dirRadarCanvasRef = useRef(null);
+  const dirBarChartRef = useRef(null);
+  const dirBarCanvasRef = useRef(null);
 
   // Auto-Logout 9 mins
   useEffect(() => {
@@ -767,13 +780,6 @@ export default function App() {
   }, [currentUser]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('claimcup_user');
-    if (saved) {
-      try { setCurrentUser(JSON.parse(saved)); } catch (e) { localStorage.removeItem('claimcup_user'); }
-    }
-  }, []);
-
-  useEffect(() => {
     setClockTime(new Date().toLocaleTimeString('th-TH'));
     const t = setInterval(() => setClockTime(new Date().toLocaleTimeString('th-TH')), 1000);
     return () => clearInterval(t);
@@ -782,6 +788,7 @@ export default function App() {
   useEffect(() => {
     const fetchAll = async () => {
       // use top-level defaultHMap
+      setLoading(true);
 
       try {
         const [resC, resE, resHos, resP, resPhy, resThai, resHerbal, resPpfs] = await Promise.allSettled([
@@ -1311,7 +1318,7 @@ export default function App() {
     const totalReceived = p1 + p2;
     const netRemain = (sum68 + sum69) - (p1 + p2 + ded);
 
-    const matrixRows = Object.values(monthMap).filter(row => row.Total > 0 || (row.monthNum >= 1 && row.monthNum <= 12));
+    const matrixRows = MONTH_KEYS.map(m => monthMap[m]);
     const matrixTotal = matrixRows.reduce((acc, row) => {
       ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย', 'Total'].forEach(k => {
         acc[k] = (acc[k] || 0) + (row[k] || 0);
@@ -1863,6 +1870,154 @@ export default function App() {
     };
   }, [ppfsList, claims, hospitalMap, currentYear]);
 
+  /* ─── Director (ผอ.) Executive Summary Data ───
+     Independent of currentYear / currentHosp filters — always compares FY2569 vs FY2568
+     across all 5 หน่วยบริการ + Cup รวม, for all 4 หมวด (PPFS / แผนไทย / สมุนไพร / กายภาพ) */
+  const directorSummaryData = useMemo(() => {
+    const allHealthCodes = ['05954', '05957', '05962', '05959', '05956'];
+    const scopeHcode = (currentUser?.hcode && currentUser.hcode !== 'ALL') ? String(currentUser.hcode).trim() : null;
+    const healthCodes = scopeHcode ? allHealthCodes.filter(c => c === scopeHcode) : allHealthCodes;
+    const physCodeMap = { '54': '05954', '56': '05956', '62': '05962' };
+    const catLabels = [
+      { key: 'ppfs', label: 'PP & PPFS' },
+      { key: 'thai', label: 'การแพทย์แผนไทย' },
+      { key: 'herbal', label: 'ยาสมุนไพร' },
+      { key: 'phys', label: 'กายภาพบำบัด' },
+    ];
+
+    const byHosp = {};
+    healthCodes.forEach(c => { byHosp[c] = { ppfs69: 0, ppfs68: 0, thai69: 0, thai68: 0, herbal69: 0, herbal68: 0, phys69: 0, phys68: 0 }; });
+
+    const addRows = (rows, catKey, hcodeFn) => {
+      rows.forEach(r => {
+        const yr = String(r.fiscal_year || '');
+        if (yr !== '2569' && yr !== '2568') return;
+        const hc = hcodeFn(r);
+        if (!byHosp[hc]) return;
+        const amt = parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0;
+        byHosp[hc][`${catKey}${yr === '2569' ? '69' : '68'}`] += amt;
+      });
+    };
+
+    const ppfsRaw = (ppfsList && ppfsList.length > 0) ? ppfsList : (claims && claims.length > 0 ? claims : OFFLINE_PPFS_DATA);
+    addRows(ppfsRaw, 'ppfs', r => String(r.hcode || '').trim());
+    addRows((thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA, 'thai', r => String(r.hcode || '').trim());
+    addRows((herbals && herbals.length > 0) ? herbals : OFFLINE_HERBAL_DATA, 'herbal', r => String(r.hcode || '').trim());
+    addRows((physicals && physicals.length > 0) ? physicals : OFFLINE_PHYSICAL_DATA, 'phys', r => physCodeMap[String(r.hcode || '').trim()] || String(r.hcode || '').trim());
+
+    const pct = (v69, v68) => (v68 > 0 ? ((v69 - v68) / v68) * 100 : (v69 > 0 ? 100 : 0));
+
+    const hospRows = healthCodes.map(code => {
+      const b = byHosp[code];
+      const cats = catLabels.map(c => {
+        const amt69 = Math.round(b[`${c.key}69`] || 0);
+        const amt68 = Math.round(b[`${c.key}68`] || 0);
+        return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68) };
+      });
+      const total69 = cats.reduce((s, c) => s + c.amt69, 0);
+      const total68 = cats.reduce((s, c) => s + c.amt68, 0);
+      return {
+        code,
+        name: hospitalMap[code] ? hospitalMap[code].replace(/^[0-9]+\s*[-–]?\s*/, '') : code,
+        cats, total69, total68, diff: total69 - total68, pct: pct(total69, total68)
+      };
+    });
+
+    const cupCats = catLabels.map(c => {
+      const amt69 = hospRows.reduce((s, h) => s + (h.cats.find(x => x.key === c.key)?.amt69 || 0), 0);
+      const amt68 = hospRows.reduce((s, h) => s + (h.cats.find(x => x.key === c.key)?.amt68 || 0), 0);
+      return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68) };
+    });
+    const cupTotal69 = hospRows.reduce((s, h) => s + h.total69, 0);
+    const cupTotal68 = hospRows.reduce((s, h) => s + h.total68, 0);
+
+    const allCombos = [];
+    hospRows.forEach(h => {
+      h.cats.forEach(c => {
+        if (c.amt69 > 0 || c.amt68 > 0) {
+          allCombos.push({ hospName: h.name, hospCode: h.code, label: c.label, amt69: c.amt69, amt68: c.amt68, diff: c.diff, pct: c.pct });
+        }
+      });
+    });
+    const highlights = allCombos.filter(x => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 5);
+    const concerns = allCombos.filter(x => x.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 5);
+
+    const channelKeys = ['KTB Claim', 'MOPH Claim', 'E-Claim', 'NTIP', 'แพทย์แผนไทย'];
+    const buildChannel = (code) => {
+      const rows = PAY_MATRIX_69[code] || [];
+      const totals = {};
+      channelKeys.forEach(k => { totals[k] = 0; });
+      rows.forEach(r => channelKeys.forEach(k => { totals[k] += (r[k] || 0); }));
+      const sum = channelKeys.reduce((s, k) => s + totals[k], 0);
+      return channelKeys
+        .map(k => ({ key: k, amt: Math.round(totals[k]), pct: sum > 0 ? (totals[k] / sum) * 100 : 0 }))
+        .filter(x => x.amt > 0)
+        .sort((a, b) => b.amt - a.amt);
+    };
+    const cupChannel = buildChannel(scopeHcode || 'ALL');
+    const hospChannels = healthCodes.map(code => ({
+      code,
+      name: hospitalMap[code] ? hospitalMap[code].replace(/^[0-9]+\s*[-–]?\s*/, '') : code,
+      channel: buildChannel(code)
+    }));
+
+    return { hospRows, cupCats, cupTotal69, cupTotal68, cupDiff: cupTotal69 - cupTotal68, cupPct: pct(cupTotal69, cupTotal68), highlights, concerns, cupChannel, hospChannels, isScoped: !!scopeHcode, scopeHospName: scopeHcode ? (hospitalMap[scopeHcode] ? hospitalMap[scopeHcode].replace(/^[0-9]+\s*[-–]?\s*/, '') : scopeHcode) : null };
+  }, [claims, ppfsList, thais, herbals, physicals, hospitalMap, currentUser]);
+
+  /* ─── Director Insight Cards (บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย) ─── */
+  const directorInsights = useMemo(() => {
+    const d = directorSummaryData;
+    const topHosp = [...d.hospRows].sort((a, b) => b.total69 - a.total69)[0];
+    const topCat = [...d.cupCats].sort((a, b) => b.amt69 - a.amt69)[0];
+    const topHighlight = d.highlights[0];
+    const topConcern = d.concerns[0];
+    const hospSharePct = d.cupTotal69 > 0 && topHosp ? (topHosp.total69 / d.cupTotal69) * 100 : 0;
+    const catSharePct = d.cupTotal69 > 0 && topCat ? (topCat.amt69 / d.cupTotal69) * 100 : 0;
+
+    const cards = [
+      {
+        icon: 'check', color: 'green',
+        title: `1. ยอดเบิกรวม Cup ปี 69 อยู่ที่ ${fmt(d.cupTotal69)} บาท ${d.cupPct >= 0 ? `สูงกว่าปี 68 ${d.cupPct.toFixed(1)}%` : `ลดลงจากปี 68 ${Math.abs(d.cupPct).toFixed(1)}%`}`,
+        desc: `เทียบกับปีงบ 2568 ที่ทำได้ ${fmt(d.cupTotal68)} บาท ${d.cupPct >= 0 ? 'สะท้อนแนวโน้มการให้บริการที่ขยายตัวต่อเนื่อง' : 'ควรทบทวนสาเหตุการลดลงเพื่อวางแผนรับมือ'}`
+      },
+      topConcern ? {
+        icon: 'hourglass', color: 'yellow',
+        title: `2. "${topConcern.label}" ที่ ${topConcern.hospName} ลดลง ${fmt(Math.abs(topConcern.diff))} บาท (${topConcern.pct.toFixed(1)}%) — ควรติดตามเร่งด่วน`,
+        desc: `จาก ${fmt(topConcern.amt68)} บาท เหลือ ${fmt(topConcern.amt69)} บาท ในปีงบ 2569 ควรตรวจสอบสาเหตุและเร่งติดตามการเบิกจ่ายให้ครบ`
+      } : {
+        icon: 'check', color: 'green',
+        title: `2. ไม่พบหมวดที่ยอดลดลงอย่างมีนัยสำคัญในปีนี้`,
+        desc: `ทุกหมวดในทุกหน่วยบริการมีแนวโน้มทรงตัวหรือเติบโตเมื่อเทียบปีก่อน`
+      },
+      topHosp ? {
+        icon: 'building', color: 'blue',
+        title: `3. ${topHosp.name} เป็นหน่วยบริการหลัก (${hospSharePct.toFixed(1)}% ของยอดปี 69)`,
+        desc: `ยอด ${fmt(topHosp.total69)} บาท จากทั้งหมด ${fmt(d.cupTotal69)} บาท — รองลงมาคือ ${d.hospRows.filter(h => h.code !== topHosp.code).sort((a, b) => b.total69 - a.total69).slice(0, 3).map(h => `${h.name} ${fmt(h.total69)} บาท`).join(' · ')}`
+      } : null,
+      topCat ? {
+        icon: 'leaf', color: 'green',
+        title: `4. "${topCat.label}" ยังเป็นหมวดบริการยอดสูงสุด (${catSharePct.toFixed(1)}% ของยอดปี 69)`,
+        desc: `ยอดรวม ${fmt(topCat.amt69)} บาท จากทั้ง 4 หมวด — ควรรักษามาตรฐานคุณภาพบริการหมวดนี้ไว้อย่างต่อเนื่อง`
+      } : null,
+      topHighlight ? {
+        icon: 'heart', color: 'pink',
+        title: `5. "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตสูงสุด (+${topHighlight.pct.toFixed(1)}%)`,
+        desc: `จาก ${fmt(topHighlight.amt68)} บาท เป็น ${fmt(topHighlight.amt69)} บาท (+${fmt(topHighlight.diff)} บาท) ควรถอดบทเรียนความสำเร็จไปปรับใช้กับหน่วยบริการอื่น`
+      } : null,
+      {
+        icon: 'target', color: 'blue',
+        title: '6. ข้อเสนอแนะเชิงนโยบาย',
+        recs: [
+          { label: 'เร่งด่วน', text: topConcern ? `ติดตามหมวด "${topConcern.label}" ที่ ${topConcern.hospName} ที่ยอดลดลง` : 'ติดตามความครบถ้วนของเอกสารเบิกจ่ายทุกหมวดในปีงบ 2569' },
+          { label: 'ระยะกลาง', text: topHighlight ? `ขยายแนวทางที่ทำให้ "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตไปยังหน่วยบริการอื่น` : 'ทบทวนแผนการให้บริการรายหมวดเพื่อกระจายรายได้ให้สมดุลขึ้น' },
+          { label: 'ระยะยาว', text: `พัฒนาระบบบันทึกข้อมูลให้ครบถ้วนตรงตามเงื่อนไขการเบิกจ่ายของ สปสช. ในทุกหน่วยบริการ` },
+        ]
+      }
+    ].filter(Boolean);
+
+    return cards;
+  }, [directorSummaryData]);
+
   /* ─── Chart: Donut in Overview ─── */
   useEffect(() => {
     if (currentView !== 'overview') return;
@@ -1898,7 +2053,7 @@ export default function App() {
     return () => {
       if (donutChartRef.current) donutChartRef.current.destroy();
     };
-  }, [currentView, processedData, hospitalMap]);
+  }, [currentView, processedData, hospitalMap, currentUser]);
 
   /* ─── Chart: Overview YoY Monthly Trend (Live from Payment Table) ─── */
   useEffect(() => {
@@ -1976,7 +2131,7 @@ export default function App() {
       clearTimeout(timer);
       if (trendChartRef.current) trendChartRef.current.destroy();
     };
-  }, [currentView, currentYear, currentHosp, monthlyTrendData]);
+  }, [currentView, currentYear, currentHosp, monthlyTrendData, currentUser]);
 
   /* ─── Chart: Detail View Top Items Horizontal Bar ─── */
   useEffect(() => {
@@ -2018,7 +2173,7 @@ export default function App() {
     return () => {
       if (detailBarChartRef.current) detailBarChartRef.current.destroy();
     };
-  }, [currentView, detailComparisonData]);
+  }, [currentView, detailComparisonData, currentUser]);
 
   /* ─── Charts: Expense View ─── */
   useEffect(() => {
@@ -2092,7 +2247,7 @@ export default function App() {
       if (expenseChartRef.current) expenseChartRef.current.destroy();
       if (expDonutChartRef.current) expDonutChartRef.current.destroy();
     };
-  }, [currentView, expenseStats]);
+  }, [currentView, expenseStats, currentUser]);
 
   /* ─── Chart: Physical Therapy YoY Comparison Chart ─── */
   useEffect(() => {
@@ -2184,7 +2339,7 @@ export default function App() {
         physYoYChartRef.current = null;
       }
     };
-  }, [currentView, physicalData]);
+  }, [currentView, physicalData, currentUser]);
 
   /* ─── Chart: Thai Medicine YoY Comparison ─── */
   useEffect(() => {
@@ -2276,7 +2431,7 @@ export default function App() {
         thaiYoYChartRef.current = null;
       }
     };
-  }, [currentView, thaiData]);
+  }, [currentView, thaiData, currentUser]);
 
   /* ─── Chart: Herbal Medicine YoY Comparison ─── */
   useEffect(() => {
@@ -2368,7 +2523,7 @@ export default function App() {
         herbalYoYChartRef.current = null;
       }
     };
-  }, [currentView, herbalData]);
+  }, [currentView, herbalData, currentUser]);
 
   /* ─── Chart: PPFS 3-Year Comparison ─── */
   useEffect(() => {
@@ -2465,7 +2620,99 @@ export default function App() {
         ppfsYoYChartRef.current = null;
       }
     };
-  }, [currentView, ppfsData]);
+  }, [currentView, ppfsData, currentUser]);
+
+  /* ─── Chart: Director Radar (สัดส่วน 4 หมวด ปี 68 vs 69) ─── */
+  useEffect(() => {
+    if (currentView !== 'director') return;
+    if (!dirRadarCanvasRef.current) return;
+
+    if (dirRadarChartRef.current) dirRadarChartRef.current.destroy();
+
+    const cats = directorSummaryData.cupCats;
+    dirRadarChartRef.current = new Chart(dirRadarCanvasRef.current, {
+      type: 'radar',
+      data: {
+        labels: cats.map(c => c.label),
+        datasets: [
+          {
+            label: `ปีงบ 2568`,
+            data: cats.map(c => c.amt68),
+            borderColor: '#0369a1',
+            backgroundColor: 'rgba(3,105,161,0.12)',
+            pointBackgroundColor: '#0369a1',
+            borderWidth: 2
+          },
+          {
+            label: `ปีงบ 2569`,
+            data: cats.map(c => c.amt69),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5,150,105,0.18)',
+            pointBackgroundColor: '#059669',
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            ticks: { display: false },
+            grid: { color: '#e2e8f0' },
+            pointLabels: { font: { size: 11, weight: 'bold' }, color: '#334155' }
+          }
+        },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+
+    return () => {
+      if (dirRadarChartRef.current) dirRadarChartRef.current.destroy();
+    };
+  }, [currentView, directorSummaryData, currentUser]);
+
+  /* ─── Chart: Director Bar (ยอดเบิกรายหน่วยบริการ ปี 68 vs 69) ─── */
+  useEffect(() => {
+    if (currentView !== 'director') return;
+    if (!dirBarCanvasRef.current) return;
+
+    if (dirBarChartRef.current) dirBarChartRef.current.destroy();
+
+    const rows = directorSummaryData.hospRows;
+    dirBarChartRef.current = new Chart(dirBarCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels: rows.map(h => h.name),
+        datasets: [
+          {
+            label: 'ปีงบ 2568',
+            data: rows.map(h => h.total68),
+            backgroundColor: '#7dd3c0'
+          },
+          {
+            label: 'ปีงบ 2569',
+            data: rows.map(h => h.total69),
+            backgroundColor: '#059669'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { font: { size: 10.5 } }, grid: { display: false } },
+          y: { ticks: { callback: (v) => fmt(v), font: { size: 10.5 } }, grid: { color: '#f1f5f9' } }
+        },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+
+    return () => {
+      if (dirBarChartRef.current) dirBarChartRef.current.destroy();
+    };
+  }, [currentView, directorSummaryData, currentUser]);
 
     // Handle Loading & Login
   if (!mounted || loading) return (
@@ -2649,12 +2896,14 @@ export default function App() {
                   </div>
 
                   <div className="mt-5 flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={() => { setActiveDetailTab('ppfs'); setCurrentView('detail'); }}
-                      className="bg-white/15 hover:bg-white/25 border border-white/30 px-5 py-2.5 rounded-full text-xs font-black transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 cursor-pointer"
-                    >
-                      <Sparkles size={15} className="text-[#34d399]" /> ดูรายละเอียดเจาะลึก 4 หมวด
-                    </button>
+                    {currentUser?.role === 'bm' && (
+                      <button
+                        onClick={() => setCurrentView('director')}
+                        className="bg-white/15 hover:bg-white/25 border border-white/30 px-5 py-2.5 rounded-full text-xs font-black transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <Sparkles size={15} className="text-[#34d399]" /> สรุปบทวิเคราะห์ Cup สันโค้ง (สำหรับ ผอ.)
+                      </button>
+                    )}
                     <div className="bg-emerald-950/50 border border-emerald-400/20 px-4 py-2 rounded-full text-xs font-bold text-emerald-200 hidden sm:flex items-center gap-2">
                       <CheckCircle2 size={14} className="text-[#34d399]" /> รพ.สต. ในเครือข่าย 5 แห่ง
                     </div>
@@ -5380,6 +5629,210 @@ export default function App() {
                     </tfoot>
                   </table>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════ VIEW 4: DIRECTOR (ผอ.) EXECUTIVE SUMMARY ════════ */}
+        {currentView === 'director' && (
+          <div className="w-full min-h-screen bg-[#f8fafc]">
+            <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm flex-wrap gap-3">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#064e3b] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(6,78,59,0.25)]">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-0.5">
+                    สรุปบทวิเคราะห์ Cup บ้านสันโค้ง • สำหรับ ผอ. เท่านั้น
+                  </span>
+                  <div className="text-lg font-black text-[#0f172a] leading-tight">ภาพรวมผลการเบิกจ่ายทุกหมวด ปีงบ 2569 เทียบ 2568</div>
+                  <div className="text-[11.5px] text-[#64748b] font-semibold">{directorSummaryData.isScoped ? `เฉพาะหน่วยบริการ ${directorSummaryData.scopeHospName}` : 'รวมทั้ง 5 หน่วยบริการในเครือข่าย อ.สันกำแพง'}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('overview')}
+                className="px-4 py-2 rounded-xl bg-[#f1f5f9] border border-[#cbd5e1] text-[#334155] text-xs font-bold flex items-center gap-1.5 hover:bg-[#e2e8f0] transition-all cursor-pointer"
+              >
+                <ArrowLeft size={15} /> กลับหน้าหลัก
+              </button>
+            </nav>
+
+            <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
+
+              {/* Cup-wide Hero */}
+              <div className="bg-gradient-to-br from-[#022c22] via-[#043e30] to-[#064e3b] rounded-3xl p-7 md:p-9 text-white shadow-[0_12px_35px_rgba(2,44,34,0.2)] border border-emerald-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <div className="text-[12px] font-extrabold uppercase tracking-widest text-[#34d399] mb-2.5">{directorSummaryData.isScoped ? `${directorSummaryData.scopeHospName}` : 'CUP รวมทั้งหมด (5 หน่วยบริการ)'}</div>
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-3xl font-black text-[#34d399]">฿</span>
+                    <span className="text-5xl font-black tracking-tight leading-none">{fmt(directorSummaryData.cupTotal69)}</span>
+                  </div>
+                  <div className="text-[13px] text-[#d1fae5] font-semibold mt-2">ปีงบ 2568: ฿{fmt(directorSummaryData.cupTotal68)}</div>
+                </div>
+                <div className={`px-5 py-3 rounded-2xl flex items-center gap-2.5 font-black text-lg border ${directorSummaryData.cupPct >= 0 ? 'bg-emerald-500/20 border-emerald-400/40 text-[#6ee7b7]' : 'bg-red-500/20 border-red-400/40 text-[#fca5a5]'}`}>
+                  {directorSummaryData.cupPct >= 0 ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
+                  {directorSummaryData.cupPct >= 0 ? '+' : ''}{directorSummaryData.cupPct.toFixed(1)}% เทียบปีก่อน
+                </div>
+              </div>
+
+              {/* บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="text-sm font-black text-[#0f172a] flex items-center gap-2 mb-5">
+                  <Sparkles size={17} className="text-[#059669]" /> บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย
+                </div>
+                <div className="space-y-3">
+                  {directorInsights.map((card, i) => {
+                    const Icon = DIR_ICON_MAP[card.icon];
+                    const c = DIR_COLOR_MAP[card.color];
+                    return (
+                      <div key={i} className={`rounded-2xl border ${c.border} ${c.bg} p-4 flex gap-3`}>
+                        <Icon size={18} className={`${c.icon} shrink-0 mt-0.5`} />
+                        <div className="flex-1">
+                          <div className={`text-[13px] font-black ${c.title}`}>{card.title}</div>
+                          {card.desc && <div className="text-[12px] text-[#475569] mt-1 font-medium">{card.desc}</div>}
+                          {card.recs && (
+                            <div className="mt-1.5 space-y-1">
+                              {card.recs.map((r, j) => (
+                                <div key={j} className="text-[12px] text-[#475569] font-medium">
+                                  <span className={`font-black ${c.title}`}>{r.label}:</span> {r.text}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Radar & Bar Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#0f172a] mb-1">Radar: สัดส่วน 4 หมวดบริการ</div>
+                  <div className="text-[11px] text-[#94a3b8] font-semibold mb-3">เปรียบเทียบยอดเบิก ปีงบ 2568 vs 2569</div>
+                  <div className="relative h-[280px]"><canvas ref={dirRadarCanvasRef}></canvas></div>
+                </div>
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#0f172a] mb-1">ยอดเบิกรายหน่วยบริการ</div>
+                  <div className="text-[11px] text-[#94a3b8] font-semibold mb-3">เปรียบเทียบ ปีงบ 2568 vs 2569</div>
+                  <div className="relative h-[280px]"><canvas ref={dirBarCanvasRef}></canvas></div>
+                </div>
+              </div>
+
+              {/* Category breakdown (4 หมวด) — Cup-wide */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {directorSummaryData.cupCats.map(c => (
+                  <div key={c.key} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm">
+                    <div className="text-xs font-bold text-[#64748b] mb-2">{c.label}</div>
+                    <div className="text-xl font-black text-[#0f172a]">฿{fmt(c.amt69)}</div>
+                    <div className={`text-xs font-bold mt-1.5 flex items-center gap-1 ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {c.pct >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                      {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(1)}% ({fmt(c.amt68)} → {fmt(c.amt69)})
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Highlights & Concerns */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="bg-white rounded-2xl border border-emerald-200 p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#065f46] flex items-center gap-2 mb-4"><TrendingUp size={17} /> จุดเด่น — หมวดที่เติบโตสูงสุด</div>
+                  {directorSummaryData.highlights.length === 0 ? (
+                    <div className="text-xs text-[#94a3b8]">ไม่มีหมวดที่เติบโตเมื่อเทียบปีก่อน</div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {directorSummaryData.highlights.map((h, i) => (
+                        <div key={i} className="flex justify-between items-center bg-emerald-50/60 rounded-xl px-4 py-2.5 border border-emerald-100">
+                          <div>
+                            <div className="text-xs font-bold text-[#0f172a]">{h.label} — {h.hospName}</div>
+                            <div className="text-[10.5px] text-[#64748b]">{fmt(h.amt68)} → {fmt(h.amt69)} บาท</div>
+                          </div>
+                          <div className="text-xs font-black text-emerald-600">+{fmt(h.diff)} ({h.pct.toFixed(0)}%)</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="bg-white rounded-2xl border border-red-200 p-6 shadow-sm">
+                  <div className="text-sm font-black text-[#991b1b] flex items-center gap-2 mb-4"><TrendingDown size={17} /> จุดที่ควรระวัง — หมวดที่ลดลง</div>
+                  {directorSummaryData.concerns.length === 0 ? (
+                    <div className="text-xs text-[#94a3b8]">ไม่มีหมวดที่ลดลงเมื่อเทียบปีก่อน</div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {directorSummaryData.concerns.map((c, i) => (
+                        <div key={i} className="flex justify-between items-center bg-red-50/60 rounded-xl px-4 py-2.5 border border-red-100">
+                          <div>
+                            <div className="text-xs font-bold text-[#0f172a]">{c.label} — {c.hospName}</div>
+                            <div className="text-[10.5px] text-[#64748b]">{fmt(c.amt68)} → {fmt(c.amt69)} บาท</div>
+                          </div>
+                          <div className="text-xs font-black text-red-600">{fmt(c.diff)} ({c.pct.toFixed(0)}%)</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Channel breakdown — Cup-wide */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="text-sm font-black text-[#0f172a] mb-4">สัดส่วนรายรับแยกช่องทาง — {directorSummaryData.isScoped ? directorSummaryData.scopeHospName : 'Cup รวม'} (ปีงบ 2569)</div>
+                <div className="space-y-2.5">
+                  {directorSummaryData.cupChannel.map(ch => (
+                    <div key={ch.key} className="flex items-center gap-3">
+                      <div className="w-24 text-[11px] font-bold text-[#475569] shrink-0">{ch.key}</div>
+                      <div className="flex-1 h-6 bg-[#f1f5f9] rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#059669] to-[#34d399] rounded-full flex items-center justify-end pr-2" style={{ width: `${Math.max(ch.pct, 4)}%` }}>
+                          <span className="text-[10px] font-black text-white">{ch.pct.toFixed(0)}%</span>
+                        </div>
+                      </div>
+                      <div className="w-28 text-right text-xs font-bold text-[#0f172a] shrink-0">฿{fmt(ch.amt)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Per-hospital summary cards — only for the Cup-wide ผอ. */}
+              {!directorSummaryData.isScoped && (
+                <>
+                  <div className="text-sm font-black text-[#0f172a] pt-2">สรุปแยกรายหน่วยบริการ (5 แห่ง)</div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {directorSummaryData.hospRows.map(h => (
+                      <div key={h.code} className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <div className="text-[10.5px] font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] px-2 py-0.5 rounded-md inline-block mb-1">{h.code}</div>
+                            <div className="text-sm font-black text-[#0f172a]">{h.name}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-black text-[#0f172a]">฿{fmt(h.total69)}</div>
+                            <div className={`text-[11px] font-bold flex items-center gap-1 justify-end ${h.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                              {h.pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                              {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          {h.cats.map(c => (
+                            <div key={c.key} className="flex justify-between items-center text-xs border-b border-[#f1f5f9] py-1.5 last:border-0">
+                              <span className="text-[#64748b] font-semibold">{c.label}</span>
+                              <span className="font-bold text-[#334155]">฿{fmt(c.amt69)}</span>
+                              <span className={`font-bold w-16 text-right ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              </div>
+
+              <div className="text-center text-xs text-[#94a3b8] pt-4 pb-2 border-t border-[#e2e8f0]">
+                © 2026 CLAIMCUP Sankhong Portal • Executive Summary สำหรับผู้อำนวยการ
               </div>
             </div>
           </div>
