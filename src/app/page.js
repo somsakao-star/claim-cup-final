@@ -1269,7 +1269,10 @@ const THAI_RATE_68 = {
   'ค่าบริการนวดและประคบ': 208.77,
   'ค่าบริการประคบ': 125.26,
   'ค่าบริการอบสมุนไพร': 100.21,
+  'ค่าบริการการฟื้นฟูสมรรถภาพมารดาหลังคลอดตามแนวเวชปฏิบัติด้านการแพทย์แผนไทย': 500,
 };
+// รายการที่ไม่นำมาแสดงในตารางเทียบเรทปี 68
+const THAI_RATE_EXCLUDE = ['ค่าการใช้ยาจากสมุนไพรในบัญชียาหลักแห่งชาติ'];
 const fmtLossD = (n) => ((Number(n) || 0) < -0.005 ? '▼ ' : '') + (Math.abs(Number(n) || 0)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtLossPct = (p) => ((Number(p) || 0) < -0.05 ? '▼ ' : '') + Math.abs(Number(p) || 0).toFixed(1) + '%';
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2493,6 +2496,7 @@ export default function App() {
       const yr = String(r.fiscal_year || '');
       if (yr !== '2568' && yr !== '2569') return;
       const name = r.service_item || 'บริการนวดและประคบสมุนไพรเพื่อการรักษา';
+      if (THAI_RATE_EXCLUDE.includes(name)) return;
       const amt = parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0;
       if (!map[name]) map[name] = { name, qty68: 0, amt68: 0, qty69: 0, amt69: 0 };
       if (yr === '2568') { map[name].qty68 += 1; map[name].amt68 += amt; }
