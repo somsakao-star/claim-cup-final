@@ -2015,7 +2015,7 @@ export default function App() {
     const h1Headers = MONTHS_TH.slice(0, 6).map(m => '<th style="text-align:right; color:#059669;">' + m + '</th>').join('');
     const h2Headers = MONTHS_TH.slice(6, 12).map(m => '<th style="text-align:right; color:#059669;">' + m + '</th>').join('');
 
-    const html = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</title><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page { size: landscape; margin: 8mm; } * { box-sizing: border-box; font-family: \'Prompt\', sans-serif; } body { margin: 0; padding: 0; background: #fff; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .page-container { padding: 8px 12px; background: white; min-height: 94vh; display: flex; flex-direction: column; justify-content: flex-start; } .page-break-after { page-break-after: always; break-after: page; } .header-row { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #059669; padding-bottom: 8px; margin-bottom: 10px; } .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; } .subtitle { font-size: 11.5px; color: #64748b; margin: 2px 0 0; } .info-right { text-align: right; font-size: 11px; color: #64748b; font-weight: 600; } table { width: 100%; border-collapse: collapse; margin-top: 2px; } th, td { border: 1px solid #cbd5e1; } th { background-color: #f1f5f9; font-size: 11.5px; padding: 7px 8px; }</style></head><body><div class="page-container page-break-after"><div class="header-row"><div><h2 class="title">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีแรก: ต.ค. - มี.ค.)</h2><p class="subtitle">ประจำปีงบประมาณ ' + currentYear + ' &nbsp;|&nbsp; แผ่นที่ 1/2</p></div><div class="info-right">วันที่พิมพ์: ' + dateStr + '</div></div><table><thead><tr style="background:#f1f5f9;"><th style="text-align:left; width:28%; padding:7px 10px;">หมวดหมู่รายการจ่าย</th>' + h1Headers + '<th style="text-align:right; background:#e6fffa; color:#059669; font-weight:800; padding:7px 10px;">รวม 6 เดือนแรก</th></tr></thead><tbody>' + p1Rows + '</tbody><tfoot>' + p1Foot + '</tfoot></table></div><div class="page-container"><div class="header-row"><div><h2 class="title">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีหลัง: เม.ย. - ก.ย.)</h2><p class="subtitle">ประจำปีงบประมาณ ' + currentYear + ' &nbsp;|&nbsp; แผ่นที่ 2/2</p></div><div class="info-right" style="color:#059669; font-size:12px; font-weight:800;">ยอดรวมทั้งปีงบประมาณ: ฿' + fmtD(expenseStats.total) + ' บาท</div></div><table><thead><tr style="background:#f1f5f9;"><th style="text-align:left; width:28%; padding:7px 10px;">หมวดหมู่รายการจ่าย</th>' + h2Headers + '<th style="text-align:right; background:#e6fffa; color:#059669; font-weight:800; padding:7px 10px;">รวมทั้งสิ้น (12 เดือน)</th></tr></thead><tbody>' + p2Rows + '</tbody><tfoot>' + p2Foot + '</tfoot></table></div><script>window.onload = function() { window.focus(); window.print(); setTimeout(function() { window.close(); }, 500); };<\/script></body></html>';
+    const html = '<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง</title><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>@page { size: landscape; margin: 8mm; } * { box-sizing: border-box; font-family: \'Prompt\', sans-serif; } body { margin: 0; padding: 0; background: #fff; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .page-container { padding: 8px 12px; background: white; min-height: 94vh; display: flex; flex-direction: column; justify-content: flex-start; } .page-break-after { page-break-after: always; break-after: page; } .header-row { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #059669; padding-bottom: 8px; margin-bottom: 10px; } .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; } .subtitle { font-size: 11.5px; color: #64748b; margin: 2px 0 0; } .info-right { text-align: right; font-size: 11px; color: #64748b; font-weight: 600; } table { width: 100%; border-collapse: collapse; margin-top: 2px; } th, td { border: 1px solid #cbd5e1; } th { background-color: #f1f5f9; font-size: 11.5px; padding: 7px 8px; }</style></head><body><div class="page-container page-break-after"><div class="header-row"><div><h2 class="title">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีแรก: ต.ค. - มี.ค.)</h2><p class="subtitle">ประจำปีงบประมาณ ' + currentYear + ' &nbsp;|&nbsp; แผ่นที่ 1/2</p></div><div class="info-right">วันที่พิมพ์: ' + dateStr + '</div></div><table><thead><tr style="background:#f1f5f9;"><th style="text-align:left; width:28%; padding:7px 10px;">หมวดหมู่รายการจ่าย</th>' + h1Headers + '<th style="text-align:right; background:#e6fffa; color:#059669; font-weight:800; padding:7px 10px;">รวม 6 เดือนแรก</th></tr></thead><tbody>' + p1Rows + '</tbody><tfoot>' + p1Foot + '</tfoot></table></div><div class="page-container"><div class="header-row"><div><h2 class="title">รายงานสรุปค่าใช้จ่าย Cup บ้านสันโค้ง (ครึ่งปีหลัง: เม.ย. - ก.ย.)</h2><p class="subtitle">ประจำปีงบประมาณ ' + currentYear + ' &nbsp;|&nbsp; แผ่นที่ 2/2</p></div><div class="info-right" style="color:#059669; font-size:12px; font-weight:800;">ยอดรวมทั้งปีงบประมาณ: ' + fmtD(expenseStats.total) + ' บาท</div></div><table><thead><tr style="background:#f1f5f9;"><th style="text-align:left; width:28%; padding:7px 10px;">หมวดหมู่รายการจ่าย</th>' + h2Headers + '<th style="text-align:right; background:#e6fffa; color:#059669; font-weight:800; padding:7px 10px;">รวมทั้งสิ้น (12 เดือน)</th></tr></thead><tbody>' + p2Rows + '</tbody><tfoot>' + p2Foot + '</tfoot></table></div><script>window.onload = function() { window.focus(); window.print(); setTimeout(function() { window.close(); }, 500); };<\/script></body></html>';
 
     printWindow.document.write(html);
     printWindow.document.close();
@@ -2586,23 +2586,39 @@ export default function App() {
     const totalMarginPct = (totalAmt || 86420) > 0 ? (((totalProfit) / (totalAmt || 86420)) * 100).toFixed(1) : '59.8';
     const totalQty = rowsSelected.length || 320;
 
+    if (selectedYr === '2570' && totalAmt === 0 && rowsSelected.length === 0) {
+      return {
+        totalAmt: 0,
+        totalCost: 0,
+        totalProfit: 0,
+        marginPct: '0.0',
+        totalQty: 0,
+        hospList: healthCodes.map(c => ({ code: c, name: hospitalMap[c] || c, totalAmt: 0, totalCost: 0, profit: 0, totalQty: 0, marginPct: '0.0', pct: '0%', topMedicine: '-', medicines: [] })),
+        medicineList: [],
+        monthly68: Array(12).fill(0),
+        monthly69: Array(12).fill(0),
+        sum68: 0,
+        sum69: 0
+      };
+    }
+
     return {
-      totalAmt: totalAmt > 0 ? totalAmt : (selectedYr === '2569' ? 86420 : 79000),
-      totalCost: totalCost > 0 ? totalCost : 34700,
-      totalProfit,
-      marginPct: totalMarginPct,
-      totalQty,
+      totalAmt: totalAmt > 0 ? totalAmt : (selectedYr === '2569' ? 86420 : (selectedYr === '2570' ? 0 : 79000)),
+      totalCost: totalCost > 0 ? totalCost : (selectedYr === '2570' ? 0 : 34700),
+      totalProfit: selectedYr === '2570' && totalAmt === 0 ? 0 : totalProfit,
+      marginPct: selectedYr === '2570' && totalAmt === 0 ? '0.0' : totalMarginPct,
+      totalQty: selectedYr === '2570' && rowsSelected.length === 0 ? 0 : totalQty,
       hospList,
-      medicineList: medicineList.length > 0 ? medicineList : [
+      medicineList: medicineList.length > 0 ? medicineList : (selectedYr === '2570' ? [] : [
         { name: 'ขมิ้นชันแคปซูล', qty: 110, cost: 14750, amt: 35020, profit: 20270, marginPct: '57.9%', pct: '40.5%' },
         { name: 'ฟ้าทะลายโจรแคปซูล', qty: 85, cost: 11800, amt: 26700, profit: 14900, marginPct: '55.8%', pct: '30.9%' },
         { name: 'ยาแก้ไอมะขามป้อม', qty: 75, cost: 6200, amt: 15200, profit: 9000, marginPct: '59.2%', pct: '17.6%' },
         { name: 'ครีมไพล', qty: 35, cost: 4450, amt: 10900, profit: 6450, marginPct: '59.2%', pct: '12.6%' }
-      ],
-      monthly68: sumPrev > 0 ? monthlyPrev : [8200, 9500, 6900, 7100, 6500, 8000, 7200, 6800, 7500, 8100, 6900, 6300],
-      monthly69: sumSelected > 0 ? monthlySelected : [10500, 12800, 11400, 14200, 13900, 15120, 8500, 0, 0, 0, 0, 0],
-      sum68: sumPrev > 0 ? sumPrev : 89000,
-      sum69: sumSelected > 0 ? sumSelected : 86420
+      ]),
+      monthly68: sumPrev > 0 ? monthlyPrev : (selectedYr === '2570' ? Array(12).fill(0) : [8200, 9500, 6900, 7100, 6500, 8000, 7200, 6800, 7500, 8100, 6900, 6300]),
+      monthly69: sumSelected > 0 ? monthlySelected : (selectedYr === '2570' ? Array(12).fill(0) : [10500, 12800, 11400, 14200, 13900, 15120, 8500, 0, 0, 0, 0, 0]),
+      sum68: sumPrev > 0 ? sumPrev : (selectedYr === '2570' ? 0 : 89000),
+      sum69: sumSelected > 0 ? sumSelected : (selectedYr === '2570' ? 0 : 86420)
     };
   }, [herbals, hospitalMap, currentYear]);
 
@@ -2777,27 +2793,45 @@ export default function App() {
     const hospBar68 = healthCodes.map(c => rows68.filter(r => String(r.hcode).trim() === c).reduce((sum, r) => sum + (parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0), 0));
     const hospBar69 = healthCodes.map(c => rows69.filter(r => String(r.hcode).trim() === c).reduce((sum, r) => sum + (parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0), 0));
 
+    if (selectedYr === '2570' && totalAmt === 0 && rowsSelected.length === 0) {
+      return {
+        totalAmt: 0,
+        totalPersons: 0,
+        totalQty: 0,
+        growthPct: '0.0',
+        hospList: healthCodes.map(c => ({ code: c, name: hospitalMap[c] || c, totalAmt: 0, totalPersons: 0, totalQty: 0, pct: '0%', topService: '-', services: [] })),
+        groupList: [],
+        serviceList: [],
+        sum67: 0,
+        sum68: 0,
+        sum69: 0,
+        hospBar67: [0,0,0,0,0],
+        hospBar68: [0,0,0,0,0],
+        hospBar69: [0,0,0,0,0]
+      };
+    }
+
     const prevAmt = selectedYr === '2569' ? (sum68 || 260000) : (sum67 || 240000);
-    const curAmt = totalAmt > 0 ? totalAmt : (selectedYr === '2569' ? 294185 : (sum68 || 276000));
-    const growthPct = prevAmt > 0 ? (((curAmt - prevAmt) / prevAmt) * 100).toFixed(1) : '12.4';
+    const curAmt = totalAmt > 0 ? totalAmt : (selectedYr === '2569' ? 294185 : (selectedYr === '2570' ? 0 : (sum68 || 276000)));
+    const growthPct = prevAmt > 0 ? (((curAmt - prevAmt) / prevAmt) * 100).toFixed(1) : (selectedYr === '2570' ? '0.0' : '12.4');
 
     return {
       totalAmt: curAmt,
-      totalPersons: totalPersons > 0 ? totalPersons : 2840,
-      totalQty: totalQty > 0 ? totalQty : 3120,
+      totalPersons: totalPersons > 0 ? totalPersons : (selectedYr === '2570' ? 0 : 2840),
+      totalQty: totalQty > 0 ? totalQty : (selectedYr === '2570' ? 0 : 3120),
       growthPct,
       hospList,
-      groupList: groupList.length > 0 ? groupList : [
+      groupList: groupList.length > 0 ? groupList : (selectedYr === '2570' ? [] : [
         { name: 'บริการคัดกรองเบาหวานและไขมันในเลือด', persons: 980, qty: 1020, amt: 112400, pct: '38.2%' },
         { name: 'บริการตรวจคัดกรองและค้นหาวัณโรคในกลุ่มเสี่ยงสูง', persons: 620, qty: 620, amt: 62000, pct: '21.1%' },
         { name: 'บริการตรวจคัดกรองมะเร็งลำไส้ใหญ่ (Fit Test)', persons: 450, qty: 450, amt: 46000, pct: '15.6%' },
         { name: 'บริการวัคซีนป้องกันโรค', persons: 410, qty: 410, amt: 41000, pct: '13.9%' },
         { name: 'บริการยาเม็ดเสริมธาตุเหล็กและกรดโฟลิค', persons: 380, qty: 380, amt: 32785, pct: '11.1%' }
-      ],
+      ]),
       serviceList,
-      sum67: sum67 > 0 ? sum67 : 245000,
-      sum68: sum68 > 0 ? sum68 : 276500,
-      sum69: sum69 > 0 ? sum69 : 294185,
+      sum67: sum67 > 0 ? sum67 : (selectedYr === '2570' ? 0 : 245000),
+      sum68: sum68 > 0 ? sum68 : (selectedYr === '2570' ? 0 : 276500),
+      sum69: sum69 > 0 ? sum69 : (selectedYr === '2570' ? 0 : 294185),
       hospBar67: hospBar67.some(v => v > 0) ? hospBar67 : [95000, 48000, 52000, 31000, 19000],
       hospBar68: hospBar68.some(v => v > 0) ? hospBar68 : [108000, 54000, 59000, 34500, 21000],
       hospBar69: hospBar69.some(v => v > 0) ? hospBar69 : [119850, 62400, 61500, 38100, 12335]
@@ -3001,9 +3035,9 @@ export default function App() {
         type: 'line',
         data: {
           labels: MONTHS_TH,
-          datasets: [
+          datasets: currentYear === '2570' ? [] : [
             {
-              label: `ปีงบ 2568 (฿ ${fmt(monthlyTrendData.total68)})`,
+              label: `ปีงบ 2568 (${fmt(monthlyTrendData.total68)})`,
               data: monthlyTrendData.y68,
               borderColor: '#94a3b8',
               backgroundColor: 'rgba(148,163,184,0.08)',
@@ -3016,7 +3050,7 @@ export default function App() {
               fill: true,
             },
             {
-              label: `ปีงบ 2569 (฿ ${fmt(monthlyTrendData.total69)})`,
+              label: `ปีงบ 2569 (${fmt(monthlyTrendData.total69)})`,
               data: monthlyTrendData.y69,
               borderColor: '#064e3b',
               backgroundColor: 'rgba(6,78,59,0.12)',
@@ -3041,7 +3075,7 @@ export default function App() {
               padding: 12,
               cornerRadius: 10,
               callbacks: {
-                label: (c) => ` ${c.dataset.label.split(' ')[0]}: ฿ ${fmtD(c.parsed.y)} บาท`
+                label: (c) => ` ${c.dataset.label.split(' ')[0]}: ${fmtD(c.parsed.y)} บาท`
               }
             }
           },
@@ -3139,7 +3173,7 @@ export default function App() {
             maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
-              tooltip: { callbacks: { label: (ctx) => ` ฿${fmtD(ctx.parsed.y)} บาท` } },
+              tooltip: { callbacks: { label: (ctx) => ` ${fmtD(ctx.parsed.y)} บาท` } },
             },
             scales: {
               y: { ticks: { callback: (v) => fmtS(v), font: { size: 11 } }, grid: { color: '#f1f5f9' } },
@@ -3169,7 +3203,7 @@ export default function App() {
             cutout: '65%',
             plugins: {
               legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' }, padding: 12 } },
-              tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ฿${fmtD(ctx.parsed)}` } }
+              tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${fmtD(ctx.parsed)}` } }
             }
           }
         });
@@ -3206,7 +3240,7 @@ export default function App() {
           labels: MONTHS_TH,
           datasets: [
             {
-              label: `ปีงบประมาณ 2568 (฿ ${fmt(physicalData.sum68)})`,
+              label: `ปีงบประมาณ 2568 (${fmt(physicalData.sum68)})`,
               data: m68,
               backgroundColor: '#94a3b8',
               borderRadius: 6,
@@ -3214,7 +3248,7 @@ export default function App() {
               categoryPercentage: 0.75
             },
             {
-              label: `ปีงบประมาณ 2569 (฿ ${fmt(physicalData.sum69)})`,
+              label: `ปีงบประมาณ 2569 (${fmt(physicalData.sum69)})`,
               data: m69,
               backgroundColor: '#0284c7',
               borderRadius: 6,
@@ -3237,7 +3271,7 @@ export default function App() {
               padding: 12,
               cornerRadius: 10,
               callbacks: {
-                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
               }
             }
           },
@@ -3298,7 +3332,7 @@ export default function App() {
           labels: MONTHS_TH,
           datasets: [
             {
-              label: `ปีงบประมาณ 2568 (฿ ${fmt(thaiData.sum68)})`,
+              label: `ปีงบประมาณ 2568 (${fmt(thaiData.sum68)})`,
               data: m68,
               backgroundColor: '#94a3b8',
               borderRadius: 6,
@@ -3306,7 +3340,7 @@ export default function App() {
               categoryPercentage: 0.75
             },
             {
-              label: `ปีงบประมาณ 2569 (฿ ${fmt(thaiData.sum69)})`,
+              label: `ปีงบประมาณ 2569 (${fmt(thaiData.sum69)})`,
               data: m69,
               backgroundColor: '#d97706',
               borderRadius: 6,
@@ -3329,7 +3363,7 @@ export default function App() {
               padding: 12,
               cornerRadius: 10,
               callbacks: {
-                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
               }
             }
           },
@@ -3390,7 +3424,7 @@ export default function App() {
           labels: MONTHS_TH,
           datasets: [
             {
-              label: `ปีงบประมาณ 2568 (฿ ${fmt(herbalData.sum68)})`,
+              label: `ปีงบประมาณ 2568 (${fmt(herbalData.sum68)})`,
               data: m68,
               backgroundColor: '#94a3b8',
               borderRadius: 6,
@@ -3398,7 +3432,7 @@ export default function App() {
               categoryPercentage: 0.75
             },
             {
-              label: `ปีงบประมาณ 2569 (฿ ${fmt(herbalData.sum69)})`,
+              label: `ปีงบประมาณ 2569 (${fmt(herbalData.sum69)})`,
               data: m69,
               backgroundColor: '#059669',
               borderRadius: 6,
@@ -3421,7 +3455,7 @@ export default function App() {
               padding: 12,
               cornerRadius: 10,
               callbacks: {
-                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+                label: (ctx) => ` ${ctx.dataset.label.split(' ')[0]}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
               }
             }
           },
@@ -3518,7 +3552,7 @@ export default function App() {
               padding: 12,
               cornerRadius: 10,
               callbacks: {
-                label: (ctx) => ` ${ctx.dataset.label}: ฿ ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
+                label: (ctx) => ` ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString('th-TH')} บาท`
               }
             }
           },
@@ -3812,9 +3846,9 @@ export default function App() {
                   
                   {/* Huge Number Typography */}
                   <div className="flex items-baseline gap-2.5 my-1.5">
-                    <span className="text-4xl md:text-5xl font-black text-[#34d399] leading-none">฿</span>
+                    
                     <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
-                      {fmt(processedData.totalAmt)}
+                      {currentYear === '2570' || processedData.totalAmt === 0 ? (currentYear === '2570' ? '-' : '0') : fmt(processedData.totalAmt)}
                     </span>
                   </div>
                   
@@ -3941,12 +3975,12 @@ export default function App() {
                       <div className="flex items-center gap-2.5 text-xs font-extrabold bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl shadow-xs">
                         <div className="flex items-center gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span>
-                          <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(monthlyTrendData.total68)})</span>
+                          <span className="text-slate-600">ปีงบ 2568 ({fmt(monthlyTrendData.total68)})</span>
                         </div>
                         <span className="text-slate-300">|</span>
                         <div className="flex items-center gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full bg-[#064e3b] inline-block"></span>
-                          <span className="text-[#064e3b]">ปีงบ 2569 (฿ {fmt(monthlyTrendData.total69)})</span>
+                          <span className="text-[#064e3b]">ปีงบ 2569 ({fmt(monthlyTrendData.total69)})</span>
                         </div>
                       </div>
                       <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
@@ -3966,7 +4000,7 @@ export default function App() {
                 {/* 1. PPFS (รายได้งบ PPFS) */}
                 {(() => {
                   const pHosp = ppfsData.hospList.find(x => x.code === currentHosp);
-                  const pAmt = currentHosp === 'all' ? (ppfsData.totalAmt || 294185) : (pHosp ? pHosp.totalAmt : 0);
+                  const pAmt = currentYear === '2570' ? (ppfsData.totalAmt || 0) : (currentHosp === 'all' ? (ppfsData.totalAmt || 294185) : (pHosp ? pHosp.totalAmt : 0));
                   const pTop = currentHosp === 'all' ? 'คัดกรองเบาหวาน-ไขมัน/CXR' : (pHosp?.topService || 'คัดกรองสุขภาพ');
                   return (
                     <div
@@ -3987,12 +4021,12 @@ export default function App() {
                           รายได้งบ PPFS ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
                         </div>
                         <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                          ฿ {fmt(pAmt)}
+                          {currentYear === '2570' || pAmt === 0 ? (currentYear === '2570' ? '-' : '0') : fmt(pAmt)}
                         </div>
                       </div>
                       <div className="text-[11px] font-semibold text-blue-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                         <Trophy size={13} className="text-blue-500 shrink-0" />
-                        <span>สูงสุด: {pTop}</span>
+                        <span>{currentYear === '2570' || pAmt === 0 ? '-' : `สูงสุด: ${pTop}`}</span>
                       </div>
                     </div>
                   );
@@ -4024,7 +4058,7 @@ export default function App() {
                           ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
                         </div>
                         <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                          {currentYear === '2570' || tAmt === 0 ? (currentYear === '2570' ? '' : '฿ 0') : `฿ ${fmt(tAmt)}`}
+                          {currentYear === '2570' || tAmt === 0 ? (currentYear === '2570' ? '' : '0') : `${fmt(tAmt)}`}
                         </div>
                       </div>
                       <div className="text-[11px] font-semibold text-amber-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
@@ -4038,7 +4072,7 @@ export default function App() {
                 {/* 3. Herbal (ยาสมุนไพร) */}
                 {(() => {
                   const hHosp = herbalData.hospList.find(x => x.code === currentHosp);
-                  const hAmt = currentHosp === 'all' ? (herbalData.totalAmt || 244931) : (hHosp ? hHosp.totalAmt : 0);
+                  const hAmt = currentYear === '2570' ? (herbalData.totalAmt || 0) : (currentHosp === 'all' ? (herbalData.totalAmt || 244931) : (hHosp ? hHosp.totalAmt : 0));
                   const hTop = currentHosp === 'all' ? `ขมิ้นชันแคปซูล (กำไร +${herbalData.marginPct}%)` : (hHosp?.topMedicine || 'ขมิ้นชันแคปซูล');
                   return (
                     <div
@@ -4059,12 +4093,12 @@ export default function App() {
                           ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
                         </div>
                         <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                          ฿ {fmt(hAmt)}
+                          {currentYear === '2570' || hAmt === 0 ? (currentYear === '2570' ? '-' : '0') : fmt(hAmt)}
                         </div>
                       </div>
                       <div className="text-[11px] font-semibold text-emerald-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                         <Trophy size={13} className="text-emerald-500 shrink-0" />
-                        <span>สูงสุด: {hTop}</span>
+                        <span>{currentYear === '2570' || hAmt === 0 ? '-' : `สูงสุด: ${hTop}`}</span>
                       </div>
                     </div>
                   );
@@ -4089,7 +4123,7 @@ export default function App() {
                       ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}
                     </div>
                     <div className="text-2xl md:text-3xl font-black text-[#0f172a] mt-1 tracking-tight">
-                      {currentYear === '2570' || physicalData.totalAmt === '' ? '' : `฿ ${fmt(physicalData.totalAmt)}`}
+                      {currentYear === '2570' || physicalData.totalAmt === '' ? '' : `${fmt(physicalData.totalAmt)}`}
                     </div>
                   </div>
                   <div className="text-[11px] font-semibold text-sky-700 truncate flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
@@ -4124,7 +4158,7 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-5 gap-3.5">
-                    {processedData.rankingList.map((item, idx) => {
+                    {currentYear !== '2570' && processedData.rankingList.map((item, idx) => {
                       const rankStyles = [
                         { border: 'border-2 border-amber-300 hover:border-amber-500 bg-gradient-to-b from-amber-50/60 to-white', badge: 'bg-amber-100 text-amber-900 border border-amber-300 font-black', shadow: 'hover:shadow-amber-500/15' },
                         { border: 'border-2 border-slate-300 hover:border-slate-500 bg-gradient-to-b from-slate-50/60 to-white', badge: 'bg-slate-100 text-slate-800 border border-slate-300 font-bold', shadow: 'hover:shadow-slate-500/15' },
@@ -4154,12 +4188,12 @@ export default function App() {
                           </div>
                           <div className="pt-2.5 border-t border-slate-100/80">
                             <div className="text-[10px] text-slate-400 font-bold">ยอดเบิกชดเชย (ปี {currentYear.slice(2)})</div>
-                            <div className="text-base font-black text-[#064e3b] mt-0.5">฿ {fmt(item.amount)}</div>
+                            <div className="text-base font-black text-[#064e3b] mt-0.5">{fmt(item.amount)}</div>
                           </div>
                         </div>
                       );
                     })}
-                    {processedData.rankingList.length === 0 && (
+                    {(currentYear === '2570' || processedData.rankingList.length === 0) && (
                       <div className="col-span-5 text-center text-slate-400 font-bold py-6">ไม่มีข้อมูล</div>
                     )}
                   </div>
@@ -4235,8 +4269,8 @@ export default function App() {
                 </div>
                 <div className="bg-slate-900/70 border border-white/10 rounded-2xl px-6 py-3.5 text-right min-w-[200px]">
                   <div className="text-[11px] font-bold text-slate-400 uppercase">ยอดเงินรวม ปี 69</div>
-                  <div className="text-2xl font-black text-amber-400">฿{fmtD(detailComparisonData.sumAmt69)}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">ปี 68: ฿{fmtD(detailComparisonData.sumAmt68)}</div>
+                  <div className="text-2xl font-black text-amber-400">{fmtD(detailComparisonData.sumAmt69)}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">ปี 68: {fmtD(detailComparisonData.sumAmt68)}</div>
                 </div>
               </div>
 
@@ -4256,7 +4290,7 @@ export default function App() {
                   </select>
                 </div>
                 <div className="text-xs font-bold text-[#475569]">
-                  พบ <strong className="text-emerald-700">{detailComparisonData.rows.length}</strong> รายการ | ยอดรวมปี 69: <strong className="text-emerald-800">฿{fmtD(detailComparisonData.sumAmt69)}</strong> บาท
+                  พบ <strong className="text-emerald-700">{detailComparisonData.rows.length}</strong> รายการ | ยอดรวมปี 69: <strong className="text-emerald-800">{fmtD(detailComparisonData.sumAmt69)}</strong> บาท
                 </div>
               </div>
 
@@ -4397,7 +4431,7 @@ export default function App() {
 
                   <div className="flex items-baseline gap-3 my-2">
                     {currentYear === '2570' || physicalData.totalAmt === '' ? null : (
-                      <span className="text-4xl md:text-5xl font-black text-sky-300 leading-none">฿</span>
+                      
                     )}
                     <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
                       {currentYear === '2570' || physicalData.totalAmt === '' ? '' : fmt(physicalData.totalAmt)}
@@ -4449,7 +4483,7 @@ export default function App() {
                       <div key={idx}>
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-200 truncate max-w-[200px]">{s.name}</span>
-                          <span className="text-white font-black">฿ {fmt(s.amt)}</span>
+                          <span className="text-white font-black">{fmt(s.amt)}</span>
                         </div>
                         <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full" style={{ width: s.pct }}></div>
@@ -4526,7 +4560,7 @@ export default function App() {
                             </div>
                             <div className="flex items-baseline justify-between">
                               <div className="text-2xl font-black text-slate-900 tracking-tight">
-                                ฿ {fmt(t.totalAmt)}
+                                {fmt(t.totalAmt)}
                               </div>
                               <span className="text-[11px] font-bold text-slate-400">ปีงบ 2569</span>
                             </div>
@@ -4560,7 +4594,7 @@ export default function App() {
                                 <TrendingUp size={13} className="text-slate-400" /> เฉลี่ย/ครั้ง
                               </div>
                               <div className="text-lg font-black text-slate-900 mt-1">
-                                ฿ {fmt(t.avg)}
+                                {fmt(t.avg)}
                               </div>
                               <div className="text-[10px] font-medium text-slate-400 mt-1.5">
                                 ต่อครั้งการรักษา
@@ -4577,7 +4611,7 @@ export default function App() {
                               <div className="flex flex-wrap gap-1.5">
                                 {t.services.slice(0, 2).map((s, sI) => (
                                   <span key={sI} className="text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200/60 truncate max-w-full">
-                                    {(s?.name || s?.service || 'บริการ').replace('กายภาพบำบัด_', '')}: <strong className="text-slate-900 font-bold">฿{fmt(s?.amt || s?.amount || 0)}</strong>
+                                    {(s?.name || s?.service || 'บริการ').replace('กายภาพบำบัด_', '')}: <strong className="text-slate-900 font-bold">{fmt(s?.amt || s?.amount || 0)}</strong>
                                   </span>
                                 ))}
                               </div>
@@ -4640,7 +4674,7 @@ export default function App() {
                             </td>
                             <td className="p-4 text-right font-bold text-sky-800 bg-sky-50/40">{fmt(s.people || 0)} คน</td>
                             <td className="p-4 text-right text-slate-600 font-medium">{fmt(s.qty)} ครั้ง</td>
-                            <td className="p-4 text-right font-black text-slate-900">฿ {fmtD(s.amt)}</td>
+                            <td className="p-4 text-right font-black text-slate-900">{fmtD(s.amt)}</td>
                             <td className="p-4">
                               <div className="flex items-center gap-2.5">
                                 <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/50">
@@ -4658,7 +4692,7 @@ export default function App() {
                         <td className="p-4">รวมทั้งหมด</td>
                         <td className="p-4 text-right text-sky-800 font-black">{fmt(physicalData.totalPatients || 661)} คน</td>
                         <td className="p-4 text-right">{fmt(physicalData.serviceList.reduce((a, b) => a + (b.qty || 0), 0))} ครั้ง</td>
-                        <td className="p-4 text-right text-[#0284c7] font-black text-base">฿ {fmtD(physicalData.totalAmt69)}</td>
+                        <td className="p-4 text-right text-[#0284c7] font-black text-base">{fmtD(physicalData.totalAmt69)}</td>
                         <td className="p-4 text-xs text-slate-500 font-black text-right">100%</td>
                       </tr>
                     </tfoot>
@@ -4687,12 +4721,12 @@ export default function App() {
                     <div className="flex items-center gap-3 text-xs font-extrabold bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-2xl shadow-xs">
                       <div className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-md bg-slate-400 inline-block shadow-xs"></span>
-                        <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(physicalData.sum68)})</span>
+                        <span className="text-slate-600">ปีงบ 2568 ({fmt(physicalData.sum68)})</span>
                       </div>
                       <span className="text-slate-300">|</span>
                       <div className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-md bg-[#0284c7] inline-block shadow-xs"></span>
-                        <span className="text-[#0284c7]">ปีงบ 2569 (฿ {fmt(physicalData.sum69)})</span>
+                        <span className="text-[#0284c7]">ปีงบ 2569 ({fmt(physicalData.sum69)})</span>
                       </div>
                     </div>
                   </div>
@@ -4757,7 +4791,7 @@ export default function App() {
                             <div className="bg-emerald-50/60 rounded-2xl p-3.5 border border-emerald-100 text-center">
                               <div className="text-[11px] text-emerald-700 font-semibold">ยอดเบิกรวม</div>
                               <div className="text-xl font-black text-emerald-800 mt-1">
-                                ฿ {fmt(currentTherapist.totalAmt || 0)}
+                                {fmt(currentTherapist.totalAmt || 0)}
                               </div>
                             </div>
                           </div>
@@ -4779,7 +4813,7 @@ export default function App() {
                                   </div>
                                   {diffAmt > 0 && (
                                     <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                                      ▲ +฿{fmt(Math.round(diffAmt))}
+                                      ▲ +{fmt(Math.round(diffAmt))}
                                       <span className="text-emerald-600">({growthPct.toFixed(1)}%)</span>
                                     </span>
                                   )}
@@ -4815,7 +4849,7 @@ export default function App() {
                                         </div>
                                         <div className="flex justify-between items-baseline pt-1 border-t border-slate-100">
                                           <span className="text-slate-500">ยอดชดเชย</span>
-                                          <span className="font-black text-slate-800">฿ {fmt(Math.round(fy68.amt || 0))}</span>
+                                          <span className="font-black text-slate-800">{fmt(Math.round(fy68.amt || 0))}</span>
                                         </div>
                                       </div>
                                     ) : (
@@ -4840,7 +4874,7 @@ export default function App() {
                                       </div>
                                       <div className="flex justify-between items-baseline pt-1 border-t border-sky-100">
                                         <span className="text-slate-500">ยอดชดเชย</span>
-                                        <span className="font-black text-emerald-700">฿ {fmt(Math.round(fy69.amt || currentTherapist.totalAmt || 0))}</span>
+                                        <span className="font-black text-emerald-700">{fmt(Math.round(fy69.amt || currentTherapist.totalAmt || 0))}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -4853,7 +4887,7 @@ export default function App() {
                                     <div className="flex-1">
                                       <div className="flex justify-between font-bold text-emerald-800 mb-1">
                                         <span>ผลต่างการเติบโต</span>
-                                        <span>▲ +฿{fmt(Math.round(diffAmt))} (+{growthPct.toFixed(1)}%)</span>
+                                        <span>▲ +{fmt(Math.round(diffAmt))} (+{growthPct.toFixed(1)}%)</span>
                                       </div>
                                       <div className="h-1.5 w-full bg-emerald-100 rounded-full overflow-hidden">
                                         <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: `${Math.min(growthPct, 100)}%` }}></div>
@@ -4886,7 +4920,7 @@ export default function App() {
                                       <td className="py-2.5 px-3 font-semibold text-slate-700">{s?.name || s?.service || 'บริการ'}</td>
                                       <td className="py-2.5 px-3 text-right font-bold text-sky-700 bg-sky-50/40">{fmt(s?.people || 0)}</td>
                                       <td className="py-2.5 px-3 text-right text-slate-500">{fmt(s?.qty || s?.count || 0)}</td>
-                                      <td className="py-2.5 px-3 text-right font-black text-slate-900">฿ {fmtD(s?.amt || s?.amount || 0)}</td>
+                                      <td className="py-2.5 px-3 text-right font-black text-slate-900">{fmtD(s?.amt || s?.amount || 0)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -4978,7 +5012,7 @@ export default function App() {
                   </div>
 
                   <div className="flex items-baseline gap-3 my-2">
-                    <span className="text-4xl md:text-5xl font-black text-amber-400 leading-none">฿</span>
+                    
                     <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
                       {fmt(thaiData.totalAmt69)}
                     </span>
@@ -4996,7 +5030,7 @@ export default function App() {
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-amber-200">เฉลี่ยชดเชยต่อครั้ง</div>
-                      <div className="text-xl font-black text-white mt-0.5">฿ {fmt(thaiData.avgPerService)}</div>
+                      <div className="text-xl font-black text-white mt-0.5">{fmt(thaiData.avgPerService)}</div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-amber-200">เติบโตเปรียบเทียบปี 68</div>
@@ -5019,7 +5053,7 @@ export default function App() {
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1">
                         <span className="text-slate-200">งวดที่ 1 (ต.ค. - พ.ย.)</span>
-                        <span className="text-white font-black">฿ {fmt(thaiData.rep1Amt69 || 142000)}</span>
+                        <span className="text-white font-black">{fmt(thaiData.rep1Amt69 || 142000)}</span>
                       </div>
                       <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                         <div className="h-full bg-amber-400 rounded-full" style={{ width: `${thaiData.totalAmt69 > 0 ? Math.round(((thaiData.rep1Amt69 || 142000) / thaiData.totalAmt69) * 100) : 60}%` }}></div>
@@ -5029,7 +5063,7 @@ export default function App() {
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1">
                         <span className="text-slate-200">งวดที่ 2 (ธ.ค. - ม.ค.)</span>
-                        <span className="text-white font-black">฿ {fmt(thaiData.rep2Amt69 || 84931)}</span>
+                        <span className="text-white font-black">{fmt(thaiData.rep2Amt69 || 84931)}</span>
                       </div>
                       <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: `${thaiData.totalAmt69 > 0 ? Math.round(((thaiData.rep2Amt69 || 84931) / thaiData.totalAmt69) * 100) : 40}%` }}></div>
@@ -5094,7 +5128,7 @@ export default function App() {
 
                           {/* Huge Amount */}
                           <div className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
-                            ฿ {fmt(h.totalAmt)}
+                            {fmt(h.totalAmt)}
                           </div>
 
                           {/* CUP Share Progress Bar */}
@@ -5178,7 +5212,7 @@ export default function App() {
                                 <span>{s.name}</span>
                               </td>
                               <td className="p-4 text-right font-medium text-slate-600">{fmt(s.qty)}</td>
-                              <td className="p-4 text-right font-black text-slate-900">฿ {fmt(s.amt)}</td>
+                              <td className="p-4 text-right font-black text-slate-900">{fmt(s.amt)}</td>
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
                                   <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -5198,7 +5232,7 @@ export default function App() {
                         <tr className="bg-amber-50/60 font-black text-slate-900 border-t-2 border-amber-200">
                           <td colSpan={2} className="p-4 text-left">รวมยอดชดเชยแพทย์แผนไทยทั้งสิ้น</td>
                           <td className="p-4 text-right">{fmt(thaiData.totalQty69)}</td>
-                          <td className="p-4 text-right text-base text-amber-800">฿ {fmt(thaiData.totalAmt69)}</td>
+                          <td className="p-4 text-right text-base text-amber-800">{fmt(thaiData.totalAmt69)}</td>
                           <td className="p-4 font-bold text-slate-700">100.0%</td>
                         </tr>
                       </tfoot>
@@ -5222,11 +5256,11 @@ export default function App() {
                       <div className="flex items-center gap-3 text-xs font-black">
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-slate-400 inline-block shadow-xs"></span>
-                          <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(thaiData.sum68)})</span>
+                          <span className="text-slate-600">ปีงบ 2568 ({fmt(thaiData.sum68)})</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-amber-600 inline-block shadow-xs"></span>
-                          <span className="text-amber-700">ปีงบ 2569 (฿ {fmt(thaiData.sum69)})</span>
+                          <span className="text-amber-700">ปีงบ 2569 ({fmt(thaiData.sum69)})</span>
                         </div>
                       </div>
                     </div>
@@ -5284,7 +5318,7 @@ export default function App() {
                           <div className="grid grid-cols-2 gap-3">
                             <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl">
                               <div className="text-[11px] font-bold text-amber-800">ยอดเงินชดเชยสะสม</div>
-                              <div className="text-xl font-black text-amber-900 mt-0.5">฿ {fmt(currentH.totalAmt)}</div>
+                              <div className="text-xl font-black text-amber-900 mt-0.5">{fmt(currentH.totalAmt)}</div>
                             </div>
                             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
                               <div className="text-[11px] font-bold text-slate-500">จำนวนครั้งที่ให้บริการ</div>
@@ -5309,7 +5343,7 @@ export default function App() {
                                   <tr key={sI} className="hover:bg-slate-50">
                                     <td className="py-2.5 font-semibold text-slate-700">{s.name}</td>
                                     <td className="py-2.5 text-right text-slate-500">{fmt(s.qty)}</td>
-                                    <td className="py-2.5 text-right font-bold text-slate-900">฿ {fmtD(s.amt)}</td>
+                                    <td className="py-2.5 text-right font-bold text-slate-900">{fmtD(s.amt)}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -5400,7 +5434,7 @@ export default function App() {
                   </div>
 
                   <div className="flex items-baseline gap-3 my-2">
-                    <span className="text-4xl md:text-5xl font-black text-[#34d399] leading-none">฿</span>
+                    
                     <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
                       {fmt(herbalData.totalAmt)}
                     </span>
@@ -5414,23 +5448,23 @@ export default function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-5">
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-emerald-200">ยอดชดเชยรวม (Amount)</div>
-                      <div className="text-xl font-black text-white mt-0.5">฿ {fmt(herbalData.totalAmt)}</div>
+                      <div className="text-xl font-black text-white mt-0.5">{fmt(herbalData.totalAmt)}</div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-emerald-200">ราคาทุนรวม (Cost)</div>
-                      <div className="text-xl font-black text-white mt-0.5">฿ {fmt(herbalData.totalCost)}</div>
+                      <div className="text-xl font-black text-white mt-0.5">{fmt(herbalData.totalCost)}</div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-emerald-200">ส่วนต่างกำไรสุทธิ (Margin)</div>
                       <div className="text-xl font-black text-[#34d399] mt-0.5 flex items-center gap-1">
-                        +฿ {fmt(herbalData.totalProfit)}
+                        {herbalData.totalProfit < 0 ? <span className="text-red-400 font-black">▼ {fmt(Math.abs(herbalData.totalProfit))}</span> : <span className="text-[#34d399] font-black">{fmt(herbalData.totalProfit)}</span>}
                       </div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-emerald-200">อัตรากำไรเฉลี่ย (Profit %)</div>
                       <div className="text-xl font-black text-[#34d399] mt-0.5 flex items-center gap-1">
                         <TrendingUp size={18} />
-                        +{herbalData.marginPct}%
+                        {parseFloat(herbalData.marginPct) < 0 ? <span className="text-red-400 font-black">▼ {Math.abs(parseFloat(herbalData.marginPct)).toFixed(1)}%</span> : `${herbalData.marginPct}%`}
                       </div>
                     </div>
                   </div>
@@ -5447,17 +5481,17 @@ export default function App() {
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1">
                         <span className="text-emerald-100">ส่วนต่างกำไรสุทธิ (Surplus)</span>
-                        <span className="text-[#34d399] font-black">฿ {fmt(herbalData.totalProfit)} ({herbalData.marginPct}%)</span>
+                        {herbalData.totalProfit < 0 ? <span className="text-red-400 font-black">▼ {fmt(Math.abs(herbalData.totalProfit))} (▼ {Math.abs(parseFloat(herbalData.marginPct)).toFixed(1)}%)</span> : <span className="text-[#34d399] font-black">{fmt(herbalData.totalProfit)} ({herbalData.marginPct}%)</span>}
                       </div>
                       <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                        <div className="h-full bg-[#34d399] rounded-full" style={{ width: `${herbalData.marginPct}%` }}></div>
+                        <div className="h-full bg-[#34d399] rounded-full" style={{ width: `${Math.max(0, Math.min(100, parseFloat(herbalData.marginPct) || 0))}%` }}></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-xs font-bold mb-1">
                         <span className="text-emerald-100">ราคาทุนยา (Cost Base)</span>
-                        <span className="text-white font-black">฿ {fmt(herbalData.totalCost)} ({(100 - parseFloat(herbalData.marginPct)).toFixed(1)}%)</span>
+                        <span className="text-white font-black">{fmt(herbalData.totalCost)} ({(100 - parseFloat(herbalData.marginPct)).toFixed(1)}%)</span>
                       </div>
                       <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                         <div className="h-full bg-amber-400 rounded-full" style={{ width: `${(100 - parseFloat(herbalData.marginPct)).toFixed(1)}%` }}></div>
@@ -5522,18 +5556,18 @@ export default function App() {
 
                           {/* Huge Amount */}
                           <div className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
-                            ฿ {fmt(h.totalAmt)}
+                            {fmt(h.totalAmt)}
                           </div>
 
                           {/* Cost vs Profit Mini Box */}
                           <div className="mt-3 p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1 text-[11px]">
                             <div className="flex justify-between text-slate-500">
                               <span>ราคาทุน:</span>
-                              <span className="font-bold text-slate-700">฿{fmt(h.totalCost)}</span>
+                              <span className="font-bold text-slate-700">{fmt(h.totalCost)}</span>
                             </div>
-                            <div className="flex justify-between text-emerald-700 font-bold">
-                              <span>กำไรส่วนต่าง:</span>
-                              <span>+฿{fmt(h.profit)}</span>
+                            <div className={`flex justify-between font-bold ${h.profit < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                              <span>{h.profit < 0 ? 'ขาดทุน:' : 'กำไรส่วนต่าง:'}</span>
+                              <span>{h.profit < 0 ? `▼ ${fmt(Math.abs(h.profit))}` : fmt(h.profit)}</span>
                             </div>
                           </div>
 
@@ -5620,12 +5654,14 @@ export default function App() {
                                 <span>{m.name}</span>
                               </td>
                               <td className="p-3.5 text-right font-medium text-slate-600">{fmt(m.qty)}</td>
-                              <td className="p-3.5 text-right text-slate-500">฿ {fmt(m.cost)}</td>
-                              <td className="p-3.5 text-right font-black text-slate-900">฿ {fmt(m.amt)}</td>
-                              <td className="p-3.5 text-right font-black text-emerald-700">+฿ {fmt(m.profit)}</td>
+                              <td className="p-3.5 text-right text-slate-500">{fmt(m.cost)}</td>
+                              <td className="p-3.5 text-right font-black text-slate-900">{fmt(m.amt)}</td>
+                              <td className={`p-3.5 text-right font-black ${m.profit < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                {m.profit < 0 ? `▼ ${fmt(Math.abs(m.profit))}` : fmt(m.profit)}
+                              </td>
                               <td className="p-3.5">
-                                <span className="text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md">
-                                  +{m.marginPct}%
+                                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${parseFloat(m.marginPct) < 0 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                                  {parseFloat(m.marginPct) < 0 ? `▼ ${Math.abs(parseFloat(m.marginPct)).toFixed(1)}%` : `${m.marginPct}%`}
                                 </span>
                               </td>
                             </tr>
@@ -5636,10 +5672,10 @@ export default function App() {
                         <tr className="bg-emerald-50/60 font-black text-slate-900 border-t-2 border-emerald-200">
                           <td colSpan={2} className="p-3.5 text-left">รวมยอดค่ายาสมุนไพรทั้งสิ้น</td>
                           <td className="p-3.5 text-right">{fmt(herbalData.totalQty)}</td>
-                          <td className="p-3.5 text-right text-slate-600">฿ {fmt(herbalData.totalCost)}</td>
-                          <td className="p-3.5 text-right text-sm text-emerald-900">฿ {fmt(herbalData.totalAmt)}</td>
-                          <td className="p-3.5 text-right text-sm text-emerald-700 font-black">+฿ {fmt(herbalData.totalProfit)}</td>
-                          <td className="p-3.5 text-emerald-800">+{herbalData.marginPct}%</td>
+                          <td className="p-3.5 text-right text-slate-600">{fmt(herbalData.totalCost)}</td>
+                          <td className="p-3.5 text-right text-sm text-emerald-900">{fmt(herbalData.totalAmt)}</td>
+                          <td className="p-3.5 text-right text-sm text-emerald-700 font-black">{herbalData.totalProfit < 0 ? <span className="text-red-400 font-black">▼ {fmt(Math.abs(herbalData.totalProfit))}</span> : <span className="text-[#34d399] font-black">{fmt(herbalData.totalProfit)}</span>}</td>
+                          <td className="p-3.5 text-emerald-800">{parseFloat(herbalData.marginPct) < 0 ? <span className="text-red-400 font-black">▼ {Math.abs(parseFloat(herbalData.marginPct)).toFixed(1)}%</span> : `${herbalData.marginPct}%`}</td>
                         </tr>
                       </tfoot>
                     </table>
@@ -5662,11 +5698,11 @@ export default function App() {
                       <div className="flex items-center gap-3 text-xs font-black">
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-slate-400 inline-block shadow-xs"></span>
-                          <span className="text-slate-600">ปีงบ 2568 (฿ {fmt(herbalData.sum68)})</span>
+                          <span className="text-slate-600">ปีงบ 2568 ({fmt(herbalData.sum68)})</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-emerald-600 inline-block shadow-xs"></span>
-                          <span className="text-emerald-700">ปีงบ 2569 (฿ {fmt(herbalData.sum69)})</span>
+                          <span className="text-emerald-700">ปีงบ 2569 ({fmt(herbalData.sum69)})</span>
                         </div>
                       </div>
                     </div>
@@ -5724,15 +5760,19 @@ export default function App() {
                           <div className="grid grid-cols-3 gap-2.5">
                             <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
                               <div className="text-[10.5px] font-bold text-slate-500">ราคาทุนรวม</div>
-                              <div className="text-base font-black text-slate-800 mt-0.5">฿{fmt(currentH.totalCost)}</div>
+                              <div className="text-base font-black text-slate-800 mt-0.5">{fmt(currentH.totalCost)}</div>
                             </div>
                             <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl">
                               <div className="text-[10.5px] font-bold text-emerald-800">ยอดชดเชยรวม</div>
-                              <div className="text-base font-black text-emerald-900 mt-0.5">฿{fmt(currentH.totalAmt)}</div>
+                              <div className="text-base font-black text-emerald-900 mt-0.5">{fmt(currentH.totalAmt)}</div>
                             </div>
-                            <div className="p-3 bg-emerald-100/70 border border-emerald-300 rounded-2xl">
-                              <div className="text-[10.5px] font-bold text-emerald-800">กำไร (+{currentH.marginPct}%)</div>
-                              <div className="text-base font-black text-emerald-700 mt-0.5">+฿{fmt(currentH.profit)}</div>
+                            <div className={`p-3 rounded-2xl border ${currentH.profit < 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-100/70 border-emerald-300'}`}>
+                              <div className={`text-[10.5px] font-bold ${currentH.profit < 0 ? 'text-red-800' : 'text-emerald-800'}`}>
+                                {currentH.profit < 0 ? `ขาดทุน (▼ ${Math.abs(parseFloat(currentH.marginPct) || 0).toFixed(1)}%)` : `กำไร (${currentH.marginPct}%)`}
+                              </div>
+                              <div className={`text-base font-black mt-0.5 ${currentH.profit < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                {currentH.profit < 0 ? `▼ ${fmt(Math.abs(currentH.profit))}` : fmt(currentH.profit)}
+                              </div>
                             </div>
                           </div>
 
@@ -5755,9 +5795,16 @@ export default function App() {
                                   <tr key={mI} className="hover:bg-slate-50">
                                     <td className="py-2.5 font-semibold text-slate-700">💊 {m.name}</td>
                                     <td className="py-2.5 text-right text-slate-500">{fmt(m.qty)}</td>
-                                    <td className="py-2.5 text-right text-slate-400">฿{fmt(m.cost)}</td>
-                                    <td className="py-2.5 text-right font-bold text-slate-900">฿{fmt(m.amt)}</td>
-                                    <td className="py-2.5 text-right font-black text-emerald-700">+฿{fmt(m.amt - m.cost)}</td>
+                                    <td className="py-2.5 text-right text-slate-400">{fmt(m.cost)}</td>
+                                    <td className="py-2.5 text-right font-bold text-slate-900">{fmt(m.amt)}</td>
+                                    {(() => {
+                                const diff = m.amt - m.cost;
+                                return (
+                                  <td className={`py-2.5 text-right font-black ${diff < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                    {diff < 0 ? `▼ ${fmt(Math.abs(diff))}` : fmt(diff)}
+                                  </td>
+                                );
+                              })()}
                                   </tr>
                                 ))}
                               </tbody>
@@ -5848,7 +5895,7 @@ export default function App() {
                   </div>
 
                   <div className="flex items-baseline gap-3 my-2">
-                    <span className="text-4xl md:text-5xl font-black text-[#93c5fd] leading-none">฿</span>
+                    
                     <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
                       {fmt(ppfsData.totalAmt)}
                     </span>
@@ -5862,7 +5909,7 @@ export default function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-5">
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-blue-200">ยอดชดเชยรวม (Amount)</div>
-                      <div className="text-xl font-black text-white mt-0.5">฿ {fmt(ppfsData.totalAmt)}</div>
+                      <div className="text-xl font-black text-white mt-0.5">{fmt(ppfsData.totalAmt)}</div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
                       <div className="text-[11px] font-bold text-blue-200">ประชาชนที่ได้รับบริการ (Persons)</div>
@@ -5970,7 +6017,7 @@ export default function App() {
 
                           {/* Huge Amount */}
                           <div className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
-                            ฿ {fmt(h.totalAmt)}
+                            {fmt(h.totalAmt)}
                           </div>
 
                           {/* CUP Share Progress Bar */}
@@ -6073,7 +6120,7 @@ export default function App() {
                                 </td>
                                 <td className="p-3.5 text-right font-medium text-slate-600">{fmt(g.persons)}</td>
                                 <td className="p-3.5 text-right font-medium text-slate-600">{fmt(g.qty)}</td>
-                                <td className="p-3.5 text-right font-black text-slate-900">฿ {fmt(g.amt)}</td>
+                                <td className="p-3.5 text-right font-black text-slate-900">{fmt(g.amt)}</td>
                                 <td className="p-3.5">
                                   <span className="text-[11px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-md">
                                     {g.pct}
@@ -6118,7 +6165,7 @@ export default function App() {
                                                   <td className="py-2.5 px-3 font-semibold text-slate-800">{sub.name}</td>
                                                   <td className="py-2.5 px-3 text-right text-slate-600">{fmt(sub.persons)}</td>
                                                   <td className="py-2.5 px-3 text-right text-slate-600">{fmt(sub.qty)}</td>
-                                                  <td className="py-2.5 px-3 text-right font-black text-blue-900">฿ {fmt(sub.amt)}</td>
+                                                  <td className="py-2.5 px-3 text-right font-black text-blue-900">{fmt(sub.amt)}</td>
                                                   <td className="py-2.5 px-3 text-right">
                                                     <span className="text-[10.5px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
                                                       {subPct}%
@@ -6143,7 +6190,7 @@ export default function App() {
                           <td colSpan={2} className="p-3.5 text-left">รวมยอดชดเชย PPFS ทั้งสิ้น</td>
                           <td className="p-3.5 text-right">{fmt(ppfsData.totalPersons)}</td>
                           <td className="p-3.5 text-right">{fmt(ppfsData.totalQty)}</td>
-                          <td className="p-3.5 text-right text-sm text-blue-900">฿ {fmt(ppfsData.totalAmt)}</td>
+                          <td className="p-3.5 text-right text-sm text-blue-900">{fmt(ppfsData.totalAmt)}</td>
                           <td className="p-3.5 text-blue-800">100%</td>
                         </tr>
                       </tfoot>
@@ -6167,15 +6214,15 @@ export default function App() {
                       <div className="flex items-center gap-3 text-xs font-black flex-wrap">
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-slate-300 inline-block shadow-xs"></span>
-                          <span className="text-slate-600">ปี 2567 (฿ {fmt(ppfsData.sum67)})</span>
+                          <span className="text-slate-600">ปี 2567 ({fmt(ppfsData.sum67)})</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-blue-400 inline-block shadow-xs"></span>
-                          <span className="text-blue-600">ปี 2568 (฿ {fmt(ppfsData.sum68)})</span>
+                          <span className="text-blue-600">ปี 2568 ({fmt(ppfsData.sum68)})</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-3 h-3 rounded-md bg-blue-600 inline-block shadow-xs"></span>
-                          <span className="text-blue-800">ปี 2569 (฿ {fmt(ppfsData.sum69)})</span>
+                          <span className="text-blue-800">ปี 2569 ({fmt(ppfsData.sum69)})</span>
                         </div>
                       </div>
                     </div>
@@ -6237,7 +6284,7 @@ export default function App() {
                         </div>
                         <div className="p-3 bg-blue-100/70 border border-blue-300 rounded-2xl">
                           <div className="text-[10.5px] font-bold text-blue-800">ยอดชดเชยรวม ({ppfsGroupModal.pct})</div>
-                          <div className="text-base font-black text-blue-700 mt-0.5">฿{fmt(ppfsGroupModal.amt)}</div>
+                          <div className="text-base font-black text-blue-700 mt-0.5">{fmt(ppfsGroupModal.amt)}</div>
                         </div>
                       </div>
 
@@ -6261,7 +6308,7 @@ export default function App() {
                                 <td className="py-2.5 font-semibold text-slate-700 pr-2">{s.name}</td>
                                 <td className="py-2.5 text-right text-slate-500">{fmt(s.persons)}</td>
                                 <td className="py-2.5 text-right text-slate-500">{fmt(s.qty)}</td>
-                                <td className="py-2.5 text-right font-bold text-blue-900">฿{fmt(s.amt)}</td>
+                                <td className="py-2.5 text-right font-bold text-blue-900">{fmt(s.amt)}</td>
                                 <td className="py-2.5 text-right text-[11px] font-bold text-slate-400">
                                   {ppfsGroupModal.amt > 0 ? ((s.amt / ppfsGroupModal.amt) * 100).toFixed(1) : 0}%
                                 </td>
@@ -6323,7 +6370,7 @@ export default function App() {
                             </div>
                             <div className="p-3 bg-blue-100/70 border border-blue-300 rounded-2xl">
                               <div className="text-[10.5px] font-bold text-blue-800">ยอดชดเชยรวม ({currentH.pct})</div>
-                              <div className="text-base font-black text-blue-700 mt-0.5">฿{fmt(currentH.totalAmt)}</div>
+                              <div className="text-base font-black text-blue-700 mt-0.5">{fmt(currentH.totalAmt)}</div>
                             </div>
                           </div>
 
@@ -6349,7 +6396,7 @@ export default function App() {
                                     </td>
                                     <td className="py-2.5 text-right text-slate-500">{fmt(s.persons)}</td>
                                     <td className="py-2.5 text-right text-slate-500">{fmt(s.qty)}</td>
-                                    <td className="py-2.5 text-right font-bold text-blue-900">฿{fmt(s.amt)}</td>
+                                    <td className="py-2.5 text-right font-bold text-blue-900">{fmt(s.amt)}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -6403,23 +6450,23 @@ export default function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#1d9e75]">
                   <div className="text-xs font-bold text-slate-500">ยอดค่าใช้จ่ายรวมทั้งหมด</div>
-                  <div className="text-2xl font-black text-[#064e3b] mt-1.5">฿{fmtS(expenseStats.total)}</div>
-                  <div className="text-[11px] font-semibold text-slate-500 mt-1">฿{fmtD(expenseStats.total)} บาท</div>
+                  <div className="text-2xl font-black text-[#064e3b] mt-1.5">{fmtS(expenseStats.total)}</div>
+                  <div className="text-[11px] font-semibold text-slate-500 mt-1">{fmtD(expenseStats.total)} บาท</div>
                 </div>
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#2563eb]">
                   <div className="text-xs font-bold text-slate-500">หมวดค่าใช้จ่ายสูงสุด</div>
                   <div className="text-lg font-black text-[#1e40af] mt-1.5 truncate" title={expenseStats.topCategory.name}>{expenseStats.topCategory.name}</div>
-                  <div className="text-[11px] font-semibold text-blue-700 mt-1">฿{fmtD(expenseStats.topCategory.amount)}</div>
+                  <div className="text-[11px] font-semibold text-blue-700 mt-1">{fmtD(expenseStats.topCategory.amount)}</div>
                 </div>
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#f59e0b]">
                   <div className="text-xs font-bold text-slate-500">เดือนที่ค่าใช้จ่ายสูงสุด</div>
                   <div className="text-lg font-black text-[#b45309] mt-1.5">{expenseStats.topMonth.month}</div>
-                  <div className="text-[11px] font-semibold text-amber-700 mt-1">฿{fmtD(expenseStats.topMonth.amount)} บาท</div>
+                  <div className="text-[11px] font-semibold text-amber-700 mt-1">{fmtD(expenseStats.topMonth.amount)} บาท</div>
                 </div>
                 <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm border-l-4 border-l-[#8b5cf6]">
                   <div className="text-xs font-bold text-slate-500">เฉลี่ยต่อเดือน</div>
-                  <div className="text-2xl font-black text-[#6d28d9] mt-1.5">฿{fmtS(expenseStats.avgPerMonth)}</div>
-                  <div className="text-[11px] font-semibold text-purple-700 mt-1">฿{fmtD(expenseStats.avgPerMonth)} บาท</div>
+                  <div className="text-2xl font-black text-[#6d28d9] mt-1.5">{fmtS(expenseStats.avgPerMonth)}</div>
+                  <div className="text-[11px] font-semibold text-purple-700 mt-1">{fmtD(expenseStats.avgPerMonth)} บาท</div>
                 </div>
               </div>
 
@@ -6594,7 +6641,7 @@ export default function App() {
                           <p className="text-xs text-slate-500 mt-0.5">ประจำปีงบประมาณ {currentYear} &nbsp;|&nbsp; แผ่นที่ 2/2</p>
                         </div>
                         <div className="text-right text-xs text-emerald-800 font-black">
-                          ยอดรวมทั้งปีงบประมาณ: ฿{fmtD(expenseStats.total)} บาท
+                          ยอดรวมทั้งปีงบประมาณ: {fmtD(expenseStats.total)} บาท
                         </div>
                       </div>
                       <table className="w-full text-left text-xs border-collapse">
@@ -6707,7 +6754,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-slate-600 mt-3">ยอดเงินรวม ปีงบ 2568</div>
                   <div className="text-2xl md:text-3xl font-black text-emerald-800 mt-1 tracking-tight">
-                    ฿ {fmtD(payableStats.sum68)}
+                    {fmtD(payableStats.sum68)}
                   </div>
                   <div className="text-[11px] font-semibold text-emerald-600 mt-1">ยอดจัดสรรทั้งปี 2568</div>
                 </div>
@@ -6720,7 +6767,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-slate-600 mt-3">ยอดเงินรวม ปีงบ 2569</div>
                   <div className="text-2xl md:text-3xl font-black text-blue-800 mt-1 tracking-tight">
-                    ฿ {fmtD(payableStats.sum69)}
+                    {fmtD(payableStats.sum69)}
                   </div>
                   <div className="text-[11px] font-semibold text-blue-600 mt-1">ยอดจัดสรรทั้งปี 2569</div>
                 </div>
@@ -6733,7 +6780,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-slate-600 mt-3">ยอดขอเบิก (1 + 2)</div>
                   <div className="text-2xl md:text-3xl font-black text-amber-700 mt-1 tracking-tight">
-                    ฿ {fmtD(payableStats.totalReceived)}
+                    {fmtD(payableStats.totalReceived)}
                   </div>
                   <div className="text-[11px] font-semibold text-amber-600 mt-1">ยอดเงินที่ได้จ่ายทั้งหมด</div>
                 </div>
@@ -6749,7 +6796,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-bold text-emerald-200/80 mt-3">ยอดเงินคงเหลือสุทธิ</div>
                   <div className="text-2xl md:text-3xl font-black text-emerald-300 mt-1 tracking-tight drop-shadow-md">
-                    ฿ {fmtD(payableStats.netRemain)}
+                    {fmtD(payableStats.netRemain)}
                   </div>
                   <div className="text-[11px] font-semibold text-emerald-400 mt-1 flex items-center gap-1">
                     <CheckCircle2 size={12} className="text-emerald-400" />
@@ -6889,10 +6936,10 @@ export default function App() {
                 <div>
                   <div className="text-[12px] font-extrabold uppercase tracking-widest text-[#34d399] mb-2.5">{directorSummaryData.isScoped ? `${directorSummaryData.scopeHospName}` : 'CUP รวมทั้งหมด (5 หน่วยบริการ)'}</div>
                   <div className="flex items-baseline gap-2.5">
-                    <span className="text-3xl font-black text-[#34d399]">฿</span>
+                    
                     <span className="text-5xl font-black tracking-tight leading-none">{fmt(directorSummaryData.cupTotal69)}</span>
                   </div>
-                  <div className="text-[13px] text-[#d1fae5] font-semibold mt-2">ปีงบ 2568: ฿{fmt(directorSummaryData.cupTotal68)}</div>
+                  <div className="text-[13px] text-[#d1fae5] font-semibold mt-2">ปีงบ 2568: {fmt(directorSummaryData.cupTotal68)}</div>
                 </div>
                 <div className={`px-5 py-3 rounded-2xl flex items-center gap-2.5 font-black text-lg border ${directorSummaryData.cupPct >= 0 ? 'bg-emerald-500/20 border-emerald-400/40 text-[#6ee7b7]' : 'bg-red-500/20 border-red-400/40 text-[#fca5a5]'}`}>
                   {directorSummaryData.cupPct >= 0 ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
@@ -6950,7 +6997,7 @@ export default function App() {
                 {directorSummaryData.cupCats.map(c => (
                   <div key={c.key} className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm">
                     <div className="text-xs font-bold text-[#64748b] mb-2">{c.label}</div>
-                    <div className="text-xl font-black text-[#0f172a]">฿{fmt(c.amt69)}</div>
+                    <div className="text-xl font-black text-[#0f172a]">{fmt(c.amt69)}</div>
                     <div className={`text-xs font-bold mt-1.5 flex items-center gap-1 ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {c.pct >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
                       {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(1)}% ({fmt(c.amt68)} → {fmt(c.amt69)})
@@ -7011,7 +7058,7 @@ export default function App() {
                           <span className="text-[10px] font-black text-white">{ch.pct.toFixed(0)}%</span>
                         </div>
                       </div>
-                      <div className="w-28 text-right text-xs font-bold text-[#0f172a] shrink-0">฿{fmt(ch.amt)}</div>
+                      <div className="w-28 text-right text-xs font-bold text-[#0f172a] shrink-0">{fmt(ch.amt)}</div>
                     </div>
                   ))}
                 </div>
@@ -7030,7 +7077,7 @@ export default function App() {
                             <div className="text-sm font-black text-[#0f172a]">{h.name}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-black text-[#0f172a]">฿{fmt(h.total69)}</div>
+                            <div className="text-lg font-black text-[#0f172a]">{fmt(h.total69)}</div>
                             <div className={`text-[11px] font-bold flex items-center gap-1 justify-end ${h.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                               {h.pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                               {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(1)}%
@@ -7041,7 +7088,7 @@ export default function App() {
                           {h.cats.map(c => (
                             <div key={c.key} className="flex justify-between items-center text-xs border-b border-[#f1f5f9] py-1.5 last:border-0">
                               <span className="text-[#64748b] font-semibold">{c.label}</span>
-                              <span className="font-bold text-[#334155]">฿{fmt(c.amt69)}</span>
+                              <span className="font-bold text-[#334155]">{fmt(c.amt69)}</span>
                               <span className={`font-bold w-16 text-right ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                                 {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(0)}%
                               </span>
