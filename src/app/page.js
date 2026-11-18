@@ -4430,9 +4430,7 @@ export default function App() {
                   </div>
 
                   <div className="flex items-baseline gap-3 my-2">
-                    {currentYear === '2570' || physicalData.totalAmt === '' ? null : (
-                      
-                    )}
+
                     <span className="text-5xl md:text-[64px] font-black tracking-tight text-white leading-none drop-shadow-md">
                       {currentYear === '2570' || physicalData.totalAmt === '' ? '' : fmt(physicalData.totalAmt)}
                     </span>
