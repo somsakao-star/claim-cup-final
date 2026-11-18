@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useId } from 'react';
 import Chart from 'chart.js/auto';
 import {
   Activity, Trophy, Syringe, Baby, Flower, Scan, HeartPulse, Monitor,
@@ -1275,6 +1275,40 @@ const THAI_RATE_68 = {
 const THAI_RATE_EXCLUDE = ['ค่าการใช้ยาจากสมุนไพรในบัญชียาหลักแห่งชาติ'];
 const fmtLossD = (n) => ((Number(n) || 0) < -0.005 ? '▼ ' : '') + (Math.abs(Number(n) || 0)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtLossPct = (p) => ((Number(p) || 0) < -0.05 ? '▼ ' : '') + Math.abs(Number(p) || 0).toFixed(1) + '%';
+
+/* ─── ไอคอนชุด "สันโค้ง" แบบ 2.5D (SVG ไล่สี มีเงาและแสงสะท้อน) ─── */
+const ICON3D_GLYPH = {"ppfs": "<path d=\"M2.5 19.5C6 7 18 7 21.5 19.5\"/><path d=\"M8.5 19.5v-3.2M12 19.5v-6M15.5 19.5v-4.2\"/><path d=\"M2 21.8h20\"/>", "thai": "<circle cx=\"12\" cy=\"14.2\" r=\"6.8\"/><path d=\"M5.6 12.2c4 2.4 8.8 2.4 12.8 0\"/><path d=\"M12 7.4V5.6\"/><path d=\"M9.6 6.8 8.2 3.6M14.4 6.8l1.4-3.2\"/>", "herbal": "<path d=\"M6 21C6 13 10 7 19 4\"/><path d=\"M8.2 15.2c-2.8-.2-4.4-1.8-4.6-4.4 2.6.1 4.2 1.4 4.6 4.4Z\"/><path d=\"M11 11.2c-.4-3 1-5 3.8-5.8.6 2.9-.8 4.9-3.8 5.8Z\"/><path d=\"M14.6 14.6c2.6.4 4.4-.6 5.4-3-2.6-.7-4.6.2-5.4 3Z\"/>", "physio": "<circle cx=\"12\" cy=\"4.6\" r=\"2\"/><path d=\"M5 10.5c3-4 11-4 14 0\"/><path d=\"M12 8v6\"/><path d=\"M12 14l-3.6 6.5M12 14l3.6 6.5\"/>", "coin": "<ellipse cx=\"12\" cy=\"6.5\" rx=\"7\" ry=\"3\"/><path d=\"M5 6.5v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 11.5v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5\"/>", "count": "<path d=\"M5 20v-5M12 20V9M19 20V4.5\"/><path d=\"M3 20.5h18\"/><path d=\"M3.8 9.5C8 9.5 9 5 12 5s4 5 8 5\" stroke-dasharray=\"1.2 2.4\"/>"};
+const ICON3D_TONE = {
+  ppfs: ['#7cb2ff', '#1e4fd8'],
+  thai: ['#fcd34d', '#b45309'],
+  herbal: ['#4ade9e', '#047857'],
+  physio: ['#4cc4f7', '#0369a1'],
+  slate: ['#94a3b8', '#334155'],
+};
+const ICON3D_DEFAULT_TONE = { coin: 'slate', count: 'slate' };
+const Icon3D = ({ name, tone, size = 32, className = '' }) => {
+  const id = 'i3' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const [a, b] = ICON3D_TONE[tone || ICON3D_DEFAULT_TONE[name] || name] || ICON3D_TONE.slate;
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" className={`shrink-0 ${className}`} aria-hidden="true">
+      <defs>
+        <linearGradient id={id + 'b'} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={a} /><stop offset="1" stopColor={b} /></linearGradient>
+        <linearGradient id={id + 's'} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".55" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></linearGradient>
+        <clipPath id={id + 'c'}><rect x="3" y="2" width="42" height="42" rx="12.5" /></clipPath>
+        <filter id={id + 'd'} x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="2.2" stdDeviation="2" floodColor={b} floodOpacity=".45" /></filter>
+        <filter id={id + 'e'} x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.1" stdDeviation=".6" floodColor="#000" floodOpacity=".35" /></filter>
+      </defs>
+      <rect x="3" y="2" width="42" height="42" rx="12.5" fill={`url(#${id}b)`} filter={`url(#${id}d)`} />
+      <g clipPath={`url(#${id}c)`}>
+        <ellipse cx="24" cy="4" rx="28" ry="17" fill={`url(#${id}s)`} />
+        <rect x="3" y="30" width="42" height="14" fill="#000" opacity=".10" />
+      </g>
+      <rect x="3.4" y="2.4" width="41.2" height="41.2" rx="12.2" fill="none" stroke="#fff" strokeOpacity=".45" strokeWidth=".8" />
+      <g transform="translate(10.6 8.6) scale(1.12)" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="#fff" style={{ color: '#fff' }} filter={`url(#${id}e)`} dangerouslySetInnerHTML={{ __html: ICON3D_GLYPH[name] || '' }} />
+    </svg>
+  );
+};
+
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtS = (n) => {
   const v = Math.abs(Math.round(n || 0));
@@ -3872,7 +3906,7 @@ export default function App() {
           <div>
             <header className="print:hidden bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="flex items-center gap-3">
-                <Leaf className="text-[#022c22]" size={26} strokeWidth={2.3} />
+                <Icon3D name="herbal" size={34} />
                 <div>
                   <div className="text-2xl font-black text-[#022c22] tracking-tight">Health Claim Analytics</div>
                   <div className="text-[11px] font-extrabold text-[#64748b] tracking-wider uppercase flex items-center gap-2 mt-0.5">
@@ -4071,9 +4105,7 @@ export default function App() {
                           <span className="text-xs font-bold text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
                             <span>✨</span> รายได้งบ PPFS
                           </span>
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                            <DollarSign size={16} />
-                          </div>
+                          <Icon3D name="ppfs" size={36} />
                         </div>
                         <div className="text-xs font-semibold text-slate-500">
                           รายได้งบ PPFS ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
@@ -4108,9 +4140,7 @@ export default function App() {
                           <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
                             <span>✨</span> แพทย์แผนไทย
                           </span>
-                          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                            <HeartPulse size={16} />
-                          </div>
+                          <Icon3D name="thai" size={36} />
                         </div>
                         <div className="text-xs font-semibold text-slate-500">
                           ชดเชยแพทย์แผนไทย ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
@@ -4143,9 +4173,7 @@ export default function App() {
                           <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
                             <span>✨</span> ยาสมุนไพร
                           </span>
-                          <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                            <Leaf size={16} />
-                          </div>
+                          <Icon3D name="herbal" size={36} />
                         </div>
                         <div className="text-xs font-semibold text-slate-500">
                           ชดเชย ยาสมุนไพร ปี {currentYear.slice(2)} {currentHosp !== 'all' && `(${selectedHospName})`}
@@ -4173,9 +4201,7 @@ export default function App() {
                       <span className="text-xs font-bold text-sky-800 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1">
                         <span>✨</span> กายภาพบำบัด
                       </span>
-                      <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                        <Activity size={16} />
-                      </div>
+                      <Icon3D name="physio" size={36} />
                     </div>
                     <div className="text-xs font-semibold text-slate-500">
                       ชดเชย กายภาพบำบัด ปี {currentYear.slice(2)}
@@ -4429,9 +4455,7 @@ export default function App() {
             {/* Physical Navbar */}
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-md">
-                  <Activity size={22} className="text-white" />
-                </div>
+                <Icon3D name="physio" size={46} />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-black text-slate-900">ชดเชยค่าบริการกายภาพบำบัด</span>
@@ -4588,9 +4612,7 @@ export default function App() {
                           {/* Card Header: Avatar & Rank */}
                           <div className="flex items-start justify-between gap-3 mb-5">
                             <div className="flex items-center gap-3">
-                              <div className={`w-12 h-12 rounded-2xl ${rt.avatarBg} text-white shadow-md flex items-center justify-center font-black shrink-0 transition-transform group-hover:scale-105`}>
-                                <Activity size={22} className="text-white drop-shadow-xs" />
-                              </div>
+                              <Icon3D name="physio" tone={['physio', 'herbal', 'thai'][idx] || 'physio'} size={54} className="transition-transform group-hover:scale-105" />
                               <div>
                                 <h4 className="font-extrabold text-base text-slate-900 group-hover:text-[#0284c7] transition-colors leading-tight">
                                   {t.name}
@@ -4610,7 +4632,7 @@ export default function App() {
                           <div className="bg-slate-50/90 rounded-2xl p-4 border border-slate-100 mb-4 group-hover:bg-white group-hover:border-slate-200 transition-all">
                             <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-1">
                               <span className="flex items-center gap-1">
-                                <DollarSign size={13} className="text-slate-400" /> ยอดเบิกชดเชยรวม
+                                <Icon3D name="coin" size={18} /> ยอดเบิกชดเชยรวม
                               </span>
                               <span className="font-black text-slate-700">{t.pct} ของ CUP</span>
                             </div>
@@ -4634,7 +4656,7 @@ export default function App() {
                           <div className="grid grid-cols-2 gap-3 mb-4">
                             <div className="rounded-2xl p-3 bg-slate-50/70 border border-slate-100 flex flex-col justify-between">
                               <div className="text-[11px] font-bold text-slate-500 flex items-center justify-between">
-                                <span className="flex items-center gap-1"><Activity size={13} className="text-slate-400" /> จำนวนบริการ</span>
+                                <span className="flex items-center gap-1"><Icon3D name="count" size={18} /> จำนวนบริการ</span>
                               </div>
                               <div className="text-lg font-black text-slate-900 mt-1">
                                 {fmt(t.totalQty)} <span className="text-xs font-semibold text-slate-400">ครั้ง</span>
@@ -4762,9 +4784,7 @@ export default function App() {
                 <div className="p-6 md:p-8">
                   <div className="flex justify-between items-start mb-6 flex-wrap gap-4 border-b border-slate-100 pb-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-[#0284c7] flex items-center justify-center font-black">
-                        <Activity size={20} />
-                      </div>
+                      <Icon3D name="physio" size={46} />
                       <div>
                         <div className="font-black text-slate-900 text-base">
                           กราฟเปรียบเทียบยอดเบิกรายเดือน (YoY Comparison)
@@ -4809,11 +4829,7 @@ export default function App() {
                       >
                         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
                           <div className="flex items-center gap-3">
-                            <div
-                              className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white shrink-0 shadow-sm bg-[#0284c7]"
-                            >
-                              <Activity size={22} className="text-white drop-shadow-xs" />
-                            </div>
+                            <Icon3D name="physio" size={54} />
                             <div>
                               <div className="font-extrabold text-base text-slate-900">
                                 {currentTherapist.name}
@@ -5009,9 +5025,7 @@ export default function App() {
             {/* Thai Medicine Navbar */}
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-white flex items-center justify-center shadow-md">
-                  <HeartPulse size={22} className="text-white" />
-                </div>
+                <Icon3D name="thai" size={46} />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-black text-slate-900">ชดเชยค่าบริการแพทย์แผนไทย</span>
@@ -5431,9 +5445,7 @@ export default function App() {
             {/* Herbal Navbar */}
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shadow-md">
-                  <Leaf size={22} className="text-white" />
-                </div>
+                <Icon3D name="herbal" size={46} />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-black text-slate-900">ชดเชยค่าบริการยาสมุนไพร</span>
@@ -5792,9 +5804,7 @@ export default function App() {
                       >
                         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black shadow-sm">
-                              <Leaf size={22} className="text-white" />
-                            </div>
+                            <Icon3D name="herbal" size={54} />
                             <div>
                               <div className="font-extrabold text-base text-slate-900">
                                 {currentH.name}
@@ -5892,9 +5902,7 @@ export default function App() {
             {/* PPFS Navbar */}
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm print:hidden">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 text-white flex items-center justify-center shadow-md">
-                  <Sparkles size={22} className="text-white" />
-                </div>
+                <Icon3D name="ppfs" size={46} />
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-black text-slate-900">บริการสร้างเสริมสุขภาพและป้องกันโรค (PPFS)</span>
@@ -6308,9 +6316,7 @@ export default function App() {
                   >
                     <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white shrink-0">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-sm">
-                          <Layers size={22} className="text-white" />
-                        </div>
+                        <Icon3D name="ppfs" size={54} />
                         <div>
                           <div className="font-extrabold text-base text-slate-900">
                             {ppfsGroupModal.name}
@@ -6394,9 +6400,7 @@ export default function App() {
                       >
                         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white shrink-0">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black shadow-sm">
-                              <Sparkles size={22} className="text-white" />
-                            </div>
+                            <Icon3D name="ppfs" size={54} />
                             <div>
                               <div className="font-extrabold text-base text-slate-900">
                                 {currentH.name}
