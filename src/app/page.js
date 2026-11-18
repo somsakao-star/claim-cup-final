@@ -1262,6 +1262,16 @@ const DIR_COLOR_MAP = {
   blue: { bg: 'bg-sky-50', border: 'border-sky-200', icon: 'text-sky-600', title: 'text-sky-900' },
   pink: { bg: 'bg-pink-50', border: 'border-pink-200', icon: 'text-pink-600', title: 'text-pink-900' },
 };
+// เรทต่อครั้งปี 68 ของแพทย์แผนไทย (ตามที่ระบุ) — รายการที่ไม่อยู่ในนี้จะคำนวณจากข้อมูลปี 68 (ยอด ÷ ครั้ง)
+const THAI_RATE_68 = {
+  'ค่าบริการนวด': 167.01,
+  'ค่าบริการพอกเข่า': 83.51,
+  'ค่าบริการนวดและประคบ': 208.77,
+  'ค่าบริการประคบ': 125.26,
+  'ค่าบริการอบสมุนไพร': 100.21,
+};
+const fmtLossD = (n) => ((Number(n) || 0) < -0.005 ? '▼ ' : '') + (Math.abs(Number(n) || 0)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtLossPct = (p) => ((Number(p) || 0) < -0.05 ? '▼ ' : '') + Math.abs(Number(p) || 0).toFixed(1) + '%';
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtS = (n) => {
   const v = Math.abs(Math.round(n || 0));
@@ -1521,6 +1531,7 @@ export default function App() {
   const [expandedPpfsGroup, setExpandedPpfsGroup] = useState(null);
   const [ppfsGroupModal, setPpfsGroupModal] = useState(null);
   const [thaiHospitalPopupId, setThaiHospitalPopupId] = useState(null);
+  const [thaiRateHosp, setThaiRateHosp] = useState('all');
   const [herbalHospitalPopupId, setHerbalHospitalPopupId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState(defaultHMap);
@@ -2452,12 +2463,14 @@ export default function App() {
     const sumPrev = monthlyPrev.reduce((a, b) => a + b, 0);
     const sumSelected = monthlySelected.reduce((a, b) => a + b, 0);
     const totalQty = rowsSelected.length;
+    const totalQty68 = rowsPrev.length;
     const avgPerService = totalQty > 0 ? Math.round(totalAmt / totalQty) : 0;
 
     return {
       totalAmt: Math.round(totalAmt),
       totalAmt69: Math.round(totalAmt),
       totalQty69: totalQty,
+      totalQty68: totalQty68,
       rep1Amt69: Math.round(rep1Amt),
       rep2Amt69: Math.round(rep2Amt),
       avgPerService,
@@ -2469,6 +2482,47 @@ export default function App() {
       sum69: Math.round(sumSelected)
     };
   }, [thais, hospitalMap, currentYear]);
+
+  /* ─── แพทย์แผนไทย: เทียบยอดจริงปี 69 กับยอดถ้าใช้เรทปี 68 ─── */
+  const thaiRateData = useMemo(() => {
+    const raw = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
+    const map = {};
+    raw.forEach(r => {
+      const hc = String(r.hcode || '').trim();
+      if (thaiRateHosp !== 'all' && hc !== thaiRateHosp) return;
+      const yr = String(r.fiscal_year || '');
+      if (yr !== '2568' && yr !== '2569') return;
+      const name = r.service_item || 'บริการนวดและประคบสมุนไพรเพื่อการรักษา';
+      const amt = parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0;
+      if (!map[name]) map[name] = { name, qty68: 0, amt68: 0, qty69: 0, amt69: 0 };
+      if (yr === '2568') { map[name].qty68 += 1; map[name].amt68 += amt; }
+      else { map[name].qty69 += 1; map[name].amt69 += amt; }
+    });
+    const rows = Object.values(map).filter(m => m.qty69 > 0).map(m => {
+      const rate68 = THAI_RATE_68[m.name] !== undefined ? THAI_RATE_68[m.name] : (m.qty68 > 0 ? m.amt68 / m.qty68 : null);
+      const rate69 = m.amt69 / m.qty69;
+      const baseAmt = rate68 !== null ? rate68 * m.qty69 : null;
+      const diff = baseAmt !== null ? m.amt69 - baseAmt : null;
+      const pct = baseAmt > 0 ? (diff / baseAmt) * 100 : null;
+      return { ...m, rate68, rate69, baseAmt, diff, pct };
+    }).sort((a, b) => {
+      if (a.diff === null && b.diff === null) return b.amt69 - a.amt69;
+      if (a.diff === null) return 1;
+      if (b.diff === null) return -1;
+      return a.diff - b.diff;
+    });
+    const comparable = rows.filter(r => r.diff !== null);
+    const totBase = comparable.reduce((a, r) => a + r.baseAmt, 0);
+    const totAct = comparable.reduce((a, r) => a + r.amt69, 0);
+    const totDiff = totAct - totBase;
+    return {
+      rows,
+      totQty: rows.reduce((a, r) => a + r.qty69, 0),
+      totBase, totAct, totDiff,
+      totPct: totBase > 0 ? (totDiff / totBase) * 100 : 0,
+      missing: rows.length - comparable.length,
+    };
+  }, [thais, thaiRateHosp]);
 
   /* ─── Herbal Medicine Data Processing (Live from Herbal table with Cost & Margin) ─── */
   const herbalData = useMemo(() => {
@@ -5031,11 +5085,18 @@ export default function App() {
                       <div className="text-xl font-black text-white mt-0.5">{fmt(thaiData.avgPerService)}</div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15">
-                      <div className="text-[11px] font-bold text-amber-200">เติบโตเปรียบเทียบปี 68</div>
-                      <div className="text-xl font-black text-[#34d399] mt-0.5 flex items-center gap-1">
-                        <TrendingUp size={18} />
-                        +{thaiData.sum68 > 0 ? ((Math.abs(thaiData.sum69 - thaiData.sum68) / thaiData.sum68) * 100).toFixed(1) : '0'}%
+                      <div className="text-[11px] font-bold text-amber-200">ครั้งบริการเติบโต vs ปี 68</div>
+                      <div className={`text-xl font-black mt-0.5 flex items-center gap-1 ${thaiData.totalQty68 > 0 && thaiData.totalQty69 >= thaiData.totalQty68 ? 'text-[#34d399]' : 'text-red-300'}`}>
+                        {thaiData.totalQty68 > 0 && thaiData.totalQty69 >= thaiData.totalQty68
+                          ? <TrendingUp size={18} />
+                          : <TrendingDown size={18} />
+                        }
+                        {thaiData.totalQty68 > 0
+                          ? `${thaiData.totalQty69 >= thaiData.totalQty68 ? '+' : ''}${(((thaiData.totalQty69 - thaiData.totalQty68) / thaiData.totalQty68) * 100).toFixed(1)}%`
+                          : '—'
+                        }
                       </div>
+                      <div className="text-[10px] text-amber-200/70 mt-0.5">{fmt(thaiData.totalQty68)} → {fmt(thaiData.totalQty69)} ครั้ง</div>
                     </div>
                   </div>
                 </div>
@@ -5169,7 +5230,7 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Left Card: ตารางแยกตามประเภทหัตถการ/บริการ (Service Types Table) */}
-                <div className="bg-white rounded-3xl border-2 border-amber-200 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 overflow-hidden relative group">
+                <div className="lg:col-span-2 bg-white rounded-3xl border-2 border-amber-200 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 overflow-hidden relative group">
                   <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-orange-400 to-yellow-400"></div>
                   
                   <div className="p-5 md:p-6 border-b border-amber-100 bg-gradient-to-r from-amber-50/50 via-white to-amber-50/20 flex justify-between items-center flex-wrap gap-3">
@@ -5238,39 +5299,102 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Right Card: กราฟเปรียบเทียบผลงานรายเดือน YoY (Monthly Bar Chart: 2568 vs 2569) */}
-                <div className="bg-white rounded-3xl border-2 border-amber-200 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 overflow-hidden p-6 relative group flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-black">
-                          <TrendingUp size={20} />
-                        </div>
-                        <div>
-                          <h3 className="font-black text-slate-900 text-base">เปรียบเทียบแนวโน้มรายเดือน (YoY)</h3>
-                          <p className="text-xs text-slate-500 mt-0.5">ปีงบประมาณ 2568 เทียบกับ 2569 (12 เดือน)</p>
-                        </div>
+                {/* Right Card: เทียบยอดจริงปี 69 กับยอดถ้าใช้เรทปี 68 (แทนกราฟ YoY) */}
+                <div className="lg:col-span-2 bg-white rounded-3xl border-2 border-amber-200 shadow-sm overflow-hidden p-5 md:p-6 relative flex flex-col gap-5">
+                  <div className="flex justify-between items-center flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-black">
+                        <TrendingUp size={20} />
                       </div>
-                      <div className="flex items-center gap-3 text-xs font-black">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-md bg-slate-400 inline-block shadow-xs"></span>
-                          <span className="text-slate-600">ปีงบ 2568 ({fmt(thaiData.sum68)})</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-md bg-amber-600 inline-block shadow-xs"></span>
-                          <span className="text-amber-700">ปีงบ 2569 ({fmt(thaiData.sum69)})</span>
-                        </div>
+                      <div>
+                        <h3 className="font-black text-slate-900 text-base">เปรียบเทียบอัตราจ่าย: ปี 69 เทียบเรทปี 68</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">ถ้าปี 69 จ่ายตามเรทปี 68 จะได้เงินเท่าไร และส่วนต่างที่หายไป · เรียงจากส่วนต่างที่หายมากสุด</p>
                       </div>
                     </div>
+                    <select
+                      value={thaiRateHosp}
+                      onChange={(e) => setThaiRateHosp(e.target.value)}
+                      className="text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 rounded-xl px-3 py-2 outline-none cursor-pointer"
+                    >
+                      <option value="all">ทุกหน่วยบริการ (All CUP)</option>
+                      {['05954', '05957', '05962', '05959', '05956'].map(code => (
+                        <option key={code} value={code}>
+                          {hospitalMap[code] ? hospitalMap[code].replace(/^[0-9]+\s*[-–]?\s*/, '') : code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <div className="relative h-[320px] w-full">
-                      <canvas ref={thaiYoYCanvasRef}></canvas>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                      <div className="text-[11px] font-bold text-slate-500">ยอดถ้าใช้เรทปี 68</div>
+                      <div className="text-xl font-black text-slate-800 mt-1">{fmtD(thaiRateData.totBase)}</div>
+                    </div>
+                    <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50">
+                      <div className="text-[11px] font-bold text-emerald-800">ยอดจริงปี 69</div>
+                      <div className="text-xl font-black text-emerald-700 mt-1">{fmtD(thaiRateData.totAct)}</div>
+                    </div>
+                    <div className="p-4 rounded-2xl border border-red-200 bg-red-50">
+                      <div className="text-[11px] font-bold text-red-700">ส่วนต่างรวม</div>
+                      <div className="text-xl font-black text-red-600 mt-1">
+                        {fmtLossD(thaiRateData.totDiff)} <span className="text-xs font-bold">({fmtLossPct(thaiRateData.totPct)})</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-center gap-2 font-medium">
-                    <span>💡</span>
-                    <span>แนวโน้มยอดชดเชยแพทย์แผนไทยของ CUP สันโค้งมีความต่อเนื่อง โดยบริการนวดและประคบสมุนไพรครองสัดส่วนสูงสุด</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-amber-50 text-amber-900 font-extrabold border-b border-amber-200">
+                          <th className="p-3 w-8">#</th>
+                          <th className="p-3">รายการหัตถการ / บริการ</th>
+                          <th className="p-3 text-right">จำนวนครั้ง 69</th>
+                          <th className="p-3 text-right">เรท/ครั้ง ปี 68</th>
+                          <th className="p-3 text-right">เรทจริง/ครั้ง ปี 69</th>
+                          <th className="p-3 text-right">ยอดถ้าใช้เรทปี 68</th>
+                          <th className="p-3 text-right">ยอดจริงปี 69</th>
+                          <th className="p-3 text-right">ส่วนต่าง</th>
+                          <th className="p-3 text-right">% ส่วนต่าง</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm">
+                        {thaiRateData.rows.map((r, i) => (
+                          <tr key={r.name} className="hover:bg-amber-50/40 transition-colors">
+                            <td className="p-3 text-slate-400 font-bold">{i + 1}</td>
+                            <td className="p-3 font-bold text-slate-800">{r.name}</td>
+                            <td className="p-3 text-right text-slate-600">{fmt(r.qty69)}</td>
+                            <td className="p-3 text-right text-slate-600">{r.rate68 !== null ? fmtD(r.rate68) : '-'}</td>
+                            <td className="p-3 text-right text-slate-600">{fmtD(r.rate69)}</td>
+                            <td className="p-3 text-right text-slate-700">{r.baseAmt !== null ? fmtD(r.baseAmt) : '-'}</td>
+                            <td className="p-3 text-right font-black text-emerald-700">{fmtD(r.amt69)}</td>
+                            <td className={`p-3 text-right font-black ${r.diff === null ? 'text-slate-400' : r.diff < -0.005 ? 'text-red-600' : 'text-emerald-700'}`}>{r.diff !== null ? fmtLossD(r.diff) : '-'}</td>
+                            <td className={`p-3 text-right font-bold ${r.pct === null ? 'text-slate-400' : r.pct < -0.05 ? 'text-red-600' : 'text-emerald-700'}`}>{r.pct !== null ? fmtLossPct(r.pct) : '-'}</td>
+                          </tr>
+                        ))}
+                        {thaiRateData.rows.length === 0 && (
+                          <tr><td colSpan={9} className="p-6 text-center text-slate-400 font-semibold">ยังไม่มีข้อมูลปี 69 ของหน่วยที่เลือก</td></tr>
+                        )}
+                      </tbody>
+                      {thaiRateData.rows.length > 0 && (
+                        <tfoot>
+                          <tr className="bg-amber-50/60 font-black text-slate-900 border-t-2 border-amber-200">
+                            <td className="p-3"></td>
+                            <td className="p-3">รวม</td>
+                            <td className="p-3 text-right">{fmt(thaiRateData.totQty)}</td>
+                            <td className="p-3"></td>
+                            <td className="p-3"></td>
+                            <td className="p-3 text-right">{fmtD(thaiRateData.totBase)}</td>
+                            <td className="p-3 text-right text-emerald-700">{fmtD(thaiRateData.totAct)}</td>
+                            <td className={`p-3 text-right ${thaiRateData.totDiff < -0.005 ? 'text-red-600' : 'text-emerald-700'}`}>{fmtLossD(thaiRateData.totDiff)}</td>
+                            <td className={`p-3 text-right ${thaiRateData.totPct < -0.05 ? 'text-red-600' : 'text-emerald-700'}`}>{fmtLossPct(thaiRateData.totPct)}</td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+
+                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs text-amber-900 font-medium">
+                    ส่วนต่าง = ยอดจริงปี 69 − (เรท/ครั้งปี 68 × จำนวนครั้งปี 69){thaiRateData.missing > 0 ? ` · มี ${thaiRateData.missing} รายการที่ไม่มีเรทปี 68 จึงไม่นำมารวมในส่วนต่าง` : ''}
                   </div>
                 </div>
 
