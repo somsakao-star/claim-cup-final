@@ -1309,6 +1309,19 @@ const Icon3D = ({ name, tone, size = 32, className = '' }) => {
   );
 };
 
+/* ─── ค่ารายหัว UC (รายได้ CUP รายเดือน ปีงบ 2569) — ที่มา: ไฟล์ OPPP ชีต "เงินOP" ───
+   pp / op = ยอดคงเหลือของกองทุน PP และ OP ในแต่ละเดือน (ต.ค.–ก.ย.) · nonUc = PP NON UC (ยอดก้อนเดียวของปี ไม่ระบุเดือน)
+   units = เผื่อข้อมูลรายหน่วยในอนาคต (hcode → {pp:[12], op:[12]}) ตอนนี้ยังไม่มี */
+const CAPITATION_UC_2569 = {
+  year: '2569',
+  pp: [65129.62, 67485.87, 70859.08, 71231.06, 71581.46, 71450.45, 71926.45, 71673.77, 71772.70, 71542.73, 71618.24, 75353.63],
+  op: [534412.33, 553746.24, 581424.67, 584476.91, 587352.02, 586277.06, 590182.82, 588109.45, 588921.25, 587034.21, 587653.86, 607457.89],
+  nonUc: 325910.36,
+  units: {},
+};
+// จุดเดียวที่ดึงข้อมูลค่ารายหัว UC — ภายหลังเปลี่ยนเป็น fetch('/api/capitation') ได้โดยแก้ที่นี่ที่เดียว
+const loadCapitation = () => CAPITATION_UC_2569;
+const fmtArrow = (n) => ((Number(n) || 0) < 0 ? '▼ ' : '') + Math.abs(Math.round(Number(n) || 0)).toLocaleString('th-TH');
 const fmtD = (n) => (n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtS = (n) => {
   const v = Math.abs(Math.round(n || 0));
@@ -1569,6 +1582,7 @@ export default function App() {
   const [ppfsGroupModal, setPpfsGroupModal] = useState(null);
   const [thaiHospitalPopupId, setThaiHospitalPopupId] = useState(null);
   const [thaiRateHosp, setThaiRateHosp] = useState('all');
+  const [showCapDetail, setShowCapDetail] = useState(false);
   const [herbalHospitalPopupId, setHerbalHospitalPopupId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hospitalMap, setHospitalMap] = useState(defaultHMap);
@@ -2933,6 +2947,30 @@ export default function App() {
   /* ─── Director (ผอ.) Executive Summary Data ───
      Independent of currentYear / currentHosp filters — always compares FY2569 vs FY2568
      across all 5 หน่วยบริการ + Cup รวม, for all 4 หมวด (PPFS / แผนไทย / สมุนไพร / กายภาพ) */
+  /* ─── รายได้ค่ารายหัว UC เทียบรายจ่าย (ระดับ CUP ปีงบ 2569) ─── */
+  const capData = useMemo(() => {
+    const cap = loadCapitation();
+    const exp = expenseStats.monthTotals || [];
+    const rows = MONTHS_TH.map((m, i) => {
+      const pp = cap.pp[i] || 0, op = cap.op[i] || 0, e = exp[i] || 0;
+      return { month: m, pp, op, income: pp + op, exp: e, hasExp: e > 0 };
+    });
+    let last = -1;
+    rows.forEach((r, i) => { if (r.hasExp) last = i; });
+    const ppTot = rows.reduce((a, r) => a + r.pp, 0);
+    const opTot = rows.reduce((a, r) => a + r.op, 0);
+    const nonUc = cap.nonUc || 0;
+    const incomeTotal = ppTot + opTot + nonUc;
+    const expTotal = rows.reduce((a, r) => a + r.exp, 0);
+    const periodMonths = last + 1;
+    const periodIncome = rows.slice(0, periodMonths).reduce((a, r) => a + r.income, 0);
+    return {
+      rows, ppTot, opTot, nonUc, incomeTotal, expTotal, periodMonths, periodIncome,
+      periodBalance: periodIncome - expTotal,
+      periodLabel: periodMonths > 0 ? `${MONTHS_TH[0]}–${MONTHS_TH[last]}` : '-',
+    };
+  }, [expenseStats]);
+
   const directorSummaryData = useMemo(() => {
     const allHealthCodes = ['05954', '05957', '05962', '05959', '05956'];
     const scopeHcode = (currentUser?.hcode && currentUser.hcode !== 'ALL') ? String(currentUser.hcode).trim() : null;
@@ -2972,7 +3010,7 @@ export default function App() {
       const cats = catLabels.map(c => {
         const amt69 = Math.round(b[`${c.key}69`] || 0);
         const amt68 = Math.round(b[`${c.key}68`] || 0);
-        return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68) };
+        return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68), isNew: amt68 === 0 && amt69 > 0 };
       });
       const total69 = cats.reduce((s, c) => s + c.amt69, 0);
       const total68 = cats.reduce((s, c) => s + c.amt68, 0);
@@ -2986,7 +3024,7 @@ export default function App() {
     const cupCats = catLabels.map(c => {
       const amt69 = hospRows.reduce((s, h) => s + (h.cats.find(x => x.key === c.key)?.amt69 || 0), 0);
       const amt68 = hospRows.reduce((s, h) => s + (h.cats.find(x => x.key === c.key)?.amt68 || 0), 0);
-      return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68) };
+      return { key: c.key, label: c.label, amt69, amt68, diff: amt69 - amt68, pct: pct(amt69, amt68), isNew: amt68 === 0 && amt69 > 0 };
     });
     const cupTotal69 = hospRows.reduce((s, h) => s + h.total69, 0);
     const cupTotal68 = hospRows.reduce((s, h) => s + h.total68, 0);
@@ -2995,7 +3033,7 @@ export default function App() {
     hospRows.forEach(h => {
       h.cats.forEach(c => {
         if (c.amt69 > 0 || c.amt68 > 0) {
-          allCombos.push({ hospName: h.name, hospCode: h.code, label: c.label, amt69: c.amt69, amt68: c.amt68, diff: c.diff, pct: c.pct });
+          allCombos.push({ hospName: h.name, hospCode: h.code, label: c.label, amt69: c.amt69, amt68: c.amt68, diff: c.diff, pct: c.pct, isNew: c.isNew });
         }
       });
     });
@@ -3024,12 +3062,79 @@ export default function App() {
     return { hospRows, cupCats, cupTotal69, cupTotal68, cupDiff: cupTotal69 - cupTotal68, cupPct: pct(cupTotal69, cupTotal68), highlights, concerns, cupChannel, hospChannels, isScoped: !!scopeHcode, scopeHospName: scopeHcode ? (hospitalMap[scopeHcode] ? hospitalMap[scopeHcode].replace(/^[0-9]+\s*[-–]?\s*/, '') : scopeHcode) : null };
   }, [claims, ppfsList, thais, herbals, physicals, hospitalMap, currentUser]);
 
+  /* ─── แพทย์แผนไทย: แยกส่วนต่างปี 69 เทียบ 68 เป็นผลจากปริมาณบริการ กับผลจากอัตราจ่ายต่อครั้ง ─── */
+  const thaiEffect = useMemo(() => {
+    const raw = (thais && thais.length > 0) ? thais : OFFLINE_THAI_DATA;
+    const sc = (currentUser?.hcode && currentUser.hcode !== 'ALL') ? String(currentUser.hcode).trim() : null;
+    const map = {};
+    raw.forEach(r => {
+      if (sc && String(r.hcode || '').trim() !== sc) return;
+      const yr = String(r.fiscal_year || '');
+      if (yr !== '2568' && yr !== '2569') return;
+      const name = r.service_item || 'บริการนวดและประคบสมุนไพรเพื่อการรักษา';
+      if (THAI_RATE_EXCLUDE.includes(name)) return;
+      const amt = parseFloat(String(r.amount || 0).replace(/,/g, '')) || 0;
+      if (!map[name]) map[name] = { qty68: 0, amt68: 0, qty69: 0, amt69: 0 };
+      if (yr === '2568') { map[name].qty68 += 1; map[name].amt68 += amt; }
+      else { map[name].qty69 += 1; map[name].amt69 += amt; }
+    });
+    let a68 = 0, a69 = 0, vol = 0, rate = 0, skipped = 0;
+    Object.entries(map).forEach(([name, m]) => {
+      const r68 = THAI_RATE_68[name] !== undefined ? THAI_RATE_68[name] : (m.qty68 > 0 ? m.amt68 / m.qty68 : null);
+      if (r68 === null) { skipped += 1; return; }
+      const hypo = r68 * m.qty69;
+      a68 += m.amt68; a69 += m.amt69;
+      vol += hypo - m.amt68;
+      rate += m.amt69 - hypo;
+    });
+    return { a68, a69, vol, rate, skipped, diff: a69 - a68 };
+  }, [thais, currentUser]);
+
+  /* ─── รายการต้องติดตาม (Action list) สร้างจากข้อมูลจริงตามกติกา ─── */
+  const actionItems = useMemo(() => {
+    const d = directorSummaryData;
+    const items = [];
+    const combos = [];
+    d.hospRows.forEach(h => h.cats.forEach(c => combos.push({ ...c, hospName: h.name })));
+    combos.filter(c => c.diff < 0 && c.amt68 >= 10000 && c.pct <= -30)
+      .sort((a, b) => a.diff - b.diff).slice(0, 3)
+      .forEach(c => items.push({
+        level: 'เร่งด่วน', rank: 1,
+        text: `"${c.label}" ที่ ${c.hospName} ลดลง ${fmt(Math.abs(c.diff))} บาท (▼ ${Math.abs(c.pct).toFixed(0)}%) — ตรวจสอบสาเหตุและเร่งติดตามการเบิกจ่าย`
+      }));
+    if (thaiEffect.rate < 0 && Math.abs(thaiEffect.rate) >= 10000) {
+      items.push({
+        level: 'เร่งด่วน', rank: 1,
+        text: `แพทย์แผนไทย: อัตราจ่ายต่อครั้งต่ำกว่าปี 68 ทำให้ยอดหายไป ${fmt(Math.abs(thaiEffect.rate))} บาท — ตรวจสอบเงื่อนไขและอัตราที่ได้รับจริง`
+      });
+    }
+    if (!d.isScoped && capData.periodMonths > 0 && capData.periodMonths < 12) {
+      items.push({
+        level: 'ติดตาม', rank: 2,
+        text: `บันทึกรายจ่ายถึง ${MONTHS_TH[capData.periodMonths - 1]} เท่านั้น (${capData.periodMonths} เดือน) — ควรบันทึกให้ครบเพื่อเทียบกับรายได้ค่ารายหัว UC`
+      });
+    }
+    const topH = [...d.hospRows].sort((a, b) => b.total69 - a.total69)[0];
+    if (!d.isScoped && topH && d.cupTotal69 > 0 && (topH.total69 / d.cupTotal69) * 100 >= 35) {
+      items.push({
+        level: 'ติดตาม', rank: 2,
+        text: `${topH.name} สร้างยอดเบิก ${((topH.total69 / d.cupTotal69) * 100).toFixed(1)}% ของ CUP — ความเสี่ยงการกระจุกตัว ควรวางแผนสนับสนุนหน่วยอื่น`
+      });
+    }
+    d.highlights.filter(x => x.isNew).slice(0, 2).forEach(x => items.push({
+      level: 'โอกาส', rank: 3,
+      text: `"${x.label}" ที่ ${x.hospName} เริ่มมีบริการในปี 69 (${fmt(x.amt69)} บาท) — ติดตามความต่อเนื่องและถอดบทเรียน`
+    }));
+    return items.sort((a, b) => a.rank - b.rank).slice(0, 6);
+  }, [directorSummaryData, thaiEffect, capData]);
+
   /* ─── Director Insight Cards (บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย) ─── */
   const directorInsights = useMemo(() => {
     const d = directorSummaryData;
     const topHosp = [...d.hospRows].sort((a, b) => b.total69 - a.total69)[0];
     const topCat = [...d.cupCats].sort((a, b) => b.amt69 - a.amt69)[0];
-    const topHighlight = d.highlights[0];
+    const topHighlight = d.highlights.find(x => !x.isNew);
+    const newOnes = d.highlights.filter(x => x.isNew);
     const topConcern = d.concerns[0];
     const hospSharePct = d.cupTotal69 > 0 && topHosp ? (topHosp.total69 / d.cupTotal69) * 100 : 0;
     const catSharePct = d.cupTotal69 > 0 && topCat ? (topCat.amt69 / d.cupTotal69) * 100 : 0;
@@ -3042,7 +3147,7 @@ export default function App() {
       },
       topConcern ? {
         icon: 'hourglass', color: 'yellow',
-        title: `2. "${topConcern.label}" ที่ ${topConcern.hospName} ลดลง ${fmt(Math.abs(topConcern.diff))} บาท (${topConcern.pct.toFixed(1)}%) — ควรติดตามเร่งด่วน`,
+        title: `2. "${topConcern.label}" ที่ ${topConcern.hospName} ลดลง ${fmt(Math.abs(topConcern.diff))} บาท (▼ ${Math.abs(topConcern.pct).toFixed(1)}%) — ควรติดตามเร่งด่วน`,
         desc: `จาก ${fmt(topConcern.amt68)} บาท เหลือ ${fmt(topConcern.amt69)} บาท ในปีงบ 2569 ควรตรวจสอบสาเหตุและเร่งติดตามการเบิกจ่ายให้ครบ`
       } : {
         icon: 'check', color: 'green',
@@ -3061,12 +3166,17 @@ export default function App() {
       } : null,
       topHighlight ? {
         icon: 'heart', color: 'pink',
-        title: `5. "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตสูงสุด (+${topHighlight.pct.toFixed(1)}%)`,
-        desc: `จาก ${fmt(topHighlight.amt68)} บาท เป็น ${fmt(topHighlight.amt69)} บาท (+${fmt(topHighlight.diff)} บาท) ควรถอดบทเรียนความสำเร็จไปปรับใช้กับหน่วยบริการอื่น`
+        title: `5. "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตสูงสุด (${topHighlight.pct.toFixed(1)}%)`,
+        desc: `จาก ${fmt(topHighlight.amt68)} บาท เป็น ${fmt(topHighlight.amt69)} บาท (เพิ่มขึ้น ${fmt(topHighlight.diff)} บาท) ควรถอดบทเรียนความสำเร็จไปปรับใช้กับหน่วยบริการอื่น`
+      } : null,
+      newOnes.length > 0 ? {
+        icon: 'target', color: 'blue',
+        title: `6. เริ่มมีบริการในปี 69 (ไม่มียอดในปี 68): ${newOnes.slice(0, 3).map(x => `"${x.label}" ที่ ${x.hospName}`).join(' · ')}`,
+        desc: `ยอดปี 69 รวม ${fmt(newOnes.reduce((a, x) => a + x.amt69, 0))} บาท จึงไม่นับเป็นอัตราการเติบโต — ควรติดตามความต่อเนื่องของบริการและถอดบทเรียนไปปรับใช้กับหน่วยอื่น`
       } : null,
       {
         icon: 'target', color: 'blue',
-        title: '6. ข้อเสนอแนะเชิงนโยบาย',
+        title: `${newOnes.length > 0 ? '7' : '6'}. ข้อเสนอแนะเชิงนโยบาย`,
         recs: [
           { label: 'เร่งด่วน', text: topConcern ? `ติดตามหมวด "${topConcern.label}" ที่ ${topConcern.hospName} ที่ยอดลดลง` : 'ติดตามความครบถ้วนของเอกสารเบิกจ่ายทุกหมวดในปีงบ 2569' },
           { label: 'ระยะกลาง', text: topHighlight ? `ขยายแนวทางที่ทำให้ "${topHighlight.label}" ที่ ${topHighlight.hospName} เติบโตไปยังหน่วยบริการอื่น` : 'ทบทวนแผนการให้บริการรายหมวดเพื่อกระจายรายได้ให้สมดุลขึ้น' },
@@ -6968,6 +7078,7 @@ export default function App() {
         {/* ════════ VIEW 4: DIRECTOR (ผอ.) EXECUTIVE SUMMARY ════════ */}
         {currentView === 'director' && (
           <div className="w-full min-h-screen bg-[#f8fafc]">
+            <style>{`@media print { @page { size: A4 portrait; margin: 10mm; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }`}</style>
             <nav className="bg-white border-b border-[#e2e8f0] px-8 py-3.5 flex justify-between items-center sticky top-0 z-40 shadow-sm flex-wrap gap-3">
               <div className="flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-[#064e3b] text-white flex items-center justify-center shadow-[0_4px_10px_rgba(6,78,59,0.25)]">
@@ -6981,12 +7092,20 @@ export default function App() {
                   <div className="text-[11.5px] text-[#64748b] font-semibold">{directorSummaryData.isScoped ? `เฉพาะหน่วยบริการ ${directorSummaryData.scopeHospName}` : 'รวมทั้ง 5 หน่วยบริการในเครือข่าย อ.สันกำแพง'}</div>
                 </div>
               </div>
-              <button
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-[#064e3b] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#065f46] transition-all cursor-pointer"
+                >
+                  <Printer size={15} /> พิมพ์หน้านี้ (A4)
+                </button>
+                <button
                 onClick={() => setCurrentView('overview')}
                 className="px-4 py-2 rounded-xl bg-[#f1f5f9] border border-[#cbd5e1] text-[#334155] text-xs font-bold flex items-center gap-1.5 hover:bg-[#e2e8f0] transition-all cursor-pointer"
               >
                 <ArrowLeft size={15} /> กลับหน้าหลัก
               </button>
+              </div>
             </nav>
 
             <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full space-y-6">
@@ -7003,8 +7122,207 @@ export default function App() {
                 </div>
                 <div className={`px-5 py-3 rounded-2xl flex items-center gap-2.5 font-black text-lg border ${directorSummaryData.cupPct >= 0 ? 'bg-emerald-500/20 border-emerald-400/40 text-[#6ee7b7]' : 'bg-red-500/20 border-red-400/40 text-[#fca5a5]'}`}>
                   {directorSummaryData.cupPct >= 0 ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
-                  {directorSummaryData.cupPct >= 0 ? '+' : ''}{directorSummaryData.cupPct.toFixed(1)}% เทียบปีก่อน
+                  {directorSummaryData.cupPct < 0 ? '▼ ' : ''}{Math.abs(directorSummaryData.cupPct).toFixed(1)}% เทียบปีก่อน
                 </div>
+              </div>
+
+              {/* รายได้ค่ารายหัว UC เทียบรายจ่าย (ระดับ CUP) */}
+              {!directorSummaryData.isScoped && (
+                <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+                    <div className="flex items-center gap-3">
+                      <Icon3D name="coin" size={34} />
+                      <div>
+                        <div className="text-sm font-black text-[#0f172a]">รายได้ค่ารายหัว UC เทียบรายจ่าย ปีงบ 2569 (ระดับ CUP)</div>
+                        <div className="text-[11.5px] text-[#64748b] font-semibold">รายได้ไม่รวมยอดเบิกชดเชย (PPFS แพทย์แผนไทย ยาสมุนไพร กายภาพบำบัด)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60">
+                      <div className="text-[11px] font-bold text-emerald-800">รายได้ค่ารายหัว UC รวม</div>
+                      <div className="text-2xl font-black text-emerald-700 mt-1">{fmtD(capData.incomeTotal)}</div>
+                      <div className="text-[11.5px] text-slate-600 font-semibold mt-2 space-y-0.5">
+                        <div className="flex justify-between"><span>กองทุน PP</span><span>{fmtD(capData.ppTot)}</span></div>
+                        <div className="flex justify-between"><span>กองทุน OP</span><span>{fmtD(capData.opTot)}</span></div>
+                        <div className="flex justify-between"><span>PP NON UC</span><span>{fmtD(capData.nonUc)}</span></div>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                      <div className="text-[11px] font-bold text-slate-600">รายจ่ายที่บันทึกแล้ว</div>
+                      <div className="text-2xl font-black text-slate-800 mt-1">{fmtD(capData.expTotal)}</div>
+                      <div className="text-[11.5px] text-slate-500 font-semibold mt-2">ช่วง {capData.periodLabel} ({capData.periodMonths} เดือน) จากหน้า "สรุปค่าใช้จ่าย Cup"</div>
+                    </div>
+                    <div className={`p-4 rounded-2xl border ${capData.periodBalance < 0 ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'}`}>
+                      <div className={`text-[11px] font-bold ${capData.periodBalance < 0 ? 'text-red-700' : 'text-emerald-800'}`}>ส่วนต่าง (รายได้ − รายจ่าย) ช่วงเดียวกัน</div>
+                      <div className={`text-2xl font-black mt-1 ${capData.periodBalance < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{fmtLossD(capData.periodBalance)}</div>
+                      <div className="text-[11.5px] text-slate-500 font-semibold mt-2">รายได้ {capData.periodLabel} {fmtD(capData.periodIncome)} (PP + OP ไม่รวม NON UC)</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowCapDetail(v => !v)}
+                    className="mt-4 text-xs font-bold text-[#064e3b] bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl px-4 py-2 hover:bg-[#d1fae5] transition-all cursor-pointer"
+                  >
+                    {showCapDetail ? 'ซ่อนรายละเอียดรายเดือน' : 'ดูรายละเอียดรายเดือน'}
+                  </button>
+
+                  {showCapDetail && (
+                    <div className="overflow-x-auto mt-4">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
+                            <th className="p-3">เดือน</th>
+                            <th className="p-3 text-right">กองทุน PP</th>
+                            <th className="p-3 text-right">กองทุน OP</th>
+                            <th className="p-3 text-right">รายได้รวม</th>
+                            <th className="p-3 text-right">รายจ่าย</th>
+                            <th className="p-3 text-right">ส่วนต่าง</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                          {capData.rows.map(r => (
+                            <tr key={r.month} className="hover:bg-slate-50/60">
+                              <td className="p-3 font-bold text-slate-800">{r.month}</td>
+                              <td className="p-3 text-right text-slate-600">{fmtD(r.pp)}</td>
+                              <td className="p-3 text-right text-slate-600">{fmtD(r.op)}</td>
+                              <td className="p-3 text-right font-black text-emerald-700">{fmtD(r.income)}</td>
+                              <td className="p-3 text-right text-slate-700">{r.hasExp ? fmtD(r.exp) : '-'}</td>
+                              <td className={`p-3 text-right font-black ${r.hasExp ? ((r.income - r.exp) < 0 ? 'text-red-600' : 'text-emerald-700') : 'text-slate-400'}`}>{r.hasExp ? fmtLossD(r.income - r.exp) : '-'}</td>
+                            </tr>
+                          ))}
+                          <tr className="bg-slate-50/70">
+                            <td className="p-3 font-bold text-slate-800">PP NON UC</td>
+                            <td className="p-3 text-right text-slate-600">{fmtD(capData.nonUc)}</td>
+                            <td className="p-3 text-right text-slate-400">-</td>
+                            <td className="p-3 text-right font-black text-emerald-700">{fmtD(capData.nonUc)}</td>
+                            <td className="p-3 text-right text-slate-400">-</td>
+                            <td className="p-3 text-right text-slate-400">-</td>
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-emerald-50 font-black text-slate-900 border-t-2 border-emerald-200">
+                            <td className="p-3">รวมทั้งปี</td>
+                            <td className="p-3 text-right">{fmtD(capData.ppTot + capData.nonUc)}</td>
+                            <td className="p-3 text-right">{fmtD(capData.opTot)}</td>
+                            <td className="p-3 text-right text-emerald-700">{fmtD(capData.incomeTotal)}</td>
+                            <td className="p-3 text-right">{fmtD(capData.expTotal)}</td>
+                            <td className="p-3 text-right text-slate-400">-</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                      <div className="text-[11px] text-slate-500 font-medium mt-2">เดือนที่ยังไม่มีรายจ่ายบันทึกแสดง "-" และไม่นำมาคำนวณส่วนต่าง · ยอดคงเหลือ PP และ OP ใช้คนละวัตถุประสงค์ จึงแสดงแยกกัน</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* รายการต้องติดตาม (Action list) */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="text-sm font-black text-[#0f172a] flex items-center gap-2 mb-4"><Sparkles size={17} className="text-[#059669]" /> รายการที่ควรติดตาม / สั่งการ</div>
+                {actionItems.length === 0 ? (
+                  <div className="text-xs text-[#94a3b8]">ยังไม่พบรายการที่ต้องติดตามเป็นพิเศษจากข้อมูลปัจจุบัน</div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {actionItems.map((it, i) => (
+                      <div key={i} className={`flex items-start gap-3 rounded-xl px-4 py-3 border ${it.rank === 1 ? 'bg-red-50/60 border-red-100' : it.rank === 2 ? 'bg-amber-50/60 border-amber-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
+                        <span className={`shrink-0 text-[10.5px] font-black px-2 py-0.5 rounded-md border ${it.rank === 1 ? 'text-red-700 bg-red-100 border-red-200' : it.rank === 2 ? 'text-amber-800 bg-amber-100 border-amber-200' : 'text-emerald-800 bg-emerald-100 border-emerald-200'}`}>{it.level}</span>
+                        <span className="text-[12.5px] font-semibold text-[#1e293b] leading-relaxed">{it.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ตารางหน่วยบริการ × หมวด */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="text-sm font-black text-[#0f172a] mb-1">ยอดเบิกรายหน่วย × รายหมวด ปี 69 (เทียบปี 68)</div>
+                <div className="text-[11.5px] text-[#64748b] font-semibold mb-4">แต่ละช่องแสดงยอดปี 69 และส่วนต่างจากปี 68 · ▼ สีแดง = ลดลง · สีเขียว = เพิ่มขึ้น</div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
+                        <th className="p-3">หน่วยบริการ</th>
+                        {directorSummaryData.cupCats.map(c => <th key={c.key} className="p-3 text-right">{c.label}</th>)}
+                        <th className="p-3 text-right">รวม</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {directorSummaryData.hospRows.map(h => (
+                        <tr key={h.code} className="hover:bg-slate-50/60">
+                          <td className="p-3 font-bold text-slate-800">{h.name}</td>
+                          {h.cats.map(c => (
+                            <td key={c.key} className="p-3 text-right align-top">
+                              <div className="font-black text-slate-800">{fmt(c.amt69)}</div>
+                              <div className={`text-[10.5px] font-bold ${c.isNew ? 'text-sky-600' : c.diff < 0 ? 'text-red-600' : c.diff > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {c.isNew ? 'เริ่มใหม่' : c.diff === 0 ? '-' : fmtArrow(c.diff)}
+                              </div>
+                            </td>
+                          ))}
+                          <td className="p-3 text-right align-top">
+                            <div className="font-black text-slate-900">{fmt(h.total69)}</div>
+                            <div className={`text-[10.5px] font-bold ${h.diff < 0 ? 'text-red-600' : h.diff > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{h.diff === 0 ? '-' : fmtArrow(h.diff)}</div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    {!directorSummaryData.isScoped && (
+                      <tfoot>
+                        <tr className="bg-emerald-50 border-t-2 border-emerald-200">
+                          <td className="p-3 font-black text-slate-900">รวมทุกหน่วย</td>
+                          {directorSummaryData.cupCats.map(c => (
+                            <td key={c.key} className="p-3 text-right align-top">
+                              <div className="font-black text-slate-900">{fmt(c.amt69)}</div>
+                              <div className={`text-[10.5px] font-bold ${c.isNew ? 'text-sky-600' : c.diff < 0 ? 'text-red-600' : c.diff > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{c.isNew ? 'เริ่มใหม่' : c.diff === 0 ? '-' : fmtArrow(c.diff)}</div>
+                            </td>
+                          ))}
+                          <td className="p-3 text-right align-top">
+                            <div className="font-black text-slate-900">{fmt(directorSummaryData.cupTotal69)}</div>
+                            <div className={`text-[10.5px] font-bold ${directorSummaryData.cupDiff < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{fmtArrow(directorSummaryData.cupDiff)}</div>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+
+              {/* แพทย์แผนไทย: ปริมาณ vs อัตราจ่าย */}
+              <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-1">
+                  <Icon3D name="thai" size={34} />
+                  <div className="text-sm font-black text-[#0f172a]">แพทย์แผนไทย: ยอดเปลี่ยนเพราะปริมาณบริการ หรืออัตราจ่ายต่อครั้ง</div>
+                </div>
+                <div className="text-[11.5px] text-[#64748b] font-semibold mb-4">แยกส่วนต่างปี 69 เทียบ 68 ออกเป็น 2 ส่วน โดยใช้เรทต่อครั้งปี 68 เป็นฐาน</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                    <div className="text-[11px] font-bold text-slate-600">ยอดปี 68</div>
+                    <div className="text-xl font-black text-slate-800 mt-1">{fmt(thaiEffect.a68)}</div>
+                  </div>
+                  <div className={`p-4 rounded-2xl border ${thaiEffect.vol < 0 ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'}`}>
+                    <div className="text-[11px] font-bold text-slate-600">ผลจากปริมาณบริการ</div>
+                    <div className={`text-xl font-black mt-1 ${thaiEffect.vol < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{fmtArrow(thaiEffect.vol)}</div>
+                  </div>
+                  <div className={`p-4 rounded-2xl border ${thaiEffect.rate < 0 ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50/60'}`}>
+                    <div className="text-[11px] font-bold text-slate-600">ผลจากอัตราจ่ายต่อครั้ง</div>
+                    <div className={`text-xl font-black mt-1 ${thaiEffect.rate < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{fmtArrow(thaiEffect.rate)}</div>
+                  </div>
+                  <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60">
+                    <div className="text-[11px] font-bold text-emerald-800">ยอดปี 69</div>
+                    <div className="text-xl font-black text-emerald-700 mt-1">{fmt(thaiEffect.a69)}</div>
+                  </div>
+                </div>
+                <div className="mt-3 p-3 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs text-amber-900 font-medium">
+                  {Math.abs(thaiEffect.rate) >= Math.abs(thaiEffect.vol)
+                    ? `ส่วนต่างส่วนใหญ่มาจากอัตราจ่ายต่อครั้ง (${fmtArrow(thaiEffect.rate)} บาท) มากกว่าปริมาณบริการ (${fmtArrow(thaiEffect.vol)} บาท)`
+                    : `ส่วนต่างส่วนใหญ่มาจากปริมาณบริการ (${fmtArrow(thaiEffect.vol)} บาท) มากกว่าอัตราจ่ายต่อครั้ง (${fmtArrow(thaiEffect.rate)} บาท)`}
+                  {' '}· คำนวณเฉพาะรายการที่มีเรทปี 68 (ไม่รวมค่าการใช้ยาจากสมุนไพรในบัญชียาหลักแห่งชาติ){thaiEffect.skipped > 0 ? ` และไม่รวม ${thaiEffect.skipped} รายการที่ไม่มีเรทปี 68` : ''}
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 font-medium px-1">
+                ข้อมูล ณ วันที่ {new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} · หากเซิร์ฟเวอร์ส่งข้อมูลไม่ครบ ระบบจะใช้ข้อมูลสำรองที่ฝังในไฟล์ ตัวเลขจึงอาจไม่ตรงกับข้อมูลล่าสุด
               </div>
 
               {/* บทวิเคราะห์และข้อเสนอแนะเชิงนโยบาย */}
@@ -7060,7 +7378,7 @@ export default function App() {
                     <div className="text-xl font-black text-[#0f172a]">{fmt(c.amt69)}</div>
                     <div className={`text-xs font-bold mt-1.5 flex items-center gap-1 ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {c.pct >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                      {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(1)}% ({fmt(c.amt68)} → {fmt(c.amt69)})
+                      {c.isNew ? 'เริ่มมีบริการปีนี้' : `${c.pct < 0 ? '▼ ' : ''}${Math.abs(c.pct).toFixed(1)}%`} ({fmt(c.amt68)} → {fmt(c.amt69)})
                     </div>
                   </div>
                 ))}
@@ -7080,7 +7398,7 @@ export default function App() {
                             <div className="text-xs font-bold text-[#0f172a]">{h.label} — {h.hospName}</div>
                             <div className="text-[10.5px] text-[#64748b]">{fmt(h.amt68)} → {fmt(h.amt69)} บาท</div>
                           </div>
-                          <div className="text-xs font-black text-emerald-600">+{fmt(h.diff)} ({h.pct.toFixed(0)}%)</div>
+                          <div className="text-xs font-black text-emerald-600">{fmt(h.diff)} ({h.isNew ? 'เริ่มใหม่' : `${Math.abs(h.pct).toFixed(0)}%`})</div>
                         </div>
                       ))}
                     </div>
@@ -7098,7 +7416,7 @@ export default function App() {
                             <div className="text-xs font-bold text-[#0f172a]">{c.label} — {c.hospName}</div>
                             <div className="text-[10.5px] text-[#64748b]">{fmt(c.amt68)} → {fmt(c.amt69)} บาท</div>
                           </div>
-                          <div className="text-xs font-black text-red-600">{fmt(c.diff)} ({c.pct.toFixed(0)}%)</div>
+                          <div className="text-xs font-black text-red-600">▼ {fmt(Math.abs(c.diff))} ({Math.abs(c.pct).toFixed(0)}%)</div>
                         </div>
                       ))}
                     </div>
@@ -7140,7 +7458,7 @@ export default function App() {
                             <div className="text-lg font-black text-[#0f172a]">{fmt(h.total69)}</div>
                             <div className={`text-[11px] font-bold flex items-center gap-1 justify-end ${h.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                               {h.pct >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                              {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(1)}%
+                              {h.pct < 0 ? '▼ ' : ''}{Math.abs(h.pct).toFixed(1)}%
                             </div>
                           </div>
                         </div>
@@ -7150,7 +7468,7 @@ export default function App() {
                               <span className="text-[#64748b] font-semibold">{c.label}</span>
                               <span className="font-bold text-[#334155]">{fmt(c.amt69)}</span>
                               <span className={`font-bold w-16 text-right ${c.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {c.pct >= 0 ? '+' : ''}{c.pct.toFixed(0)}%
+                                {c.isNew ? 'ใหม่' : `${c.pct < 0 ? '▼ ' : ''}${Math.abs(c.pct).toFixed(0)}%`}
                               </span>
                             </div>
                           ))}
